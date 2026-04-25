@@ -1,0 +1,6 @@
+jaeger_base_url: "http://localhost:16686"
+service_name: "YOUR_SERVICE_NAME"
+lookback_minutes: 10
+limit_traces: 20
+output_dir: "data/raw/traces"
+scom_threshold: 0.5
