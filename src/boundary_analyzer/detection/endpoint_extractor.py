@@ -1,26 +1,38 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
-
-def _extract_endpoint_key(operation_name: str) -> str:
-    """Build endpoint key from operation name.
-    
-    Simple version: use operation_name directly.
-    Later we can parse http.method and http.route from span tags.
-    """
-    return operation_name.strip()
+from boundary_analyzer.detection.endpoint_normalizer import (
+    build_endpoint_key,
+    extract_tags_from_span,
+)
 
 
 def _is_endpoint_span(row: pd.Series) -> bool:
     """Check if a span is an HTTP endpoint span.
     
-    Simple heuristic for MVP:
-    - operation_name starts with HTTP method (GET, POST, PUT, DELETE, PATCH)
+    Heuristic:
+    - Has http.method tag, OR
+    - Has http.route or http.target tag, OR
+    - operation_name starts with HTTP method
     """
+    # Check tags if available
+    tags_str = row.get("tags", "")
+    if tags_str:
+        try:
+            tags = json.loads(tags_str)
+            for tag in tags:
+                key = tag.get("key", "")
+                if key in ["http.method", "http.route", "http.target"]:
+                    return True
+        except (json.JSONDecodeError, TypeError):
+            pass
+    
+    # Fallback: operation_name heuristic
     operation = str(row.get("operation_name", "")).upper()
     http_methods = ["GET ", "POST ", "PUT ", "DELETE ", "PATCH ", "HEAD ", "OPTIONS "]
     
@@ -31,11 +43,14 @@ def _is_endpoint_span(row: pd.Series) -> bool:
     return False
 
 
-def extract_endpoints(spans_df: pd.DataFrame) -> pd.DataFrame:
-    """Extract endpoint spans from spans DataFrame.
+def extract_endpoints(spans_df: pd.DataFrame, normalize: bool = True) -> pd.DataFrame:
+    """Extract endpoint spans from spans DataFrame with normalization.
     
-    Input columns: trace_id, span_id, parent_span_id, service_name, operation_name, start_time, duration
+    Input columns: trace_id, span_id, parent_span_id, service_name, operation_name, start_time, duration, tags
     Output columns: service_name, endpoint_key, span_id, trace_id
+    
+    Args:
+        normalize: Whether to normalize dynamic parameters in routes
     """
     if spans_df.empty:
         return pd.DataFrame(columns=["service_name", "endpoint_key", "span_id", "trace_id"])
@@ -47,8 +62,19 @@ def extract_endpoints(spans_df: pd.DataFrame) -> pd.DataFrame:
     if endpoint_spans.empty:
         return pd.DataFrame(columns=["service_name", "endpoint_key", "span_id", "trace_id"])
     
-    # Build endpoint key
-    endpoint_spans["endpoint_key"] = endpoint_spans["operation_name"].apply(_extract_endpoint_key)
+    # Build endpoint key using normalizer with tags
+    def build_key_from_row(row: pd.Series) -> str:
+        operation_name = str(row.get("operation_name", ""))
+        tags_str = row.get("tags", "")
+        tags = []
+        if tags_str:
+            try:
+                tags = json.loads(tags_str)
+            except (json.JSONDecodeError, TypeError):
+                tags = []
+        return build_endpoint_key(operation_name, tags, normalize=normalize)
+    
+    endpoint_spans["endpoint_key"] = endpoint_spans.apply(build_key_from_row, axis=1)
     
     # Select and rename columns
     result = endpoint_spans[["service_name", "endpoint_key", "span_id", "trace_id"]].copy()

@@ -22,6 +22,23 @@ def _get_service_name(span: dict[str, Any]) -> str:
     return process.get("serviceName", "")
 
 
+def _extract_tags_as_json(span: dict[str, Any]) -> str:
+    """Extract span tags as JSON string for storage.
+    
+    This preserves tag information for later use in endpoint normalization.
+    """
+    tags = span.get("tags", [])
+    if not tags:
+        # Try attributes (OTel format)
+        attributes = span.get("attributes", {})
+        if attributes:
+            tags = [{"key": k, "value": v} for k, v in attributes.items()]
+    
+    if tags:
+        return json.dumps(tags)
+    return ""
+
+
 def _read_one_trace_file(file_path: Path) -> list[dict[str, Any]]:
     """Read one Jaeger export file and return list of span rows."""
     with file_path.open("r", encoding="utf-8") as f:
@@ -44,6 +61,7 @@ def _read_one_trace_file(file_path: Path) -> list[dict[str, Any]]:
                 "operation_name": span.get("operationName", ""),
                 "start_time": span.get("startTime", 0),
                 "duration": span.get("duration", 0),
+                "tags": _extract_tags_as_json(span),
             }
             rows.append(row)
 
@@ -65,7 +83,7 @@ def read_all_traces(traces_dir: Path) -> pd.DataFrame:
     if df.empty:
         df = pd.DataFrame(columns=[
             "trace_id", "span_id", "parent_span_id",
-            "service_name", "operation_name", "start_time", "duration"
+            "service_name", "operation_name", "start_time", "duration", "tags"
         ])
 
     return df

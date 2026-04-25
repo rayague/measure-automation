@@ -4,3 +4,13 @@ lookback_minutes: 10
 limit_traces: 20
 output_dir: "data/raw/traces"
 scom_threshold: 0.5
+
+# SCOM calculation method (ultimate version)
+scom_method: "weighted"  # Options: "weighted" or "simple"
+table_weighting: true    # Weight tables by frequency
+endpoint_weighting: true # Weight endpoints by call frequency
+
+# Threshold method for suspicious services
+threshold_method: "percentile"  # Options: "percentile", "zscore", or "fixed"
+threshold_percentile: 25.0      # Percentile value (bottom X% are suspicious)
+threshold_zscore: -1.5          # Z-score cutoff (below this is suspicious)
