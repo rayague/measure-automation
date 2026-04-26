@@ -1,0 +1,32 @@
+# requirements_auto.txt
+# ======================
+# All Python packages needed by the auto_setup instrumentation system.
+# Install with:  pip install -r requirements_auto.txt
+
+# ── Core OpenTelemetry ────────────────────────────────────────────────────────
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-exporter-otlp-proto-grpc>=1.20.0
+opentelemetry-instrumentation>=0.41b0
+
+# ── Framework-specific instrumentations ──────────────────────────────────────
+opentelemetry-instrumentation-flask>=0.41b0
+opentelemetry-instrumentation-fastapi>=0.41b0
+opentelemetry-instrumentation-django>=0.41b0
+opentelemetry-instrumentation-starlette>=0.41b0
+opentelemetry-instrumentation-tornado>=0.41b0
+
+# ── Database instrumentation ──────────────────────────────────────────────────
+opentelemetry-instrumentation-sqlalchemy>=0.41b0
+opentelemetry-instrumentation-psycopg2>=0.41b0    # PostgreSQL
+opentelemetry-instrumentation-pymysql>=0.41b0     # MySQL
+opentelemetry-instrumentation-sqlite3>=0.41b0     # SQLite
+
+# ── HTTP client instrumentation (for outgoing calls between services) ─────────
+opentelemetry-instrumentation-requests>=0.41b0
+opentelemetry-instrumentation-httpx>=0.41b0
+opentelemetry-instrumentation-aiohttp-client>=0.41b0
+
+# ── gRPC communication (needed for the OTLP exporter) ────────────────────────
+grpcio>=1.50.0
+protobuf>=4.0.0

@@ -86,8 +86,12 @@ def build_endpoint_table_mapping(
         span_id = db_row["span_id"]
         tables_str = db_row.get("tables", "")
         
-        if not tables_str:
+        # Handle NaN values (can be float when read from CSV)
+        if pd.isna(tables_str) or not tables_str:
             continue
+        
+        # Convert to string if needed
+        tables_str = str(tables_str)
         
         # Find endpoint for this DB span
         endpoint_key, service_name = _find_endpoint_for_db_span(

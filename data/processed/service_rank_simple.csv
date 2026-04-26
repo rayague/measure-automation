@@ -1,0 +1,5 @@
+service_name,scom_score,endpoints_count,tables_count,method,rank,threshold_value,threshold_method,is_suspicious
+inventory-service,0.5,3,3,simple,1,0.6250249999999999,percentile,True
+notification-service,0.6667,3,2,simple,2,0.6250249999999999,percentile,False
+order-service,0.7778,4,3,simple,3,0.6250249999999999,percentile,False
+user-service,1.0,3,2,simple,4,0.6250249999999999,percentile,False
