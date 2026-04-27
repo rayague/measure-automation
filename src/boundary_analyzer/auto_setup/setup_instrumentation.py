@@ -283,7 +283,7 @@ def generate_instrumentation_file(
     Returns the path of the generated file.
     """
     lang = SUPPORTED_FRAMEWORKS[framework]["lang"]
-    templates_dir = Path(__file__).parent / "templates"
+    templates_dir = Path(__file__).parent
 
     # Pick the right template file
     template_file = templates_dir / f"{framework}_wrapper.{'py' if lang == 'python' else 'js' if lang == 'js' else 'php'}"

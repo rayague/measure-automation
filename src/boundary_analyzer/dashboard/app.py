@@ -10,6 +10,7 @@ Palette: #0a0e1a bg, #00e5ff cyan accent, #ff6d00 amber alert, #1e2a3a cards.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Optional
 
 import dash
 import pandas as pd
@@ -344,6 +345,20 @@ def _load_service_rank() -> pd.DataFrame:
 
 def _load_endpoint_table_map() -> pd.DataFrame:
     path = Path("data/interim/endpoint_table_map.csv")
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_csv(path)
+
+
+def _load_service_rank_from(base_dir: Path) -> pd.DataFrame:
+    path = base_dir / "processed" / "service_rank.csv"
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_csv(path)
+
+
+def _load_endpoint_table_map_from(base_dir: Path) -> pd.DataFrame:
+    path = base_dir / "interim" / "endpoint_table_map.csv"
     if not path.exists():
         return pd.DataFrame()
     return pd.read_csv(path)
@@ -846,7 +861,7 @@ def _detail_layout(
 # APP FACTORY
 # ─────────────────────────────────────────────────────────────────────────────
 
-def create_app() -> dash.Dash:
+def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
     app = dash.Dash(
         __name__,
         suppress_callback_exceptions=True,
@@ -858,8 +873,9 @@ def create_app() -> dash.Dash:
         ],
     )
 
-    rank_df    = _load_service_rank()
-    mapping_df = _load_endpoint_table_map()
+    base_dir = data_dir or Path("data")
+    rank_df = _load_service_rank_from(base_dir)
+    mapping_df = _load_endpoint_table_map_from(base_dir)
     summary    = create_summary_cards(rank_df)
 
     # ── Root layout ───────────────────────────────────────────────────────────
@@ -1001,8 +1017,8 @@ def create_app() -> dash.Dash:
 # ENTRY POINT
 # ─────────────────────────────────────────────────────────────────────────────
 
-def main() -> int:
-    app = create_app()
+def main(data_dir: Optional[Path] = None) -> int:
+    app = create_app(data_dir=data_dir)
     print(f"\n  ◈ Boundary Analyzer — http://127.0.0.1:8050\n")
     app.run(host="127.0.0.1", port=8050, debug=False)
     return 0
