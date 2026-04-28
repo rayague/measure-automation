@@ -82,7 +82,9 @@ python -m boundary_analyzer run
   Dashboard port (default: `8050`).
 
 - **`--settings <path>`**
-  Validates that the settings file exists. The pipeline steps currently read `config/settings.yaml`.
+  Path to `settings.yaml`. This applies to all pipeline steps.
+
+  Note: for MongoDB spans, the tool counts collections as "tables" (for backward compatibility in CSV/report columns).
 
 ### Examples
 

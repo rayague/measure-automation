@@ -7,7 +7,7 @@ from pathlib import Path
 
 import requests
 from requests import RequestException
-import yaml
+from boundary_analyzer.settings_loader import get_settings_path, load_settings
 
 
 def _lookback_str(minutes: int) -> str:
@@ -15,9 +15,8 @@ def _lookback_str(minutes: int) -> str:
 
 
 def main() -> int:
-    settings_path = Path("config/settings.yaml")
-    with settings_path.open("r", encoding="utf-8") as f:
-        settings = yaml.safe_load(f)
+    settings_path = get_settings_path()
+    settings = load_settings(settings_path)
 
     jaeger_base_url = str(settings["jaeger_base_url"]).rstrip("/")
     service_name = str(settings["service_name"])
@@ -28,7 +27,8 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if service_name == "YOUR_SERVICE_NAME":
-        print("Error: Please set 'service_name' in config/settings.yaml")
+        print("Error: Please set 'service_name' in settings.yaml")
+        print(f"Settings file: {settings_path}")
         return 2
 
     services_url = f"{jaeger_base_url}/api/services"

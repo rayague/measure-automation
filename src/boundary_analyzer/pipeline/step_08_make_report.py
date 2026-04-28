@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import yaml
-
 from boundary_analyzer.reporting.report_builder import generate_report
+from boundary_analyzer.settings_loader import load_settings
 
 
 def main() -> int:
@@ -19,20 +18,16 @@ def main() -> int:
         return 1
     
     # Load settings for threshold
-    settings_path = Path("config/settings.yaml")
-    if settings_path.exists():
-        with settings_path.open("r", encoding="utf-8") as f:
-            settings = yaml.safe_load(f)
-        threshold = float(settings.get("scom_threshold", 0.5))
-    else:
-        threshold = 0.5
+    settings = load_settings()
+    threshold = float(settings.get("scom_threshold", 0.5))
     
-    print(f"Using SCOM threshold: {threshold}")
+    print(f"Using SCOM threshold from settings as fallback: {threshold}")
+    print("Note: if service_rank.csv contains a computed threshold, the report will use it.")
     
     generate_report(rank_path, suspicious_path, output_path, threshold)
     
     print(f"Report saved to: {output_path}")
-    print(f"\nOpen the report in your browser or Markdown viewer.")
+    print("\nOpen the report in your browser or Markdown viewer.")
     
     return 0
 

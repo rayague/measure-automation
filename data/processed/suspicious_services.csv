@@ -1,2 +1,2 @@
 service_name,scom_score,endpoints_count,tables_count,method,rank,threshold_value,threshold_method,is_suspicious
-inventory-service,0.7835,3,3,weighted-table-weighted-endpoint-weighted,1,0.80375,percentile,True
+inventory-service,0.9562,3,3,weighted-table-weighted-endpoint-weighted,1,0.98905,percentile,True

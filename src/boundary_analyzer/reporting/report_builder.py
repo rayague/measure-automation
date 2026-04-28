@@ -18,10 +18,23 @@ def _generate_markdown_report(
     
     report = []
     
+    # Use the same threshold that was used to flag services (if available)
+    threshold_used = float(threshold)
+    threshold_method = None
+    if not rank_df.empty and "threshold_value" in rank_df.columns:
+        try:
+            threshold_used = float(rank_df["threshold_value"].iloc[0])
+        except Exception:
+            threshold_used = float(threshold)
+    if not rank_df.empty and "threshold_method" in rank_df.columns:
+        threshold_method = str(rank_df["threshold_method"].iloc[0])
+
     # Header
     report.append("# Microservice Boundary Analysis Report\n")
     report.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    report.append(f"**SCOM Threshold:** {threshold}\n")
+    if threshold_method:
+        report.append(f"**Threshold Method:** {threshold_method}\n")
+    report.append(f"**SCOM Threshold Used:** {threshold_used}\n")
 
     scom_methods = []
     if "method" in rank_df.columns:
@@ -33,19 +46,33 @@ def _generate_markdown_report(
     # Summary
     report.append("## Summary\n")
     report.append(f"- **Total Services:** {total_services}\n")
-    report.append(f"- **Suspicious Services (SCOM < {threshold}):** {suspicious_services}\n")
-    report.append(f"- **Safe Services (SCOM >= {threshold}):** {total_services - suspicious_services}\n")
+    report.append(f"- **Suspicious Services (SCOM < {threshold_used}):** {suspicious_services}\n")
+    report.append(f"- **Safe Services (SCOM >= {threshold_used}):** {total_services - suspicious_services}\n")
     report.append("\n")
     
     # Suspicious services
     if not suspicious_df.empty:
         report.append("## Suspicious Services\n")
-        report.append("These services have low cohesion and may have problematic boundaries.\n")
+        report.append("These services have low cohesion. They may have a boundary problem.\n")
         report.append("\n")
         report.append("| Rank | Service | SCOM | Endpoints | Tables |\n")
         report.append("|------|---------|------|-----------|--------|\n")
         for _, row in suspicious_df.iterrows():
             report.append(f"| {row['rank']} | {row['service_name']} | {row['scom_score']:.4f} | {row['endpoints_count']} | {row['tables_count']} |\n")
+        report.append("\n")
+
+        report.append("### Why they are suspicious (simple English)\n")
+        report.append("\n")
+        for _, row in suspicious_df.iterrows():
+            service_name = str(row.get("service_name", ""))
+            scom_score = float(row.get("scom_score", 0.0))
+            endpoints_count = int(row.get("endpoints_count", 0))
+            tables_count = int(row.get("tables_count", 0))
+
+            report.append(f"- **{service_name}**\n")
+            report.append(f"  - SCOM is {scom_score:.4f}. This is below the threshold {threshold_used}.\n")
+            report.append(f"  - This service has {endpoints_count} endpoints and {tables_count} tables/collections.\n")
+            report.append("  - Low cohesion can mean the service does many different things.\n")
         report.append("\n")
     else:
         report.append("## Suspicious Services\n")

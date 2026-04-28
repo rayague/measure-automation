@@ -105,6 +105,37 @@ def _extract_tables_from_sql(sql: str) -> list[str]:
     return sorted(tables)
 
 
+def _extract_nosql_entities(tags: list[dict[str, Any]], db_system: str) -> list[str]:
+    """Extract collection/table-like entity names for NoSQL systems.
+
+    We keep using the output column name 'tables' for backward compatibility.
+    """
+    system = (db_system or "").lower()
+
+    key_candidates_by_system: dict[str, list[str]] = {
+        "mongodb": [
+            "db.mongodb.collection",
+            "db.collection.name",
+            "mongodb.collection",
+            "mongo.collection",
+            "collection",
+        ],
+        "cassandra": ["db.cassandra.table", "db.table", "table"],
+        "scylladb": ["db.cassandra.table", "db.table", "table"],
+    }
+
+    keys = key_candidates_by_system.get(system)
+    if keys is None:
+        keys = ["db.table", "db.collection", "db.collection.name", "table", "collection"]
+
+    for key in keys:
+        value = _get_tag_value(tags, key)
+        if value:
+            return [value.strip().lower()]
+
+    return []
+
+
 def _detect_db_system(operation_name: str) -> str:
     """Detect database system from operation name."""
     op_upper = operation_name.upper()
@@ -169,8 +200,17 @@ def extract_db_operations(spans_df: pd.DataFrame) -> pd.DataFrame:
 
     db_spans["db_statement"] = db_spans.apply(detect_statement, axis=1)
 
-    # Extract tables
-    db_spans["tables"] = db_spans["db_statement"].apply(_extract_tables_from_sql)
+    # Extract tables / NoSQL entities
+    def extract_entities(row: pd.Series) -> list[str]:
+        system = str(row.get("db_system", "")).lower()
+        tags = row.get("_tags_parsed", [])
+        if system and system != "sql":
+            entities = _extract_nosql_entities(tags, system)
+            if entities:
+                return entities
+        return _extract_tables_from_sql(str(row.get("db_statement", "")))
+
+    db_spans["tables"] = db_spans.apply(extract_entities, axis=1)
     
     # Convert tables list to comma-separated string
     db_spans["tables"] = db_spans["tables"].apply(lambda x: ",".join(x) if x else "")

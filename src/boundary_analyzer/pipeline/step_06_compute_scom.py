@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
-import yaml
 
 from boundary_analyzer.metrics.scom_ultimate import (
     compute_paper_scom,
@@ -11,6 +10,7 @@ from boundary_analyzer.metrics.scom_ultimate import (
     compute_weighted_scom,
     save_scom_csv,
 )
+from boundary_analyzer.settings_loader import load_settings
 
 
 def main() -> int:
@@ -25,17 +25,10 @@ def main() -> int:
         return 1
     
     # Load settings for SCOM method
-    settings_path = Path("config/settings.yaml")
-    if settings_path.exists():
-        with settings_path.open("r", encoding="utf-8") as f:
-            settings = yaml.safe_load(f)
-        scom_method = settings.get("scom_method", "weighted")
-        table_weighting = settings.get("table_weighting", True)
-        endpoint_weighting = settings.get("endpoint_weighting", True)
-    else:
-        scom_method = "weighted"
-        table_weighting = True
-        endpoint_weighting = True
+    settings = load_settings()
+    scom_method = settings.get("scom_method", "weighted")
+    table_weighting = settings.get("table_weighting", True)
+    endpoint_weighting = settings.get("endpoint_weighting", True)
     
     mapping_df = pd.read_csv(mapping_path)
     print(f"Loaded {len(mapping_df)} endpoint-table mappings")

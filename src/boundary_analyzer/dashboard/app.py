@@ -423,14 +423,14 @@ def _build_bar_chart(rank_df: pd.DataFrame) -> go.Figure:
         textfont=dict(family="JetBrains Mono", size=10, color=T["text_secondary"]),
         customdata=df[["rank", "endpoints_count", "tables_count", "status_label"]],
         hovertemplate=(
-            "<b>%{y}</b><br>"
-            "<span style='color:%s'>SCOM</span>: %{x:.4f}<br>"
-            "Rank: #%{customdata[0]}<br>"
-            "Endpoints: %{customdata[1]}<br>"
-            "Tables: %{customdata[2]}<br>"
-            "Status: %{customdata[3]}"
-            "<extra></extra>"
-        ) % T["cyan"],
+            f"<b>%{{y}}</b><br>"
+            f"<span style='color:{T['cyan']}'>SCOM</span>: %{{x:.4f}}<br>"
+            f"Rank: #%{{customdata[0]}}<br>"
+            f"Endpoints: %{{customdata[1]}}<br>"
+            f"Tables: %{{customdata[2]}}<br>"
+            f"Status: %{{customdata[3]}}"
+            f"<extra></extra>"
+        ),
     ))
 
     # Threshold line
@@ -847,7 +847,7 @@ def _definitions_block(rank_df: pd.DataFrame) -> html.Div:
         f"{threshold_value:.4f}" if threshold_value is not None else "(not available)"
     )
     method_txt = (
-        f"method={threshold_method}" if threshold_method else "method is configured in config/settings.yaml"
+        f"method={threshold_method}" if threshold_method else "method is configured in settings.yaml"
     )
 
     return html.Div(
@@ -1034,6 +1034,40 @@ def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
     mapping_df = _load_endpoint_table_map_from(base_dir)
     summary    = create_summary_cards(rank_df)
 
+    missing_inputs: list[str] = []
+    if rank_df.empty:
+        missing_inputs.append(str(base_dir / "processed" / "service_rank.csv"))
+    if mapping_df.empty:
+        missing_inputs.append(str(base_dir / "interim" / "endpoint_table_map.csv"))
+
+    data_warning = None
+    if missing_inputs:
+        data_warning = html.Div(
+            style={
+                "border": f"1px solid {T['border_hot']}",
+                "background": T["bg_card"],
+                "padding": "14px 16px",
+                "borderRadius": "10px",
+                "marginBottom": "18px",
+            },
+            children=[
+                html.Div("No data found", style={
+                    "fontFamily": T["font_mono"],
+                    "fontSize": "12px",
+                    "color": T["text_primary"],
+                    "marginBottom": "6px",
+                }),
+                html.Div(
+                    "I cannot show charts because input CSV files are missing or empty.",
+                    style={"color": T["text_secondary"], "fontSize": "12px"},
+                ),
+                html.Div(
+                    "Run: boundary-analyzer run --skip-collect (or run full pipeline).",
+                    style={"color": T["text_muted"], "fontSize": "12px", "marginTop": "8px"},
+                ),
+            ],
+        )
+
     # ── Root layout ───────────────────────────────────────────────────────────
     app.layout = html.Div(
         style={"minHeight": "100vh", "background": T["bg_base"], "position": "relative"},
@@ -1111,6 +1145,8 @@ def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
                 },
                 children=[
                     dcc.Store(id="selected-service", data=None),
+
+                    data_warning,
 
                     # Overview page
                     html.Div(

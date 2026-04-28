@@ -382,10 +382,14 @@ INTEGRATION_INSTRUCTIONS = {
     "fastapi": {
         "file": "main.py  (or wherever you create your FastAPI app)",
         "code": textwrap.dedent("""\
-            # ── Add these lines AT THE TOP of your main file ──
+            # ── Add these lines WHERE you create the FastAPI app ──
+            # (Important: pass the app to get HTTP spans)
+            from fastapi import FastAPI
             from otel_instrumentation import init_tracing
-            init_tracing()
-            # ─────────────────────────────────────────────────
+
+            app = FastAPI()
+            init_tracing(app)
+            # ───────────────────────────────────────────────────
         """),
     },
 
@@ -412,10 +416,14 @@ INTEGRATION_INSTRUCTIONS = {
     "starlette": {
         "file": "main.py  (or wherever you create your Starlette app)",
         "code": textwrap.dedent("""\
-            # ── Add these lines AT THE TOP of your main file ──
+            # ── Add these lines WHERE you create the Starlette app ──
+            # (Important: pass the app to get HTTP spans)
+            from starlette.applications import Starlette
             from otel_instrumentation import init_tracing
-            init_tracing()
-            # ─────────────────────────────────────────────────
+
+            app = Starlette()
+            init_tracing(app)
+            # ────────────────────────────────────────────────────
         """),
     },
 
@@ -690,7 +698,13 @@ def main():
     if args.no_jaeger:
         info("Skipping Jaeger start (--no-jaeger flag set).")
     else:
-        start_jaeger()
+        started = start_jaeger()
+        if not started:
+            warn("Jaeger is not running (or I could not start it).")
+            tip(
+                "You can continue if Jaeger is already running elsewhere. "
+                "If not, start Jaeger and run this command again, or use --no-jaeger."
+            )
 
     # ── STEP 5: Show integration instructions ─────────────────────────────────
     step(5, "Integration instructions")

@@ -124,7 +124,7 @@ def main(argv: list[str] | None = None) -> int:
     run_parser.add_argument(
         "--settings",
         default="config/settings.yaml",
-        help="Path to settings.yaml (currently steps read config/settings.yaml; this flag is validated only).",
+        help="Path to settings.yaml (applies to all pipeline steps).",
     )
 
     dash_parser = subparsers.add_parser(
@@ -205,6 +205,10 @@ def main(argv: list[str] | None = None) -> int:
         settings_path = Path(args.settings)
         if not settings_path.exists():
             parser.error(f"settings file not found: {settings_path}")
+
+        # Make settings path visible to all pipeline steps
+        import os
+        os.environ["BOUNDARY_ANALYZER_SETTINGS"] = str(settings_path)
 
         rc = _run_pipeline(skip_collect=bool(args.skip_collect))
         if rc != 0:

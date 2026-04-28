@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
-import yaml
 
 from boundary_analyzer.metrics.threshold_ultimate import apply_threshold
+from boundary_analyzer.settings_loader import load_settings
 
 
 def main() -> int:
@@ -20,19 +20,11 @@ def main() -> int:
         return 1
     
     # Load settings for threshold method
-    settings_path = Path("config/settings.yaml")
-    if settings_path.exists():
-        with settings_path.open("r", encoding="utf-8") as f:
-            settings = yaml.safe_load(f)
-        threshold_method = settings.get("threshold_method", "percentile")
-        threshold_percentile = settings.get("threshold_percentile", 25.0)
-        threshold_zscore = settings.get("threshold_zscore", -1.5)
-        fixed_threshold = settings.get("scom_threshold", 0.5)
-    else:
-        threshold_method = "percentile"
-        threshold_percentile = 25.0
-        threshold_zscore = -1.5
-        fixed_threshold = 0.5
+    settings = load_settings()
+    threshold_method = settings.get("threshold_method", "percentile")
+    threshold_percentile = settings.get("threshold_percentile", 25.0)
+    threshold_zscore = settings.get("threshold_zscore", -1.5)
+    fixed_threshold = settings.get("scom_threshold", 0.5)
     
     scom_df = pd.read_csv(scom_path)
     print(f"Loaded {len(scom_df)} services")
