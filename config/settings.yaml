@@ -5,8 +5,11 @@ limit_traces: 20
 output_dir: "data/raw/traces"
 scom_threshold: 0.5
 
-# SCOM calculation method (ultimate version)
-scom_method: "weighted"  # Options: "weighted" or "simple"
+# SCOM calculation method
+# - "paper": CI/CImax normalization from the paper (endpoints < 2 => 0)
+# - "weighted": weighted Jaccard (legacy)
+# - "simple": unweighted Jaccard (legacy)
+scom_method: "weighted"  # Options: "paper", "weighted", or "simple"
 table_weighting: true    # Weight tables by frequency
 endpoint_weighting: true # Weight endpoints by call frequency
 

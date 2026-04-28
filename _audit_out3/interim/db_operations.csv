@@ -1,0 +1,144 @@
+trace_id,span_id,service_name,db_system,db_statement,tables
+af1c22110743431cba1d51f11620249b,e51d5794e6fe4021,inventory-service,mysql,"INSERT INTO warehouse (col1, col2) VALUES (?, ?)",warehouse
+af1c22110743431cba1d51f11620249b,96a34737978a4695,inventory-service,mysql,"INSERT INTO stock (col1, col2) VALUES (?, ?)",stock
+0dd61c841943465892396acf5d806d67,899a0096105c4de7,inventory-service,mysql,SELECT * FROM inventory WHERE id = ?,inventory
+0dd61c841943465892396acf5d806d67,0fb9bdfb76bf46e5,inventory-service,mysql,SELECT * FROM stock WHERE id = ?,stock
+0dd61c841943465892396acf5d806d67,b8de407f406a41f6,inventory-service,mysql,"INSERT INTO stock (col1, col2) VALUES (?, ?)",stock
+3ceaafb5247d4229b0130e1c22156554,c94a63e0978441d1,inventory-service,mysql,UPDATE stock SET col1 = ? WHERE id = ?,stock
+37924fc66c394514bbfaadc4e7c1f050,b553c24d68f646a8,inventory-service,mysql,UPDATE inventory SET col1 = ? WHERE id = ?,inventory
+37924fc66c394514bbfaadc4e7c1f050,112185ed56234559,inventory-service,mysql,SELECT * FROM inventory WHERE id = ?,inventory
+a55ddf909f394fe0b3d13909992e2b9a,942c9af1bca446f1,inventory-service,mysql,SELECT * FROM inventory WHERE id = ?,inventory
+a55ddf909f394fe0b3d13909992e2b9a,28ec7b832c1f456b,inventory-service,mysql,"INSERT INTO warehouse (col1, col2) VALUES (?, ?)",warehouse
+6eeef793cafe4e01af4a965a8a2eb265,0608c98d4f544968,inventory-service,mysql,UPDATE stock SET col1 = ? WHERE id = ?,stock
+6eeef793cafe4e01af4a965a8a2eb265,f7b03d3e503d4ad6,inventory-service,mysql,"INSERT INTO warehouse (col1, col2) VALUES (?, ?)",warehouse
+6eeef793cafe4e01af4a965a8a2eb265,5c8991817a564fa1,inventory-service,mysql,SELECT * FROM stock WHERE id = ?,stock
+ce0d6a36981c4b9da04d1ad1165c737f,f5ccdc54539b4e77,inventory-service,mysql,"INSERT INTO inventory (col1, col2) VALUES (?, ?)",inventory
+ce0d6a36981c4b9da04d1ad1165c737f,146424f8250646ce,inventory-service,mysql,"INSERT INTO inventory (col1, col2) VALUES (?, ?)",inventory
+ce0d6a36981c4b9da04d1ad1165c737f,dcbfb914dc814d7e,inventory-service,mysql,UPDATE stock SET col1 = ? WHERE id = ?,stock
+c728d269531b4807a45f8e8f1a44e234,62191bcff6fd4e71,inventory-service,mysql,SELECT * FROM warehouse WHERE id = ?,warehouse
+6262cf4825ef4fffbc2fdf03cb309c36,29cada9b8cf9435f,inventory-service,mysql,UPDATE inventory SET col1 = ? WHERE id = ?,inventory
+6262cf4825ef4fffbc2fdf03cb309c36,41f294560c3a48d4,inventory-service,mysql,SELECT * FROM stock WHERE id = ?,stock
+6262cf4825ef4fffbc2fdf03cb309c36,74898f97ed51484e,inventory-service,mysql,"INSERT INTO warehouse (col1, col2) VALUES (?, ?)",warehouse
+1e47277434de488d91f8297b095b48a3,4210700d9b3e4f6b,inventory-service,mysql,UPDATE inventory SET col1 = ? WHERE id = ?,inventory
+1e47277434de488d91f8297b095b48a3,c2672a8426cc4144,inventory-service,mysql,"INSERT INTO stock (col1, col2) VALUES (?, ?)",stock
+1e47277434de488d91f8297b095b48a3,abf2beab2810474d,inventory-service,mysql,UPDATE inventory SET col1 = ? WHERE id = ?,inventory
+120686d89f274a81a593956bef1fdcde,295b01d6f0c84df6,inventory-service,mysql,"INSERT INTO inventory (col1, col2) VALUES (?, ?)",inventory
+120686d89f274a81a593956bef1fdcde,bd5f3dedb4ab4d5e,inventory-service,mysql,SELECT * FROM warehouse WHERE id = ?,warehouse
+120686d89f274a81a593956bef1fdcde,be8d00ec26e54a45,inventory-service,mysql,"INSERT INTO warehouse (col1, col2) VALUES (?, ?)",warehouse
+297977df2a7e4a7c89d5ae8a1cf05e67,29b098e5c9d54a4f,inventory-service,mysql,SELECT * FROM warehouse WHERE id = ?,warehouse
+297977df2a7e4a7c89d5ae8a1cf05e67,0b83b60a008e4234,inventory-service,mysql,UPDATE stock SET col1 = ? WHERE id = ?,stock
+a8ee8fd05b5844148909bf455484249a,1ca5a6b3d215406e,inventory-service,mysql,UPDATE inventory SET col1 = ? WHERE id = ?,inventory
+a8ee8fd05b5844148909bf455484249a,a9c12cec209f4d64,inventory-service,mysql,SELECT * FROM inventory WHERE id = ?,inventory
+9c8aca7ab3894e33a19e3123539ad085,04f9f542a5184718,inventory-service,mysql,"INSERT INTO warehouse (col1, col2) VALUES (?, ?)",warehouse
+9c8aca7ab3894e33a19e3123539ad085,77bdb42e7922422a,inventory-service,mysql,SELECT * FROM warehouse WHERE id = ?,warehouse
+9c8aca7ab3894e33a19e3123539ad085,f4ab22393ff24e65,inventory-service,mysql,"INSERT INTO warehouse (col1, col2) VALUES (?, ?)",warehouse
+1bff53f3ec664669944481151ff15ba2,aebccbb3cf1b45bc,inventory-service,mysql,"INSERT INTO stock (col1, col2) VALUES (?, ?)",stock
+1bff53f3ec664669944481151ff15ba2,ea4a24cc2d8548ff,inventory-service,mysql,UPDATE warehouse SET col1 = ? WHERE id = ?,warehouse
+835f79ebe5bf441687b9dcd0a3fe9a4d,86f07da7b1824ece,notification-service,mysql,UPDATE logs SET col1 = ? WHERE id = ?,logs
+835f79ebe5bf441687b9dcd0a3fe9a4d,fc5f803df55347ba,notification-service,mysql,UPDATE logs SET col1 = ? WHERE id = ?,logs
+59026886892249168a39f31136bd088b,98579ff59070474e,notification-service,mysql,SELECT * FROM logs WHERE id = ?,logs
+59026886892249168a39f31136bd088b,90c8defd87d245ff,notification-service,mysql,SELECT * FROM logs WHERE id = ?,logs
+506a88d5b3bd4b61895809acd4074d3b,336270ca3c0749c8,notification-service,mysql,SELECT * FROM notifications WHERE id = ?,notifications
+3ca602212dce44bfaf1a287b76a8c2a9,c88c3840754a4a89,notification-service,mysql,SELECT * FROM logs WHERE id = ?,logs
+3ca602212dce44bfaf1a287b76a8c2a9,cc0a8adc63924f6c,notification-service,mysql,UPDATE logs SET col1 = ? WHERE id = ?,logs
+cb8011627daa420f9b3b30dad50fed65,0af53efbc1884939,notification-service,mysql,UPDATE logs SET col1 = ? WHERE id = ?,logs
+cb8011627daa420f9b3b30dad50fed65,741ffde245f84762,notification-service,mysql,SELECT * FROM logs WHERE id = ?,logs
+8c7dd8c488d94276b5800ed81ecb8cd4,ddc2267bf889488e,notification-service,mysql,SELECT * FROM notifications WHERE id = ?,notifications
+8c7dd8c488d94276b5800ed81ecb8cd4,3e6d03f8a7ca4822,notification-service,mysql,"INSERT INTO notifications (col1, col2) VALUES (?, ?)",notifications
+9761407cf3e64337ab355981d2da97da,0551711c46c94b90,notification-service,mysql,"INSERT INTO logs (col1, col2) VALUES (?, ?)",logs
+9761407cf3e64337ab355981d2da97da,7721a272fa2247d0,notification-service,mysql,UPDATE notifications SET col1 = ? WHERE id = ?,notifications
+f4921b76726b4ccdafb6b8df0b3dbc9f,69e36d90112f4abe,notification-service,mysql,SELECT * FROM logs WHERE id = ?,logs
+3c2582c339c9443f9d03820d75fb14b7,f77fe07ebc844a32,notification-service,mysql,UPDATE notifications SET col1 = ? WHERE id = ?,notifications
+3c2582c339c9443f9d03820d75fb14b7,72b044b922bc4b16,notification-service,mysql,"INSERT INTO logs (col1, col2) VALUES (?, ?)",logs
+3c2582c339c9443f9d03820d75fb14b7,42100d6b5c9e47a2,notification-service,mysql,UPDATE notifications SET col1 = ? WHERE id = ?,notifications
+35686f428c7845f1a4fd65dfeb0a1ec2,33f159fa28a242d3,notification-service,mysql,SELECT * FROM notifications WHERE id = ?,notifications
+db289e957acc4cc38dad1ce9572418b7,05345643caf549af,notification-service,mysql,"INSERT INTO notifications (col1, col2) VALUES (?, ?)",notifications
+db289e957acc4cc38dad1ce9572418b7,9fd7a176525e489e,notification-service,mysql,UPDATE notifications SET col1 = ? WHERE id = ?,notifications
+db289e957acc4cc38dad1ce9572418b7,cea8dac62e0a4b94,notification-service,mysql,"INSERT INTO notifications (col1, col2) VALUES (?, ?)",notifications
+dbc16aba9000417c8e829643a5948ec0,bde975d1da1c4df5,notification-service,mysql,"INSERT INTO notifications (col1, col2) VALUES (?, ?)",notifications
+dbc16aba9000417c8e829643a5948ec0,0274387f8e4b4571,notification-service,mysql,SELECT * FROM notifications WHERE id = ?,notifications
+dbc16aba9000417c8e829643a5948ec0,1209f34319d244dc,notification-service,mysql,"INSERT INTO notifications (col1, col2) VALUES (?, ?)",notifications
+930379b9b33548559da35242512f2028,526aa5a26b564c09,notification-service,mysql,UPDATE notifications SET col1 = ? WHERE id = ?,notifications
+930379b9b33548559da35242512f2028,738ab375fe654e83,notification-service,mysql,UPDATE logs SET col1 = ? WHERE id = ?,logs
+801b1e5652aa48c6b2e57f66f3a0924b,d762aa6d003e4ab4,notification-service,mysql,"INSERT INTO logs (col1, col2) VALUES (?, ?)",logs
+801b1e5652aa48c6b2e57f66f3a0924b,894b326fd0834468,notification-service,mysql,SELECT * FROM notifications WHERE id = ?,notifications
+7a84f22a897241c1aa0dde5ed62efd97,857d32e0bfa640e8,notification-service,mysql,"INSERT INTO notifications (col1, col2) VALUES (?, ?)",notifications
+7a84f22a897241c1aa0dde5ed62efd97,4472647a179545e0,notification-service,mysql,UPDATE logs SET col1 = ? WHERE id = ?,logs
+7a84f22a897241c1aa0dde5ed62efd97,884850c9a68048fa,notification-service,mysql,SELECT * FROM notifications WHERE id = ?,notifications
+d06612c0c92a432da34cf621d99c418e,0f0d7144e5a74c04,order-service,mysql,SELECT * FROM payments WHERE id = ?,payments
+d06612c0c92a432da34cf621d99c418e,db0bda77c5d24c33,order-service,mysql,UPDATE payments SET col1 = ? WHERE id = ?,payments
+d06612c0c92a432da34cf621d99c418e,db851debee5e4466,order-service,mysql,SELECT * FROM orders WHERE id = ?,orders
+047543a210ac4e138808592d62f9b745,2be275aaa07646c8,order-service,mysql,SELECT * FROM products WHERE id = ?,products
+047543a210ac4e138808592d62f9b745,9b29ad97339e4cd9,order-service,mysql,UPDATE products SET col1 = ? WHERE id = ?,products
+038309c92bb14e09b116af86e06cef77,a1a653abe3b94d05,order-service,mysql,UPDATE products SET col1 = ? WHERE id = ?,products
+038309c92bb14e09b116af86e06cef77,e8c8fccf5c2240f0,order-service,mysql,UPDATE orders SET col1 = ? WHERE id = ?,orders
+038309c92bb14e09b116af86e06cef77,a42e2312bee348d5,order-service,mysql,"INSERT INTO products (col1, col2) VALUES (?, ?)",products
+06c968eb462f4e1690c8671345bb3516,e98e5d5a08a14bd2,order-service,mysql,UPDATE orders SET col1 = ? WHERE id = ?,orders
+06c968eb462f4e1690c8671345bb3516,a6382147a4744e65,order-service,mysql,SELECT * FROM orders WHERE id = ?,orders
+06c968eb462f4e1690c8671345bb3516,390e0aae18374bff,order-service,mysql,SELECT * FROM products WHERE id = ?,products
+878b3b0a15274789b6af830da612c2ce,36fae24b480649a6,order-service,mysql,"INSERT INTO products (col1, col2) VALUES (?, ?)",products
+878b3b0a15274789b6af830da612c2ce,70f17c43de7c4b45,order-service,mysql,SELECT * FROM payments WHERE id = ?,payments
+878b3b0a15274789b6af830da612c2ce,83608b2e24cc44f2,order-service,mysql,UPDATE orders SET col1 = ? WHERE id = ?,orders
+fa894baec89b424ea8adad96ea6ab370,ce3f571f3b354646,order-service,mysql,UPDATE orders SET col1 = ? WHERE id = ?,orders
+fa894baec89b424ea8adad96ea6ab370,ba6d1621294146ed,order-service,mysql,SELECT * FROM products WHERE id = ?,products
+00806b2e9d8d4f3695e481ffa5e75643,085f4b11f1c0426e,order-service,mysql,"INSERT INTO orders (col1, col2) VALUES (?, ?)",orders
+00806b2e9d8d4f3695e481ffa5e75643,96eb23e45360463a,order-service,mysql,SELECT * FROM payments WHERE id = ?,payments
+00806b2e9d8d4f3695e481ffa5e75643,64e1fed5f0ef425a,order-service,mysql,UPDATE orders SET col1 = ? WHERE id = ?,orders
+8c2382463e0c42a3b0dbd2fda746ed2c,869d9c08407d49f7,order-service,mysql,"INSERT INTO payments (col1, col2) VALUES (?, ?)",payments
+fe7e4048d8894c02b87f0151bc0ba25f,b2e957df38284fa4,order-service,mysql,SELECT * FROM payments WHERE id = ?,payments
+fe7e4048d8894c02b87f0151bc0ba25f,c726dcdb16a34281,order-service,mysql,"INSERT INTO payments (col1, col2) VALUES (?, ?)",payments
+fe7e4048d8894c02b87f0151bc0ba25f,2d617c8a73ac423c,order-service,mysql,UPDATE payments SET col1 = ? WHERE id = ?,payments
+1f8ddc532e9b481daa64d1ad1d5a2fd2,cde1933c6e404a4c,order-service,mysql,UPDATE products SET col1 = ? WHERE id = ?,products
+cd061306e2744accbce6017bbf68d195,d89196f8c78e445d,order-service,mysql,UPDATE orders SET col1 = ? WHERE id = ?,orders
+428acae073474830a9af2d32b67e96c5,b8855b69505340c0,order-service,mysql,SELECT * FROM orders WHERE id = ?,orders
+f49aaae84d114785bff0d87949181004,812fa9686ee743e7,order-service,mysql,"INSERT INTO orders (col1, col2) VALUES (?, ?)",orders
+f49aaae84d114785bff0d87949181004,c5194eacfd694869,order-service,mysql,SELECT * FROM payments WHERE id = ?,payments
+142f976989cc466188f2f3869ede8622,8bf17caff5054174,order-service,mysql,UPDATE payments SET col1 = ? WHERE id = ?,payments
+142f976989cc466188f2f3869ede8622,edde85686aa847c8,order-service,mysql,"INSERT INTO payments (col1, col2) VALUES (?, ?)",payments
+142f976989cc466188f2f3869ede8622,6ec1f17624af404a,order-service,mysql,UPDATE products SET col1 = ? WHERE id = ?,products
+df20a445bf2e44dc83413c673aca505f,bb3d928f2c8f44f8,order-service,mysql,UPDATE products SET col1 = ? WHERE id = ?,products
+df20a445bf2e44dc83413c673aca505f,7ef32fc7c20441b0,order-service,mysql,"INSERT INTO payments (col1, col2) VALUES (?, ?)",payments
+25211783b6e44ac3b0d54ac88aebdf71,bdaae258eff9436b,order-service,mysql,UPDATE orders SET col1 = ? WHERE id = ?,orders
+25211783b6e44ac3b0d54ac88aebdf71,056669d4e14a4885,order-service,mysql,SELECT * FROM orders WHERE id = ?,orders
+25211783b6e44ac3b0d54ac88aebdf71,6884d46a92024afb,order-service,mysql,SELECT * FROM products WHERE id = ?,products
+63bf07ef4990487792a831f4fee259ad,e0486bf7d0084a6c,order-service,mysql,"INSERT INTO payments (col1, col2) VALUES (?, ?)",payments
+ebf11c73bef14937aafea2af60884688,f18e09a4d25b44ed,order-service,mysql,UPDATE orders SET col1 = ? WHERE id = ?,orders
+ebf11c73bef14937aafea2af60884688,d5670be9e9b84838,order-service,mysql,UPDATE products SET col1 = ? WHERE id = ?,products
+ebf11c73bef14937aafea2af60884688,ac6d497be0d841da,order-service,mysql,SELECT * FROM orders WHERE id = ?,orders
+f7ad0ade66854ec1bd8c13d44e61912c,4b9c41bc924849a7,order-service,mysql,UPDATE payments SET col1 = ? WHERE id = ?,payments
+7ebf669f4b194416ae7a29cd462941a4,1631efe0b84e4252,order-service,mysql,SELECT * FROM orders WHERE id = ?,orders
+7ebf669f4b194416ae7a29cd462941a4,d492e4e670864660,order-service,mysql,UPDATE payments SET col1 = ? WHERE id = ?,payments
+6fe9296f48034b65878b5f79763a29ae,c207e79bd8e847d9,user-service,mysql,UPDATE users SET col1 = ? WHERE id = ?,users
+6fe9296f48034b65878b5f79763a29ae,cb7487e06cee4fdd,user-service,mysql,UPDATE users SET col1 = ? WHERE id = ?,users
+6fe9296f48034b65878b5f79763a29ae,9297e456faa94326,user-service,mysql,"INSERT INTO profiles (col1, col2) VALUES (?, ?)",profiles
+2ed05fa627f4424a929a608e44333036,6ff9e58a3e1c4b93,user-service,mysql,"INSERT INTO users (col1, col2) VALUES (?, ?)",users
+f4d4a36d7a4f48b798a1a936f72de905,0d0172a601834856,user-service,mysql,UPDATE profiles SET col1 = ? WHERE id = ?,profiles
+f4d4a36d7a4f48b798a1a936f72de905,34b633e1c3004a32,user-service,mysql,UPDATE users SET col1 = ? WHERE id = ?,users
+467bd692ea324620b048f9c49a91c429,b8400e3a3bc44260,user-service,mysql,"INSERT INTO users (col1, col2) VALUES (?, ?)",users
+467bd692ea324620b048f9c49a91c429,602d5da460d84bc1,user-service,mysql,UPDATE profiles SET col1 = ? WHERE id = ?,profiles
+467bd692ea324620b048f9c49a91c429,77313e841d4148ab,user-service,mysql,UPDATE profiles SET col1 = ? WHERE id = ?,profiles
+5b65a769351f4692b27c3d9a95afb658,97766b12d6a049d5,user-service,mysql,UPDATE profiles SET col1 = ? WHERE id = ?,profiles
+5b65a769351f4692b27c3d9a95afb658,a318b794bf654494,user-service,mysql,SELECT * FROM users WHERE id = ?,users
+33049a986f73414a9629963bb1201deb,19523419779d4b7e,user-service,mysql,UPDATE users SET col1 = ? WHERE id = ?,users
+33049a986f73414a9629963bb1201deb,ba5becf33c8149ba,user-service,mysql,SELECT * FROM profiles WHERE id = ?,profiles
+0c731684719b40aa9007646f31f83880,cefc135899bf47f6,user-service,mysql,UPDATE profiles SET col1 = ? WHERE id = ?,profiles
+0c731684719b40aa9007646f31f83880,d90cb77151cd488c,user-service,mysql,"INSERT INTO profiles (col1, col2) VALUES (?, ?)",profiles
+0c731684719b40aa9007646f31f83880,0e4252e95c854268,user-service,mysql,"INSERT INTO profiles (col1, col2) VALUES (?, ?)",profiles
+f73c31783d614e8a9e4515fbdaa2e9df,96c9a2c06b9c4135,user-service,mysql,UPDATE profiles SET col1 = ? WHERE id = ?,profiles
+f73c31783d614e8a9e4515fbdaa2e9df,95e5233958514ab7,user-service,mysql,UPDATE users SET col1 = ? WHERE id = ?,users
+60109abbf38c47879ddbe0d6ac9d8300,8a3befd276324e4f,user-service,mysql,"INSERT INTO users (col1, col2) VALUES (?, ?)",users
+60109abbf38c47879ddbe0d6ac9d8300,45e2c3bae5cf4d8d,user-service,mysql,UPDATE users SET col1 = ? WHERE id = ?,users
+2034b4d0cc7e41eca5f2f64eb5d8e47e,7f524515bc6b4a95,user-service,mysql,"INSERT INTO users (col1, col2) VALUES (?, ?)",users
+8ee76c0b94c8411d82f90546b188f087,edbb14e504424186,user-service,mysql,SELECT * FROM users WHERE id = ?,users
+3782a963c584456e8e0026b1d9e6a436,5915d77851694c25,user-service,mysql,UPDATE profiles SET col1 = ? WHERE id = ?,profiles
+816147205f2d43808cc7ff159f25d396,4704c94f338d429e,user-service,mysql,"INSERT INTO users (col1, col2) VALUES (?, ?)",users
+f300587ebcc142a5be71df8b3e46c1a6,81679390d7524b08,user-service,mysql,SELECT * FROM profiles WHERE id = ?,profiles
+f300587ebcc142a5be71df8b3e46c1a6,4f7c1b383ec545e6,user-service,mysql,SELECT * FROM users WHERE id = ?,users
+f300587ebcc142a5be71df8b3e46c1a6,1bb2ecd542d44c0d,user-service,mysql,"INSERT INTO users (col1, col2) VALUES (?, ?)",users
+887b51b9e1aa4745b7f30dd5235afbb4,d45f5b93ed844209,user-service,mysql,"INSERT INTO users (col1, col2) VALUES (?, ?)",users
+79c590fb25844728a02ace8b8296c0b0,e27bb72f6bc042e7,user-service,mysql,"INSERT INTO profiles (col1, col2) VALUES (?, ?)",profiles
+22bb1bbe3a09456ab30363a3be42a3f9,fb5c7b67e00e4bdd,user-service,mysql,UPDATE profiles SET col1 = ? WHERE id = ?,profiles
+1bdf16637069473787c432cf65ac921e,a4caec3b8961408c,user-service,mysql,SELECT * FROM profiles WHERE id = ?,profiles
+1bdf16637069473787c432cf65ac921e,3985c749329c46f5,user-service,mysql,SELECT * FROM profiles WHERE id = ?,profiles
+22dee0938a354138ab18147fc92cbd82,361f36f955aa443b,user-service,mysql,"INSERT INTO profiles (col1, col2) VALUES (?, ?)",profiles
+5ff308068a7b470e8960b578e4762298,cd2b0a5563ac46d3,user-service,mysql,SELECT * FROM profiles WHERE id = ?,profiles

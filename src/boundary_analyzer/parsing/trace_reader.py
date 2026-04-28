@@ -13,6 +13,12 @@ def _find_parent_span_id(span: dict[str, Any]) -> str | None:
     for ref in refs:
         if ref.get("refType") == "CHILD_OF":
             return ref.get("spanID")
+
+    # Fallback for Jaeger JSON that uses an explicit parentSpanID field
+    parent_span_id = span.get("parentSpanID")
+    if parent_span_id:
+        return str(parent_span_id)
+
     return None
 
 

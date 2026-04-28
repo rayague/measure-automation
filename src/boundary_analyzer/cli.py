@@ -39,8 +39,13 @@ def _run_pipeline(skip_collect: bool) -> int:
     return 0
 
 
-def _run_dashboard(data_dir: Path | None = None) -> int:
+def _run_dashboard(data_dir: Path | None = None, host: str = "127.0.0.1", port: int = 8050) -> int:
     from boundary_analyzer.dashboard.app import main as dashboard_main
+
+    # Pass configuration via env to avoid coupling CLI to Dash internals
+    import os
+    os.environ["BOUNDARY_ANALYZER_DASH_HOST"] = str(host)
+    os.environ["BOUNDARY_ANALYZER_DASH_PORT"] = str(int(port))
 
     return dashboard_main(data_dir=data_dir)
 
@@ -106,6 +111,17 @@ def main(argv: list[str] | None = None) -> int:
         help="Base directory containing interim/ and processed/ folders for the dashboard (default: data).",
     )
     run_parser.add_argument(
+        "--dash-host",
+        default="127.0.0.1",
+        help="Dashboard host bind (default: 127.0.0.1). Use 0.0.0.0 to expose on LAN.",
+    )
+    run_parser.add_argument(
+        "--dash-port",
+        type=int,
+        default=8050,
+        help="Dashboard port (default: 8050).",
+    )
+    run_parser.add_argument(
         "--settings",
         default="config/settings.yaml",
         help="Path to settings.yaml (currently steps read config/settings.yaml; this flag is validated only).",
@@ -119,6 +135,17 @@ def main(argv: list[str] | None = None) -> int:
         "--data-dir",
         default="data",
         help="Base directory containing interim/ and processed/ folders (default: data).",
+    )
+    dash_parser.add_argument(
+        "--dash-host",
+        default="127.0.0.1",
+        help="Dashboard host bind (default: 127.0.0.1). Use 0.0.0.0 to expose on LAN.",
+    )
+    dash_parser.add_argument(
+        "--dash-port",
+        type=int,
+        default=8050,
+        help="Dashboard port (default: 8050).",
     )
 
     setup_parser = subparsers.add_parser(
@@ -184,12 +211,20 @@ def main(argv: list[str] | None = None) -> int:
             return rc
 
         if args.dashboard:
-            return _run_dashboard(data_dir=Path(str(args.data_dir)))
+            return _run_dashboard(
+                data_dir=Path(str(args.data_dir)),
+                host=str(args.dash_host),
+                port=int(args.dash_port),
+            )
 
         return 0
 
     if args.command == "dashboard":
-        return _run_dashboard(data_dir=Path(str(args.data_dir)))
+        return _run_dashboard(
+            data_dir=Path(str(args.data_dir)),
+            host=str(args.dash_host),
+            port=int(args.dash_port),
+        )
 
     if args.command == "setup":
         rc = _run_setup(

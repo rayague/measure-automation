@@ -192,8 +192,13 @@ def create_animated_bar_chart(df: pd.DataFrame) -> dcc.Graph:
             f"<span style='color:{status_col}'>{status}</span>"
         )
 
-    # Threshold value: use column if present, else fallback to 0.75
-    threshold = float(df_sorted["threshold"].iloc[0]) if "threshold" in df_sorted.columns else 0.75
+    # Threshold value: prefer pipeline column name
+    if "threshold_value" in df_sorted.columns:
+        threshold = float(df_sorted["threshold_value"].iloc[0])
+    elif "threshold" in df_sorted.columns:
+        threshold = float(df_sorted["threshold"].iloc[0])
+    else:
+        threshold = 0.75
 
     fig = go.Figure()
 
@@ -336,7 +341,12 @@ def create_scom_distribution(df: pd.DataFrame) -> dcc.Graph:
     if df.empty:
         return dcc.Graph()
 
-    threshold = float(df["threshold"].iloc[0]) if "threshold" in df.columns else 0.75
+    if "threshold_value" in df.columns:
+        threshold = float(df["threshold_value"].iloc[0])
+    elif "threshold" in df.columns:
+        threshold = float(df["threshold"].iloc[0])
+    else:
+        threshold = 0.75
 
     scores      = df["scom_score"].values.astype(float)
     healthy_sc  = df.loc[~df["is_suspicious"], "scom_score"].values

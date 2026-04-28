@@ -1,0 +1,2 @@
+service_name,scom_score,endpoints_count,tables_count,method,rank,threshold_value,threshold_method,is_suspicious
+inventory-service,0.7778,3,3,paper,1,0.94445,percentile,True

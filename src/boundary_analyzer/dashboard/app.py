@@ -9,6 +9,7 @@ Palette: #0a0e1a bg, #00e5ff cyan accent, #ff6d00 amber alert, #1e2a3a cards.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -24,6 +25,36 @@ from boundary_analyzer.dashboard.charts import (
     create_scom_distribution,
     create_summary_cards,
 )
+
+
+def _with_alpha(color: str, alpha: float) -> str:
+    """Return an rgba() color string with the requested alpha.
+
+    Supports:
+    - '#RRGGBB'
+    - 'rgb(r,g,b)'
+    - 'rgba(r,g,b,a)'
+    """
+    c = str(color).strip()
+    if c.startswith("rgba("):
+        # Replace alpha in existing rgba
+        inner = c[len("rgba(") : -1]
+        parts = [p.strip() for p in inner.split(",")]
+        if len(parts) >= 3:
+            r, g, b = parts[:3]
+            return f"rgba({r},{g},{b},{alpha})"
+    if c.startswith("rgb("):
+        inner = c[len("rgb(") : -1]
+        parts = [p.strip() for p in inner.split(",")]
+        if len(parts) == 3:
+            r, g, b = parts
+            return f"rgba({r},{g},{b},{alpha})"
+    if c.startswith("#") and len(c) == 7:
+        r = int(c[1:3], 16)
+        g = int(c[3:5], 16)
+        b = int(c[5:7], 16)
+        return f"rgba({r},{g},{b},{alpha})"
+    return c
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DESIGN TOKENS – single source of truth for every colour and spacing
@@ -305,6 +336,7 @@ PLOT_LAYOUT = dict(
     plot_bgcolor="rgba(0,0,0,0)",
     font=dict(family="JetBrains Mono, monospace", color=T["text_primary"], size=11),
     colorway=[T["cyan"], T["amber"], T["green"], "#7c4dff", "#f06292", "#80cbc4"],
+    hovermode="closest",
     xaxis=dict(
         gridcolor="rgba(0,229,255,0.06)",
         linecolor="rgba(0,229,255,0.12)",
@@ -322,6 +354,7 @@ PLOT_LAYOUT = dict(
         bordercolor=T["cyan"],
         font_family="JetBrains Mono, monospace",
         font_color=T["text_primary"],
+        font_size=12,
     ),
     margin=dict(t=40, b=40, l=40, r=24),
     legend=dict(
@@ -372,8 +405,9 @@ def _build_bar_chart(rank_df: pd.DataFrame) -> go.Figure:
     if rank_df.empty:
         return go.Figure()
 
-    df = rank_df.sort_values("scom_score", ascending=True)
+    df = rank_df.sort_values("scom_score", ascending=True).copy()
     colors = [T["red"] if s else T["cyan"] for s in df["is_suspicious"]]
+    df["status_label"] = df["is_suspicious"].map({True: "suspicious", False: "healthy"})
 
     fig = go.Figure(go.Bar(
         x=df["scom_score"],
@@ -387,32 +421,42 @@ def _build_bar_chart(rank_df: pd.DataFrame) -> go.Figure:
         text=df["scom_score"].map(lambda v: f"{v:.4f}"),
         textposition="outside",
         textfont=dict(family="JetBrains Mono", size=10, color=T["text_secondary"]),
+        customdata=df[["rank", "endpoints_count", "tables_count", "status_label"]],
         hovertemplate=(
             "<b>%{y}</b><br>"
-            "SCOM: %{x:.4f}<br>"
+            "<span style='color:%s'>SCOM</span>: %{x:.4f}<br>"
+            "Rank: #%{customdata[0]}<br>"
+            "Endpoints: %{customdata[1]}<br>"
+            "Tables: %{customdata[2]}<br>"
+            "Status: %{customdata[3]}"
             "<extra></extra>"
-        ),
+        ) % T["cyan"],
     ))
 
     # Threshold line
-    if "threshold" in rank_df.columns:
+    thresh = None
+    if "threshold_value" in rank_df.columns:
+        thresh = rank_df["threshold_value"].iloc[0]
+    elif "threshold" in rank_df.columns:
         thresh = rank_df["threshold"].iloc[0]
+
+    if thresh is not None:
         fig.add_vline(
-            x=thresh,
+            x=float(thresh),
             line=dict(color=T["amber"], width=1.5, dash="dot"),
-            annotation_text=f"threshold {thresh:.3f}",
+            annotation_text=f"threshold {float(thresh):.3f}",
             annotation_font=dict(color=T["amber"], size=9, family="JetBrains Mono"),
             annotation_position="top right",
         )
 
-    fig.update_layout(
+    fig.update_layout({
         **PLOT_LAYOUT,
-        height=max(240, len(df) * 44),
-        showlegend=False,
-        xaxis=dict(**PLOT_LAYOUT["xaxis"], title="SCOM Score", range=[0, 1.08]),
-        yaxis=dict(**PLOT_LAYOUT["yaxis"], title=None, tickfont=dict(size=11)),
-        bargap=0.28,
-    )
+        "height": max(240, len(df) * 44),
+        "showlegend": False,
+        "xaxis": dict(**PLOT_LAYOUT["xaxis"], title="SCOM Score", range=[0, 1.08]),
+        "yaxis": dict(**PLOT_LAYOUT["yaxis"], title=None, tickfont=dict(size=11)),
+        "bargap": 0.28,
+    })
     return fig
 
 
@@ -421,37 +465,39 @@ def _build_distribution(rank_df: pd.DataFrame) -> go.Figure:
     if rank_df.empty:
         return go.Figure()
 
-    healthy = rank_df[~rank_df["is_suspicious"]]["scom_score"]
-    suspect = rank_df[rank_df["is_suspicious"]]["scom_score"]
+    healthy_df = rank_df[~rank_df["is_suspicious"]][["service_name", "scom_score"]]
+    suspect_df = rank_df[rank_df["is_suspicious"]][["service_name", "scom_score"]]
 
     fig = go.Figure()
-    for scores, name, col in [
-        (healthy, "Healthy",    T["cyan"]),
-        (suspect, "Suspicious", T["red"]),
+    for subdf, name, col in [
+        (healthy_df, "Healthy",    T["cyan"]),
+        (suspect_df, "Suspicious", T["red"]),
     ]:
-        if scores.empty:
+        if subdf.empty:
             continue
         fig.add_trace(go.Violin(
-            y=scores,
+            y=subdf["scom_score"],
             name=name,
             box_visible=True,
             meanline_visible=True,
-            fillcolor=col.replace(")", ", 0.12)").replace("rgb", "rgba") if col.startswith("rgb") else col + "1f",
+            fillcolor=_with_alpha(col, 0.12),
             line_color=col,
             points="all",
             pointpos=0,
             marker=dict(color=col, size=7, opacity=0.7),
-            hovertemplate="SCOM: %{y:.4f}<extra>" + name + "</extra>",
+            hovertext=subdf["service_name"],
+            hovertemplate="<b>%{hovertext}</b><br>SCOM: %{y:.4f}<extra>" + name + "</extra>",
+            hoveron="points",
         ))
 
-    fig.update_layout(
+    fig.update_layout({
         **PLOT_LAYOUT,
-        height=300,
-        violingap=0.3,
-        violinmode="group",
-        yaxis=dict(**PLOT_LAYOUT["yaxis"], title="SCOM Score", range=[-0.05, 1.05]),
-        xaxis=dict(**PLOT_LAYOUT["xaxis"], title=None),
-    )
+        "height": 300,
+        "violingap": 0.3,
+        "violinmode": "group",
+        "yaxis": dict(**PLOT_LAYOUT["yaxis"], title="SCOM Score", range=[-0.05, 1.05]),
+        "xaxis": dict(**PLOT_LAYOUT["xaxis"], title=None),
+    })
     return fig
 
 
@@ -472,16 +518,30 @@ def _build_radar_chart(row: pd.Series) -> go.Figure:
         0.0 if row.get("is_suspicious") else 1.0,
     ]
 
+    raw_vals = [
+        float(row.get("scom_score", 0)),
+        int(row.get("endpoints_count", 0)),
+        int(row.get("tables_count", 0)),
+        int(row.get("rank", 1)),
+        0 if row.get("is_suspicious") else 1,
+    ]
+
     color = T["red"] if row.get("is_suspicious") else T["cyan"]
 
     fig = go.Figure(go.Scatterpolar(
         r=r_vals + [r_vals[0]],
         theta=cats + [cats[0]],
         fill="toself",
-        fillcolor=color + "22",
+        fillcolor=_with_alpha(color, 0.13),
         line=dict(color=color, width=2),
         marker=dict(color=color, size=6),
-        hovertemplate="%{theta}: %{r:.3f}<extra></extra>",
+        customdata=raw_vals + [raw_vals[0]],
+        hovertemplate=(
+            "<b>%{theta}</b><br>"
+            "Normalized: %{r:.3f}<br>"
+            "Raw: %{customdata}"
+            "<extra></extra>"
+        ),
     ))
     fig.update_layout(
         **PLOT_LAYOUT,
@@ -537,13 +597,13 @@ def _build_heatmap(mapping_df: pd.DataFrame, service_name: str) -> go.Figure:
         ),
         hovertemplate="Endpoint: %{y}<br>Table: %{x}<br>Calls: %{z}<extra></extra>",
     ))
-    fig.update_layout(
+    fig.update_layout({
         **PLOT_LAYOUT,
-        height=max(260, len(pivot) * 36 + 80),
-        xaxis=dict(**PLOT_LAYOUT["xaxis"], tickangle=40, tickfont=dict(size=10)),
-        yaxis=dict(**PLOT_LAYOUT["yaxis"], tickfont=dict(size=10)),
-        margin=dict(t=16, b=60, l=180, r=24),
-    )
+        "height": max(260, len(pivot) * 36 + 80),
+        "xaxis": dict(**PLOT_LAYOUT["xaxis"], tickangle=40, tickfont=dict(size=10)),
+        "yaxis": dict(**PLOT_LAYOUT["yaxis"], tickfont=dict(size=10)),
+        "margin": dict(t=16, b=60, l=180, r=24),
+    })
     return fig
 
 
@@ -744,7 +804,91 @@ def _overview_layout(rank_df: pd.DataFrame, summary: dict) -> html.Div:
                     },
                 ),
             ]),
+
+            _card("Definitions — how to read these charts", [
+                _definitions_block(rank_df),
+            ], style_extra={"marginBottom": "0"}),
         ],
+    )
+
+
+def _definitions_block(rank_df: pd.DataFrame) -> html.Div:
+    """Glossary for metrics/terms used in the dashboard."""
+
+    threshold_value = None
+    threshold_method = None
+    if not rank_df.empty:
+        if "threshold_value" in rank_df.columns:
+            threshold_value = float(rank_df["threshold_value"].iloc[0])
+        elif "threshold" in rank_df.columns:
+            threshold_value = float(rank_df["threshold"].iloc[0])
+
+        if "threshold_method" in rank_df.columns:
+            threshold_method = str(rank_df["threshold_method"].iloc[0])
+
+    def _term_row(term: str, meaning: str) -> html.Div:
+        return html.Div(
+            style={"marginBottom": "10px", "lineHeight": "1.55"},
+            children=[
+                html.Span(term + ": ", style={
+                    "fontFamily": T["font_mono"],
+                    "fontSize": "12px",
+                    "color": T["cyan"],
+                }),
+                html.Span(meaning, style={
+                    "fontFamily": T["font_display"],
+                    "fontSize": "12.5px",
+                    "color": T["text_secondary"],
+                }),
+            ],
+        )
+
+    thresh_txt = (
+        f"{threshold_value:.4f}" if threshold_value is not None else "(not available)"
+    )
+    method_txt = (
+        f"method={threshold_method}" if threshold_method else "method is configured in config/settings.yaml"
+    )
+
+    return html.Div(
+        children=[
+            _term_row(
+                "SCOM (Service Cohesion Score)",
+                "A 0–1 cohesion score per service computed from endpoint→table access overlap. 1.0 means endpoints touch highly-overlapping tables (high cohesion); lower values mean endpoints access more disjoint table sets (potential Wrong Cut).",
+            ),
+            _term_row(
+                "Threshold / Seuil",
+                f"Services with SCOM < threshold are flagged suspicious. Current threshold={thresh_txt} ({method_txt}).",
+            ),
+            _term_row(
+                "Healthy vs Suspicious",
+                "Healthy means SCOM ≥ threshold. Suspicious means SCOM < threshold (service likely mixes multiple domains).",
+            ),
+            _term_row(
+                "Rank",
+                "Ordering by SCOM (ascending): rank #1 is the lowest cohesion (worst), larger rank is better cohesion.",
+            ),
+            _term_row(
+                "Endpoints",
+                "Number of distinct HTTP endpoints observed in traces for the service (method + normalized route).",
+            ),
+            _term_row(
+                "Tables",
+                "Number of distinct database tables extracted from DB spans (from SQL statements like SELECT/INSERT/UPDATE/DELETE).",
+            ),
+            _term_row(
+                "Distribution (violin)",
+                "Shows the spread of SCOM scores across services; each point corresponds to one service (hover to see its name and score).",
+            ),
+            _term_row(
+                "Heatmap (detail view)",
+                "Rows=endpoint, columns=table, value=calls (how often this endpoint accessed that table).",
+            ),
+            _term_row(
+                "Radar (detail view)",
+                "A normalized 0–1 view of multiple indicators. ‘Raw’ values appear in hover; normalization uses caps (endpoints≤20, tables≤15) and rank scaling.",
+            ),
+        ]
     )
 
 
@@ -757,69 +901,47 @@ def _detail_layout(
     if svc.empty:
         return html.Div("Service not found.")
 
-    row          = svc.iloc[0]
+    row = svc.iloc[0]
     is_suspicious = bool(row["is_suspicious"])
-    accent       = T["red"] if is_suspicious else T["cyan"]
+    accent = T["red"] if is_suspicious else T["cyan"]
 
     explanation = (
         "Endpoints within this service access disjoint sets of database tables. "
         "This pattern suggests the service may be doing the work of two or more "
         "independent domains — a classic Wrong Cut. Consider splitting it."
-        if is_suspicious else
-        "Endpoints within this service access a tightly overlapping set of database tables. "
+        if is_suspicious
+        else "Endpoints within this service access a tightly overlapping set of database tables. "
         "This indicates strong cohesion: the service is responsible for one well-defined domain."
     )
 
     return html.Div(
         className="fade-in",
         children=[
-            # ── Top bar ───────────────────────────────────────────────────────
-            html.Div(
-                style={"display": "flex", "alignItems": "center",
-                       "justifyContent": "space-between", "marginBottom": "28px"},
-                children=[
-                    html.Div([
-                        html.P("Service Detail", className="section-label",
-                               style={"marginBottom": "6px"}),
-                        html.H2(service_name, style={
-                            "fontFamily":    T["font_mono"],
-                            "fontSize":      "26px",
-                            "fontWeight":    "600",
-                            "color":         accent,
-                            "letterSpacing": "-0.5px",
-                        }),
-                    ]),
-                    html.Button(
-                        "← Overview",
-                        id="back-button",
-                        n_clicks=0,
-                        className="back-btn",
-                    ),
-                ],
-            ),
-
             # ── Status banner ─────────────────────────────────────────────────
             html.Div(
                 style={
-                    "background":  T["red_dim"] if is_suspicious else T["green_dim"],
-                    "border":      f"1px solid {T['red']}33" if is_suspicious else f"1px solid {T['green']}33",
-                    "borderLeft":  f"3px solid {accent}",
+                    "background": T["red_dim"] if is_suspicious else T["green_dim"],
+                    "border": f"1px solid {T['red']}33" if is_suspicious else f"1px solid {T['green']}33",
+                    "borderLeft": f"3px solid {accent}",
                     "borderRadius": "10px",
-                    "padding":     "18px 24px",
+                    "padding": "18px 24px",
                     "marginBottom": "24px",
-                    "display":     "flex",
-                    "alignItems":  "flex-start",
-                    "gap":         "14px",
+                    "display": "flex",
+                    "alignItems": "flex-start",
+                    "gap": "14px",
                 },
                 children=[
                     _status_badge(is_suspicious),
-                    html.P(explanation, style={
-                        "fontFamily": T["font_display"],
-                        "fontSize":   "13px",
-                        "color":      T["text_secondary"],
-                        "lineHeight": "1.65",
-                        "margin":     "0",
-                    }),
+                    html.P(
+                        explanation,
+                        style={
+                            "fontFamily": T["font_display"],
+                            "fontSize": "13px",
+                            "color": T["text_secondary"],
+                            "lineHeight": "1.65",
+                            "margin": "0",
+                        },
+                    ),
                 ],
             ),
 
@@ -827,31 +949,46 @@ def _detail_layout(
             html.Div(
                 style={"display": "flex", "gap": "14px", "marginBottom": "24px", "flexWrap": "wrap"},
                 children=[
-                    _metric_card("SCOM Score",  f"{row['scom_score']:.4f}", "amber" if is_suspicious else "cyan"),
-                    _metric_card("Rank",        f"#{row['rank']}",           "cyan"),
-                    _metric_card("Endpoints",   row["endpoints_count"],      "green"),
-                    _metric_card("Tables",      row["tables_count"],         "cyan"),
+                    _metric_card(
+                        "SCOM Score",
+                        f"{row['scom_score']:.4f}",
+                        "amber" if is_suspicious else "cyan",
+                    ),
+                    _metric_card("Rank", f"#{row['rank']}", "cyan"),
+                    _metric_card("Endpoints", row["endpoints_count"], "green"),
+                    _metric_card("Tables", row["tables_count"], "cyan"),
                 ],
             ),
 
             # ── Two-column: heatmap + radar ───────────────────────────────────
             html.Div(
-                style={"display": "grid", "gridTemplateColumns": "1fr 340px",
-                       "gap": "20px", "marginBottom": "20px"},
+                style={
+                    "display": "grid",
+                    "gridTemplateColumns": "1fr 340px",
+                    "gap": "20px",
+                    "marginBottom": "20px",
+                },
                 children=[
-                    _card("Endpoint × Table Access Heatmap", [
-                        dcc.Graph(
-                            figure=_build_heatmap(mapping_df, service_name),
-                            config={"displayModeBar": False},
-                        ),
-                    ], style_extra={"marginBottom": "0"}),
-
-                    _card("Multi-Metric Radar", [
-                        dcc.Graph(
-                            figure=_build_radar_chart(row),
-                            config={"displayModeBar": False},
-                        ),
-                    ], style_extra={"marginBottom": "0"}),
+                    _card(
+                        "Endpoint × Table Access Heatmap",
+                        [
+                            dcc.Graph(
+                                figure=_build_heatmap(mapping_df, service_name),
+                                config={"displayModeBar": False},
+                            ),
+                        ],
+                        style_extra={"marginBottom": "0"},
+                    ),
+                    _card(
+                        "Multi-Metric Radar",
+                        [
+                            dcc.Graph(
+                                figure=_build_radar_chart(row),
+                                config={"displayModeBar": False},
+                            ),
+                        ],
+                        style_extra={"marginBottom": "0"},
+                    ),
                 ],
             ),
         ],
@@ -869,9 +1006,28 @@ def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
         external_stylesheets=[
             "https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800"
             "&family=JetBrains+Mono:wght@300;400;600&display=swap",
-            {"data": GLOBAL_CSS, "type": "text/css"},
         ],
     )
+
+    # Inject global CSS in a version-compatible way (some Dash versions lack html.Style)
+    app.index_string = f"""<!DOCTYPE html>
+<html>
+    <head>
+        {{%metas%}}
+        <title>{{%title%}}</title>
+        {{%favicon%}}
+        {{%css%}}
+        <style>{GLOBAL_CSS}</style>
+    </head>
+    <body>
+        {{%app_entry%}}
+        <footer>
+            {{%config%}}
+            {{%scripts%}}
+            {{%renderer%}}
+        </footer>
+    </body>
+</html>"""
 
     base_dir = data_dir or Path("data")
     rank_df = _load_service_rank_from(base_dir)
@@ -882,7 +1038,6 @@ def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
     app.layout = html.Div(
         style={"minHeight": "100vh", "background": T["bg_base"], "position": "relative"},
         children=[
-
             # ── Header ────────────────────────────────────────────────────────
             html.Header(
                 style={
@@ -967,6 +1122,27 @@ def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
                     html.Div(
                         id="detail-page",
                         style={"display": "none"},
+                        children=[
+                            # Fixed header so callback Inputs always exist
+                            html.Div(
+                                style={
+                                    "display": "flex",
+                                    "alignItems": "center",
+                                    "justifyContent": "space-between",
+                                    "marginBottom": "28px",
+                                },
+                                children=[
+                                    html.Div(id="detail-title"),
+                                    html.Button(
+                                        "← Overview",
+                                        id="back-button",
+                                        n_clicks=0,
+                                        className="back-btn",
+                                    ),
+                                ],
+                            ),
+                            html.Div(id="detail-content"),
+                        ],
                     ),
                 ],
             ),
@@ -976,9 +1152,10 @@ def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
     # ── Callback: navigate between overview and detail ────────────────────────
     @app.callback(
         [
-            Output("detail-page",   "children"),
+            Output("detail-content","children"),
             Output("detail-page",   "style"),
             Output("overview-page", "style"),
+            Output("detail-title",  "children"),
         ],
         [
             Input("service-table", "active_cell"),
@@ -998,15 +1175,30 @@ def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
 
         # Back to overview
         if trigger == "back-button":
-            return None, {"display": "none"}, {"display": "block"}
+            return None, {"display": "none"}, {"display": "block"}, None
 
         # Into detail view
         if trigger == "service-table" and active_cell and table_data:
             row_idx = active_cell["row"]
             if row_idx < len(table_data):
                 name    = table_data[row_idx]["service_name"]
+                svc_row = rank_df[rank_df["service_name"] == name].iloc[0]
+                is_susp = bool(svc_row["is_suspicious"])
+                accent  = T["red"] if is_susp else T["cyan"]
+
+                title = html.Div([
+                    html.P("Service Detail", className="section-label", style={"marginBottom": "6px"}),
+                    html.H2(name, style={
+                        "fontFamily":    T["font_mono"],
+                        "fontSize":      "26px",
+                        "fontWeight":    "600",
+                        "color":         accent,
+                        "letterSpacing": "-0.5px",
+                    }),
+                ])
+
                 content = _detail_layout(name, rank_df, mapping_df)
-                return content, {"display": "block"}, {"display": "none"}
+                return content, {"display": "block"}, {"display": "none"}, title
 
         raise dash.exceptions.PreventUpdate
 
@@ -1019,8 +1211,12 @@ def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
 
 def main(data_dir: Optional[Path] = None) -> int:
     app = create_app(data_dir=data_dir)
-    print(f"\n  ◈ Boundary Analyzer — http://127.0.0.1:8050\n")
-    app.run(host="127.0.0.1", port=8050, debug=False)
+
+    host = os.environ.get("BOUNDARY_ANALYZER_DASH_HOST", "127.0.0.1")
+    port = int(os.environ.get("BOUNDARY_ANALYZER_DASH_PORT", "8050"))
+
+    print(f"\n  ◈ Boundary Analyzer — http://{host}:{port}\n")
+    app.run(host=host, port=port, debug=False)
     return 0
 
 

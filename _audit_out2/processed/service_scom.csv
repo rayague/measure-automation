@@ -1,0 +1,5 @@
+service_name,scom_score,endpoints_count,tables_count,method
+inventory-service,0.7778,3,3,paper
+notification-service,1.0,3,2,paper
+order-service,1.0,4,3,paper
+user-service,1.0,3,2,paper

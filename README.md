@@ -32,7 +32,10 @@ limit_traces: 20
 output_dir: "data/raw/traces"
 
 # SCOM calculation method
-scom_method: "weighted"  # Options: "weighted" or "simple"
+# - "paper": CI/CImax normalization from the paper (endpoints < 2 => 0)
+# - "weighted": weighted Jaccard (legacy)
+# - "simple": unweighted Jaccard (legacy)
+scom_method: "weighted"  # Options: "paper", "weighted" or "simple"
 table_weighting: true
 endpoint_weighting: true
 
@@ -72,6 +75,12 @@ python -m boundary_analyzer run
 - **`--data-dir <path>`**
   Base directory containing `interim/` and `processed/` for the dashboard (default: `data`).
 
+- **`--dash-host <host>`**
+  Dashboard bind host (default: `127.0.0.1`). Use `0.0.0.0` to expose on LAN.
+
+- **`--dash-port <port>`**
+  Dashboard port (default: `8050`).
+
 - **`--settings <path>`**
   Validates that the settings file exists. The pipeline steps currently read `config/settings.yaml`.
 
@@ -94,6 +103,10 @@ Launch only the dashboard:
 ```powershell
 boundary-analyzer dashboard
 ```
+
+The dashboard is available by default at:
+
+`http://127.0.0.1:8050`
 
 Launch the dashboard for a different results folder:
 

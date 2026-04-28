@@ -1,0 +1,1800 @@
+{
+  "jaeger_response": {
+    "data": [
+      {
+        "traceID": "af1c22110743431cba1d51f11620249b",
+        "spans": [
+          {
+            "traceID": "af1c22110743431cba1d51f11620249b",
+            "spanID": "ef3f1310b93b4405",
+            "parentSpanID": null,
+            "operationName": "GET /stock",
+            "startTime": 1700000400000000,
+            "duration": 4079,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "value": "/stock"
+              },
+              {
+                "key": "http.target",
+                "value": "/stock"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "af1c22110743431cba1d51f11620249b",
+            "spanID": "e51d5794e6fe4021",
+            "parentSpanID": "ef3f1310b93b4405",
+            "operationName": "INSERT warehouse",
+            "startTime": 1700000400000500,
+            "duration": 2352,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO warehouse (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "ef3f1310b93b4405"
+              }
+            ]
+          },
+          {
+            "traceID": "af1c22110743431cba1d51f11620249b",
+            "spanID": "96a34737978a4695",
+            "parentSpanID": "ef3f1310b93b4405",
+            "operationName": "INSERT stock",
+            "startTime": 1700000400000500,
+            "duration": 1536,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO stock (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "ef3f1310b93b4405"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "0dd61c841943465892396acf5d806d67",
+        "spans": [
+          {
+            "traceID": "0dd61c841943465892396acf5d806d67",
+            "spanID": "d805215d449c4c99",
+            "parentSpanID": null,
+            "operationName": "GET /inventory",
+            "startTime": 1700000410000000,
+            "duration": 2405,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "0dd61c841943465892396acf5d806d67",
+            "spanID": "899a0096105c4de7",
+            "parentSpanID": "d805215d449c4c99",
+            "operationName": "SELECT inventory",
+            "startTime": 1700000410000500,
+            "duration": 2769,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM inventory WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "d805215d449c4c99"
+              }
+            ]
+          },
+          {
+            "traceID": "0dd61c841943465892396acf5d806d67",
+            "spanID": "0fb9bdfb76bf46e5",
+            "parentSpanID": "d805215d449c4c99",
+            "operationName": "SELECT stock",
+            "startTime": 1700000410000500,
+            "duration": 1326,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM stock WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "d805215d449c4c99"
+              }
+            ]
+          },
+          {
+            "traceID": "0dd61c841943465892396acf5d806d67",
+            "spanID": "b8de407f406a41f6",
+            "parentSpanID": "d805215d449c4c99",
+            "operationName": "INSERT stock",
+            "startTime": 1700000410000500,
+            "duration": 2168,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO stock (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "d805215d449c4c99"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "3ceaafb5247d4229b0130e1c22156554",
+        "spans": [
+          {
+            "traceID": "3ceaafb5247d4229b0130e1c22156554",
+            "spanID": "676ce60fcca740f1",
+            "parentSpanID": null,
+            "operationName": "GET /stock",
+            "startTime": 1700000420000000,
+            "duration": 1156,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "value": "/stock"
+              },
+              {
+                "key": "http.target",
+                "value": "/stock"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "3ceaafb5247d4229b0130e1c22156554",
+            "spanID": "c94a63e0978441d1",
+            "parentSpanID": "676ce60fcca740f1",
+            "operationName": "UPDATE stock",
+            "startTime": 1700000420000500,
+            "duration": 2213,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE stock SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "676ce60fcca740f1"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "37924fc66c394514bbfaadc4e7c1f050",
+        "spans": [
+          {
+            "traceID": "37924fc66c394514bbfaadc4e7c1f050",
+            "spanID": "30e6a13e79a2493a",
+            "parentSpanID": null,
+            "operationName": "POST /inventory",
+            "startTime": 1700000430000000,
+            "duration": 1994,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "37924fc66c394514bbfaadc4e7c1f050",
+            "spanID": "b553c24d68f646a8",
+            "parentSpanID": "30e6a13e79a2493a",
+            "operationName": "UPDATE inventory",
+            "startTime": 1700000430000500,
+            "duration": 1931,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE inventory SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "30e6a13e79a2493a"
+              }
+            ]
+          },
+          {
+            "traceID": "37924fc66c394514bbfaadc4e7c1f050",
+            "spanID": "112185ed56234559",
+            "parentSpanID": "30e6a13e79a2493a",
+            "operationName": "SELECT inventory",
+            "startTime": 1700000430000500,
+            "duration": 1163,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM inventory WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "30e6a13e79a2493a"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "a55ddf909f394fe0b3d13909992e2b9a",
+        "spans": [
+          {
+            "traceID": "a55ddf909f394fe0b3d13909992e2b9a",
+            "spanID": "0d926a010ba34c32",
+            "parentSpanID": null,
+            "operationName": "GET /inventory",
+            "startTime": 1700000440000000,
+            "duration": 2545,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "a55ddf909f394fe0b3d13909992e2b9a",
+            "spanID": "942c9af1bca446f1",
+            "parentSpanID": "0d926a010ba34c32",
+            "operationName": "SELECT inventory",
+            "startTime": 1700000440000500,
+            "duration": 2416,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM inventory WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "0d926a010ba34c32"
+              }
+            ]
+          },
+          {
+            "traceID": "a55ddf909f394fe0b3d13909992e2b9a",
+            "spanID": "28ec7b832c1f456b",
+            "parentSpanID": "0d926a010ba34c32",
+            "operationName": "INSERT warehouse",
+            "startTime": 1700000440000500,
+            "duration": 1723,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO warehouse (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "0d926a010ba34c32"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "6eeef793cafe4e01af4a965a8a2eb265",
+        "spans": [
+          {
+            "traceID": "6eeef793cafe4e01af4a965a8a2eb265",
+            "spanID": "7f69c12ff11f4d18",
+            "parentSpanID": null,
+            "operationName": "POST /inventory",
+            "startTime": 1700000450000000,
+            "duration": 3649,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "6eeef793cafe4e01af4a965a8a2eb265",
+            "spanID": "0608c98d4f544968",
+            "parentSpanID": "7f69c12ff11f4d18",
+            "operationName": "UPDATE stock",
+            "startTime": 1700000450000500,
+            "duration": 1178,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE stock SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "7f69c12ff11f4d18"
+              }
+            ]
+          },
+          {
+            "traceID": "6eeef793cafe4e01af4a965a8a2eb265",
+            "spanID": "f7b03d3e503d4ad6",
+            "parentSpanID": "7f69c12ff11f4d18",
+            "operationName": "INSERT warehouse",
+            "startTime": 1700000450000500,
+            "duration": 1013,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO warehouse (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "7f69c12ff11f4d18"
+              }
+            ]
+          },
+          {
+            "traceID": "6eeef793cafe4e01af4a965a8a2eb265",
+            "spanID": "5c8991817a564fa1",
+            "parentSpanID": "7f69c12ff11f4d18",
+            "operationName": "SELECT stock",
+            "startTime": 1700000450000500,
+            "duration": 1859,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM stock WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "7f69c12ff11f4d18"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "ce0d6a36981c4b9da04d1ad1165c737f",
+        "spans": [
+          {
+            "traceID": "ce0d6a36981c4b9da04d1ad1165c737f",
+            "spanID": "64d31608173849ea",
+            "parentSpanID": null,
+            "operationName": "POST /inventory",
+            "startTime": 1700000460000000,
+            "duration": 4644,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "ce0d6a36981c4b9da04d1ad1165c737f",
+            "spanID": "f5ccdc54539b4e77",
+            "parentSpanID": "64d31608173849ea",
+            "operationName": "INSERT inventory",
+            "startTime": 1700000460000500,
+            "duration": 2004,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO inventory (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "64d31608173849ea"
+              }
+            ]
+          },
+          {
+            "traceID": "ce0d6a36981c4b9da04d1ad1165c737f",
+            "spanID": "146424f8250646ce",
+            "parentSpanID": "64d31608173849ea",
+            "operationName": "INSERT inventory",
+            "startTime": 1700000460000500,
+            "duration": 2981,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO inventory (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "64d31608173849ea"
+              }
+            ]
+          },
+          {
+            "traceID": "ce0d6a36981c4b9da04d1ad1165c737f",
+            "spanID": "dcbfb914dc814d7e",
+            "parentSpanID": "64d31608173849ea",
+            "operationName": "UPDATE stock",
+            "startTime": 1700000460000500,
+            "duration": 1263,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE stock SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "64d31608173849ea"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "c728d269531b4807a45f8e8f1a44e234",
+        "spans": [
+          {
+            "traceID": "c728d269531b4807a45f8e8f1a44e234",
+            "spanID": "401e3d951a6a4cfa",
+            "parentSpanID": null,
+            "operationName": "POST /inventory",
+            "startTime": 1700000470000000,
+            "duration": 4068,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "c728d269531b4807a45f8e8f1a44e234",
+            "spanID": "62191bcff6fd4e71",
+            "parentSpanID": "401e3d951a6a4cfa",
+            "operationName": "SELECT warehouse",
+            "startTime": 1700000470000500,
+            "duration": 1971,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM warehouse WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "401e3d951a6a4cfa"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "6262cf4825ef4fffbc2fdf03cb309c36",
+        "spans": [
+          {
+            "traceID": "6262cf4825ef4fffbc2fdf03cb309c36",
+            "spanID": "a277635e47de4842",
+            "parentSpanID": null,
+            "operationName": "GET /inventory",
+            "startTime": 1700000480000000,
+            "duration": 3608,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "6262cf4825ef4fffbc2fdf03cb309c36",
+            "spanID": "29cada9b8cf9435f",
+            "parentSpanID": "a277635e47de4842",
+            "operationName": "UPDATE inventory",
+            "startTime": 1700000480000500,
+            "duration": 1537,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE inventory SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "a277635e47de4842"
+              }
+            ]
+          },
+          {
+            "traceID": "6262cf4825ef4fffbc2fdf03cb309c36",
+            "spanID": "41f294560c3a48d4",
+            "parentSpanID": "a277635e47de4842",
+            "operationName": "SELECT stock",
+            "startTime": 1700000480000500,
+            "duration": 2399,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM stock WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "a277635e47de4842"
+              }
+            ]
+          },
+          {
+            "traceID": "6262cf4825ef4fffbc2fdf03cb309c36",
+            "spanID": "74898f97ed51484e",
+            "parentSpanID": "a277635e47de4842",
+            "operationName": "INSERT warehouse",
+            "startTime": 1700000480000500,
+            "duration": 1421,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO warehouse (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "a277635e47de4842"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "1e47277434de488d91f8297b095b48a3",
+        "spans": [
+          {
+            "traceID": "1e47277434de488d91f8297b095b48a3",
+            "spanID": "e6df443efb56461f",
+            "parentSpanID": null,
+            "operationName": "POST /inventory",
+            "startTime": 1700000490000000,
+            "duration": 3192,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "1e47277434de488d91f8297b095b48a3",
+            "spanID": "4210700d9b3e4f6b",
+            "parentSpanID": "e6df443efb56461f",
+            "operationName": "UPDATE inventory",
+            "startTime": 1700000490000500,
+            "duration": 2629,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE inventory SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "e6df443efb56461f"
+              }
+            ]
+          },
+          {
+            "traceID": "1e47277434de488d91f8297b095b48a3",
+            "spanID": "c2672a8426cc4144",
+            "parentSpanID": "e6df443efb56461f",
+            "operationName": "INSERT stock",
+            "startTime": 1700000490000500,
+            "duration": 1058,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO stock (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "e6df443efb56461f"
+              }
+            ]
+          },
+          {
+            "traceID": "1e47277434de488d91f8297b095b48a3",
+            "spanID": "abf2beab2810474d",
+            "parentSpanID": "e6df443efb56461f",
+            "operationName": "UPDATE inventory",
+            "startTime": 1700000490000500,
+            "duration": 1744,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE inventory SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "e6df443efb56461f"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "120686d89f274a81a593956bef1fdcde",
+        "spans": [
+          {
+            "traceID": "120686d89f274a81a593956bef1fdcde",
+            "spanID": "c387f59578fa4a4c",
+            "parentSpanID": null,
+            "operationName": "GET /inventory",
+            "startTime": 1700000500000000,
+            "duration": 4933,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "120686d89f274a81a593956bef1fdcde",
+            "spanID": "295b01d6f0c84df6",
+            "parentSpanID": "c387f59578fa4a4c",
+            "operationName": "INSERT inventory",
+            "startTime": 1700000500000500,
+            "duration": 2000,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO inventory (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "c387f59578fa4a4c"
+              }
+            ]
+          },
+          {
+            "traceID": "120686d89f274a81a593956bef1fdcde",
+            "spanID": "bd5f3dedb4ab4d5e",
+            "parentSpanID": "c387f59578fa4a4c",
+            "operationName": "SELECT warehouse",
+            "startTime": 1700000500000500,
+            "duration": 1932,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM warehouse WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "c387f59578fa4a4c"
+              }
+            ]
+          },
+          {
+            "traceID": "120686d89f274a81a593956bef1fdcde",
+            "spanID": "be8d00ec26e54a45",
+            "parentSpanID": "c387f59578fa4a4c",
+            "operationName": "INSERT warehouse",
+            "startTime": 1700000500000500,
+            "duration": 2709,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO warehouse (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "c387f59578fa4a4c"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "297977df2a7e4a7c89d5ae8a1cf05e67",
+        "spans": [
+          {
+            "traceID": "297977df2a7e4a7c89d5ae8a1cf05e67",
+            "spanID": "6b359c1e40354be4",
+            "parentSpanID": null,
+            "operationName": "GET /inventory",
+            "startTime": 1700000510000000,
+            "duration": 2171,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "297977df2a7e4a7c89d5ae8a1cf05e67",
+            "spanID": "29b098e5c9d54a4f",
+            "parentSpanID": "6b359c1e40354be4",
+            "operationName": "SELECT warehouse",
+            "startTime": 1700000510000500,
+            "duration": 1378,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM warehouse WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "6b359c1e40354be4"
+              }
+            ]
+          },
+          {
+            "traceID": "297977df2a7e4a7c89d5ae8a1cf05e67",
+            "spanID": "0b83b60a008e4234",
+            "parentSpanID": "6b359c1e40354be4",
+            "operationName": "UPDATE stock",
+            "startTime": 1700000510000500,
+            "duration": 1838,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE stock SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "6b359c1e40354be4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "a8ee8fd05b5844148909bf455484249a",
+        "spans": [
+          {
+            "traceID": "a8ee8fd05b5844148909bf455484249a",
+            "spanID": "e36e033da4a247c2",
+            "parentSpanID": null,
+            "operationName": "GET /inventory",
+            "startTime": 1700000520000000,
+            "duration": 3616,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "a8ee8fd05b5844148909bf455484249a",
+            "spanID": "1ca5a6b3d215406e",
+            "parentSpanID": "e36e033da4a247c2",
+            "operationName": "UPDATE inventory",
+            "startTime": 1700000520000500,
+            "duration": 2756,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE inventory SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "e36e033da4a247c2"
+              }
+            ]
+          },
+          {
+            "traceID": "a8ee8fd05b5844148909bf455484249a",
+            "spanID": "a9c12cec209f4d64",
+            "parentSpanID": "e36e033da4a247c2",
+            "operationName": "SELECT inventory",
+            "startTime": 1700000520000500,
+            "duration": 2626,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM inventory WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "e36e033da4a247c2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "9c8aca7ab3894e33a19e3123539ad085",
+        "spans": [
+          {
+            "traceID": "9c8aca7ab3894e33a19e3123539ad085",
+            "spanID": "865f17ae4c6a4381",
+            "parentSpanID": null,
+            "operationName": "POST /inventory",
+            "startTime": 1700000530000000,
+            "duration": 1141,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "9c8aca7ab3894e33a19e3123539ad085",
+            "spanID": "04f9f542a5184718",
+            "parentSpanID": "865f17ae4c6a4381",
+            "operationName": "INSERT warehouse",
+            "startTime": 1700000530000500,
+            "duration": 1067,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO warehouse (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "865f17ae4c6a4381"
+              }
+            ]
+          },
+          {
+            "traceID": "9c8aca7ab3894e33a19e3123539ad085",
+            "spanID": "77bdb42e7922422a",
+            "parentSpanID": "865f17ae4c6a4381",
+            "operationName": "SELECT warehouse",
+            "startTime": 1700000530000500,
+            "duration": 2965,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM warehouse WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "865f17ae4c6a4381"
+              }
+            ]
+          },
+          {
+            "traceID": "9c8aca7ab3894e33a19e3123539ad085",
+            "spanID": "f4ab22393ff24e65",
+            "parentSpanID": "865f17ae4c6a4381",
+            "operationName": "INSERT warehouse",
+            "startTime": 1700000530000500,
+            "duration": 1193,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO warehouse (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "865f17ae4c6a4381"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "1bff53f3ec664669944481151ff15ba2",
+        "spans": [
+          {
+            "traceID": "1bff53f3ec664669944481151ff15ba2",
+            "spanID": "070e79881ee24b7a",
+            "parentSpanID": null,
+            "operationName": "GET /inventory",
+            "startTime": 1700000540000000,
+            "duration": 3980,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "value": "/inventory"
+              },
+              {
+                "key": "http.target",
+                "value": "/inventory"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "1bff53f3ec664669944481151ff15ba2",
+            "spanID": "aebccbb3cf1b45bc",
+            "parentSpanID": "070e79881ee24b7a",
+            "operationName": "INSERT stock",
+            "startTime": 1700000540000500,
+            "duration": 2648,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO stock (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "070e79881ee24b7a"
+              }
+            ]
+          },
+          {
+            "traceID": "1bff53f3ec664669944481151ff15ba2",
+            "spanID": "ea4a24cc2d8548ff",
+            "parentSpanID": "070e79881ee24b7a",
+            "operationName": "UPDATE warehouse",
+            "startTime": 1700000540000500,
+            "duration": 1150,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE warehouse SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "inventory-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "070e79881ee24b7a"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "total": 15,
+    "limit": 15,
+    "offset": 0,
+    "errors": null
+  }
+}

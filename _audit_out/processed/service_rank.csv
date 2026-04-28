@@ -1,0 +1,5 @@
+service_name,scom_score,endpoints_count,tables_count,method,rank,threshold_value,threshold_method,is_suspicious
+inventory-service,0.7835,3,3,weighted-table-weighted-endpoint-weighted,1,0.5,fixed,False
+notification-service,0.8105,3,2,weighted-table-weighted-endpoint-weighted,2,0.5,fixed,False
+order-service,0.864,4,3,weighted-table-weighted-endpoint-weighted,3,0.5,fixed,False
+user-service,1.0,3,2,weighted-table-weighted-endpoint-weighted,4,0.5,fixed,False

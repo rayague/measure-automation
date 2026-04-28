@@ -22,6 +22,12 @@ def _generate_markdown_report(
     report.append("# Microservice Boundary Analysis Report\n")
     report.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     report.append(f"**SCOM Threshold:** {threshold}\n")
+
+    scom_methods = []
+    if "method" in rank_df.columns:
+        scom_methods = sorted({str(m) for m in rank_df["method"].dropna().unique().tolist()})
+    if scom_methods:
+        report.append(f"**SCOM Method:** {', '.join(scom_methods)}\n")
     report.append("---\n")
     
     # Summary
@@ -59,7 +65,10 @@ def _generate_markdown_report(
     
     # Notes
     report.append("## Notes\n")
-    report.append("- SCOM (Service Cohesion Measure) uses Jaccard similarity of endpoint-table sets.\n")
+    if scom_methods:
+        report.append(f"- SCOM (Service Cohesion Measure) method: {', '.join(scom_methods)}.\n")
+    else:
+        report.append("- SCOM (Service Cohesion Measure) method is recorded in service_scom.csv.\n")
     report.append("- A service is suspicious if its SCOM score is below the threshold.\n")
     report.append("- Low cohesion may indicate that the service boundary is not optimal.\n")
     report.append("\n")

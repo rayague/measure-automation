@@ -9,7 +9,7 @@ import pandas as pd
 from boundary_analyzer.detection.db_table_extractor import extract_db_operations
 from boundary_analyzer.detection.endpoint_extractor import extract_endpoints
 from boundary_analyzer.detection.mapping_builder import build_endpoint_table_mapping
-from boundary_analyzer.metrics.scom_ultimate import compute_weighted_scom
+from boundary_analyzer.metrics.scom_ultimate import compute_paper_scom, compute_simple_scom, compute_weighted_scom
 from boundary_analyzer.metrics.threshold_ultimate import apply_threshold
 from boundary_analyzer.parsing.trace_reader import read_all_traces, save_spans_csv
 from boundary_analyzer.reporting.report_builder import generate_report
@@ -35,6 +35,9 @@ def _prepare_traces(input_path: Path, traces_dir: Path) -> None:
 def run_pipeline(
     traces: Path,
     output_dir: Path,
+    scom_method: str = "weighted",
+    table_weighting: bool = True,
+    endpoint_weighting: bool = True,
     threshold_method: str = "percentile",
     threshold_percentile: float = 25.0,
     threshold_zscore: float = -1.5,
@@ -65,7 +68,17 @@ def run_pipeline(
     mapping_csv.parent.mkdir(parents=True, exist_ok=True)
     mapping_df.to_csv(mapping_csv, index=False)
 
-    scom_df = compute_weighted_scom(mapping_df)
+    if scom_method == "paper":
+        scom_df = compute_paper_scom(mapping_df, endpoints_df=endpoints_df)
+    elif scom_method == "weighted":
+        scom_df = compute_weighted_scom(
+            mapping_df,
+            use_table_weighting=table_weighting,
+            use_endpoint_weighting=endpoint_weighting,
+            endpoints_df=endpoints_df,
+        )
+    else:
+        scom_df = compute_simple_scom(mapping_df, endpoints_df=endpoints_df)
     service_scom_csv = processed_dir / "service_scom.csv"
     service_scom_csv.parent.mkdir(parents=True, exist_ok=True)
     scom_df.to_csv(service_scom_csv, index=False)
@@ -112,6 +125,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--service", default="", help="Service name (reserved, kept for compatibility)")
     ap.add_argument("--output", required=True, help="Output folder")
 
+    ap.add_argument("--scom-method", default="weighted", choices=["paper", "weighted", "simple"])
+    ap.add_argument("--table-weighting", action="store_true", default=True)
+    ap.add_argument("--no-table-weighting", action="store_false", dest="table_weighting")
+    ap.add_argument("--endpoint-weighting", action="store_true", default=True)
+    ap.add_argument("--no-endpoint-weighting", action="store_false", dest="endpoint_weighting")
+
     ap.add_argument("--threshold-method", default="percentile", choices=["percentile", "zscore", "fixed"])
     ap.add_argument("--threshold-percentile", type=float, default=25.0)
     ap.add_argument("--threshold-zscore", type=float, default=-1.5)
@@ -125,6 +144,9 @@ def main(argv: list[str] | None = None) -> int:
     return run_pipeline(
         traces=traces_path,
         output_dir=output_dir,
+        scom_method=str(args.scom_method),
+        table_weighting=bool(args.table_weighting),
+        endpoint_weighting=bool(args.endpoint_weighting),
         threshold_method=args.threshold_method,
         threshold_percentile=args.threshold_percentile,
         threshold_zscore=args.threshold_zscore,

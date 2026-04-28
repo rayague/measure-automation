@@ -1,0 +1,1652 @@
+{
+  "jaeger_response": {
+    "data": [
+      {
+        "traceID": "835f79ebe5bf441687b9dcd0a3fe9a4d",
+        "spans": [
+          {
+            "traceID": "835f79ebe5bf441687b9dcd0a3fe9a4d",
+            "spanID": "dc988cb8ebe741fa",
+            "parentSpanID": null,
+            "operationName": "POST /sms",
+            "startTime": 1700000600000000,
+            "duration": 4330,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/sms"
+              },
+              {
+                "key": "http.target",
+                "value": "/sms"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "835f79ebe5bf441687b9dcd0a3fe9a4d",
+            "spanID": "86f07da7b1824ece",
+            "parentSpanID": "dc988cb8ebe741fa",
+            "operationName": "UPDATE logs",
+            "startTime": 1700000600000500,
+            "duration": 2619,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE logs SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "dc988cb8ebe741fa"
+              }
+            ]
+          },
+          {
+            "traceID": "835f79ebe5bf441687b9dcd0a3fe9a4d",
+            "spanID": "fc5f803df55347ba",
+            "parentSpanID": "dc988cb8ebe741fa",
+            "operationName": "UPDATE logs",
+            "startTime": 1700000600000500,
+            "duration": 1517,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE logs SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "dc988cb8ebe741fa"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "59026886892249168a39f31136bd088b",
+        "spans": [
+          {
+            "traceID": "59026886892249168a39f31136bd088b",
+            "spanID": "e9edc42ebbb541a1",
+            "parentSpanID": null,
+            "operationName": "POST /notify",
+            "startTime": 1700000610000000,
+            "duration": 4618,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/notify"
+              },
+              {
+                "key": "http.target",
+                "value": "/notify"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "59026886892249168a39f31136bd088b",
+            "spanID": "98579ff59070474e",
+            "parentSpanID": "e9edc42ebbb541a1",
+            "operationName": "SELECT logs",
+            "startTime": 1700000610000500,
+            "duration": 1577,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM logs WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "e9edc42ebbb541a1"
+              }
+            ]
+          },
+          {
+            "traceID": "59026886892249168a39f31136bd088b",
+            "spanID": "90c8defd87d245ff",
+            "parentSpanID": "e9edc42ebbb541a1",
+            "operationName": "SELECT logs",
+            "startTime": 1700000610000500,
+            "duration": 1496,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM logs WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "e9edc42ebbb541a1"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "506a88d5b3bd4b61895809acd4074d3b",
+        "spans": [
+          {
+            "traceID": "506a88d5b3bd4b61895809acd4074d3b",
+            "spanID": "594dc55095574a2a",
+            "parentSpanID": null,
+            "operationName": "POST /notify",
+            "startTime": 1700000620000000,
+            "duration": 2103,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/notify"
+              },
+              {
+                "key": "http.target",
+                "value": "/notify"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "506a88d5b3bd4b61895809acd4074d3b",
+            "spanID": "336270ca3c0749c8",
+            "parentSpanID": "594dc55095574a2a",
+            "operationName": "SELECT notifications",
+            "startTime": 1700000620000500,
+            "duration": 2793,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM notifications WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "594dc55095574a2a"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "3ca602212dce44bfaf1a287b76a8c2a9",
+        "spans": [
+          {
+            "traceID": "3ca602212dce44bfaf1a287b76a8c2a9",
+            "spanID": "148d0c17838f4cdc",
+            "parentSpanID": null,
+            "operationName": "POST /email",
+            "startTime": 1700000630000000,
+            "duration": 3403,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/email"
+              },
+              {
+                "key": "http.target",
+                "value": "/email"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "3ca602212dce44bfaf1a287b76a8c2a9",
+            "spanID": "c88c3840754a4a89",
+            "parentSpanID": "148d0c17838f4cdc",
+            "operationName": "SELECT logs",
+            "startTime": 1700000630000500,
+            "duration": 2871,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM logs WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "148d0c17838f4cdc"
+              }
+            ]
+          },
+          {
+            "traceID": "3ca602212dce44bfaf1a287b76a8c2a9",
+            "spanID": "cc0a8adc63924f6c",
+            "parentSpanID": "148d0c17838f4cdc",
+            "operationName": "UPDATE logs",
+            "startTime": 1700000630000500,
+            "duration": 2468,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE logs SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "148d0c17838f4cdc"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "cb8011627daa420f9b3b30dad50fed65",
+        "spans": [
+          {
+            "traceID": "cb8011627daa420f9b3b30dad50fed65",
+            "spanID": "f586026594684e7a",
+            "parentSpanID": null,
+            "operationName": "POST /sms",
+            "startTime": 1700000640000000,
+            "duration": 2127,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/sms"
+              },
+              {
+                "key": "http.target",
+                "value": "/sms"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "cb8011627daa420f9b3b30dad50fed65",
+            "spanID": "0af53efbc1884939",
+            "parentSpanID": "f586026594684e7a",
+            "operationName": "UPDATE logs",
+            "startTime": 1700000640000500,
+            "duration": 1690,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE logs SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "f586026594684e7a"
+              }
+            ]
+          },
+          {
+            "traceID": "cb8011627daa420f9b3b30dad50fed65",
+            "spanID": "741ffde245f84762",
+            "parentSpanID": "f586026594684e7a",
+            "operationName": "SELECT logs",
+            "startTime": 1700000640000500,
+            "duration": 1295,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM logs WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "f586026594684e7a"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "8c7dd8c488d94276b5800ed81ecb8cd4",
+        "spans": [
+          {
+            "traceID": "8c7dd8c488d94276b5800ed81ecb8cd4",
+            "spanID": "e07c998ae44f456b",
+            "parentSpanID": null,
+            "operationName": "POST /notify",
+            "startTime": 1700000650000000,
+            "duration": 2148,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/notify"
+              },
+              {
+                "key": "http.target",
+                "value": "/notify"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "8c7dd8c488d94276b5800ed81ecb8cd4",
+            "spanID": "ddc2267bf889488e",
+            "parentSpanID": "e07c998ae44f456b",
+            "operationName": "SELECT notifications",
+            "startTime": 1700000650000500,
+            "duration": 1159,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM notifications WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "e07c998ae44f456b"
+              }
+            ]
+          },
+          {
+            "traceID": "8c7dd8c488d94276b5800ed81ecb8cd4",
+            "spanID": "3e6d03f8a7ca4822",
+            "parentSpanID": "e07c998ae44f456b",
+            "operationName": "INSERT notifications",
+            "startTime": 1700000650000500,
+            "duration": 2096,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO notifications (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "e07c998ae44f456b"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "9761407cf3e64337ab355981d2da97da",
+        "spans": [
+          {
+            "traceID": "9761407cf3e64337ab355981d2da97da",
+            "spanID": "da07479c41f04b68",
+            "parentSpanID": null,
+            "operationName": "POST /sms",
+            "startTime": 1700000660000000,
+            "duration": 4854,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/sms"
+              },
+              {
+                "key": "http.target",
+                "value": "/sms"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "9761407cf3e64337ab355981d2da97da",
+            "spanID": "0551711c46c94b90",
+            "parentSpanID": "da07479c41f04b68",
+            "operationName": "INSERT logs",
+            "startTime": 1700000660000500,
+            "duration": 2242,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO logs (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "da07479c41f04b68"
+              }
+            ]
+          },
+          {
+            "traceID": "9761407cf3e64337ab355981d2da97da",
+            "spanID": "7721a272fa2247d0",
+            "parentSpanID": "da07479c41f04b68",
+            "operationName": "UPDATE notifications",
+            "startTime": 1700000660000500,
+            "duration": 1771,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE notifications SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "da07479c41f04b68"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "f4921b76726b4ccdafb6b8df0b3dbc9f",
+        "spans": [
+          {
+            "traceID": "f4921b76726b4ccdafb6b8df0b3dbc9f",
+            "spanID": "d3db6ab346a544b5",
+            "parentSpanID": null,
+            "operationName": "POST /email",
+            "startTime": 1700000670000000,
+            "duration": 4410,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/email"
+              },
+              {
+                "key": "http.target",
+                "value": "/email"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "f4921b76726b4ccdafb6b8df0b3dbc9f",
+            "spanID": "69e36d90112f4abe",
+            "parentSpanID": "d3db6ab346a544b5",
+            "operationName": "SELECT logs",
+            "startTime": 1700000670000500,
+            "duration": 2196,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM logs WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "d3db6ab346a544b5"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "3c2582c339c9443f9d03820d75fb14b7",
+        "spans": [
+          {
+            "traceID": "3c2582c339c9443f9d03820d75fb14b7",
+            "spanID": "7eb988b93fbe4a7f",
+            "parentSpanID": null,
+            "operationName": "POST /notify",
+            "startTime": 1700000680000000,
+            "duration": 3631,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/notify"
+              },
+              {
+                "key": "http.target",
+                "value": "/notify"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "3c2582c339c9443f9d03820d75fb14b7",
+            "spanID": "f77fe07ebc844a32",
+            "parentSpanID": "7eb988b93fbe4a7f",
+            "operationName": "UPDATE notifications",
+            "startTime": 1700000680000500,
+            "duration": 1106,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE notifications SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "7eb988b93fbe4a7f"
+              }
+            ]
+          },
+          {
+            "traceID": "3c2582c339c9443f9d03820d75fb14b7",
+            "spanID": "72b044b922bc4b16",
+            "parentSpanID": "7eb988b93fbe4a7f",
+            "operationName": "INSERT logs",
+            "startTime": 1700000680000500,
+            "duration": 1250,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO logs (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "7eb988b93fbe4a7f"
+              }
+            ]
+          },
+          {
+            "traceID": "3c2582c339c9443f9d03820d75fb14b7",
+            "spanID": "42100d6b5c9e47a2",
+            "parentSpanID": "7eb988b93fbe4a7f",
+            "operationName": "UPDATE notifications",
+            "startTime": 1700000680000500,
+            "duration": 2251,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE notifications SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "7eb988b93fbe4a7f"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "35686f428c7845f1a4fd65dfeb0a1ec2",
+        "spans": [
+          {
+            "traceID": "35686f428c7845f1a4fd65dfeb0a1ec2",
+            "spanID": "fa52bf3bf67d4f2a",
+            "parentSpanID": null,
+            "operationName": "POST /email",
+            "startTime": 1700000690000000,
+            "duration": 3924,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/email"
+              },
+              {
+                "key": "http.target",
+                "value": "/email"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "35686f428c7845f1a4fd65dfeb0a1ec2",
+            "spanID": "33f159fa28a242d3",
+            "parentSpanID": "fa52bf3bf67d4f2a",
+            "operationName": "SELECT notifications",
+            "startTime": 1700000690000500,
+            "duration": 2417,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM notifications WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "fa52bf3bf67d4f2a"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "db289e957acc4cc38dad1ce9572418b7",
+        "spans": [
+          {
+            "traceID": "db289e957acc4cc38dad1ce9572418b7",
+            "spanID": "6805edd857244712",
+            "parentSpanID": null,
+            "operationName": "POST /email",
+            "startTime": 1700000700000000,
+            "duration": 4914,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/email"
+              },
+              {
+                "key": "http.target",
+                "value": "/email"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "db289e957acc4cc38dad1ce9572418b7",
+            "spanID": "05345643caf549af",
+            "parentSpanID": "6805edd857244712",
+            "operationName": "INSERT notifications",
+            "startTime": 1700000700000500,
+            "duration": 2279,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO notifications (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "6805edd857244712"
+              }
+            ]
+          },
+          {
+            "traceID": "db289e957acc4cc38dad1ce9572418b7",
+            "spanID": "9fd7a176525e489e",
+            "parentSpanID": "6805edd857244712",
+            "operationName": "UPDATE notifications",
+            "startTime": 1700000700000500,
+            "duration": 1444,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE notifications SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "6805edd857244712"
+              }
+            ]
+          },
+          {
+            "traceID": "db289e957acc4cc38dad1ce9572418b7",
+            "spanID": "cea8dac62e0a4b94",
+            "parentSpanID": "6805edd857244712",
+            "operationName": "INSERT notifications",
+            "startTime": 1700000700000500,
+            "duration": 1237,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO notifications (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "6805edd857244712"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "dbc16aba9000417c8e829643a5948ec0",
+        "spans": [
+          {
+            "traceID": "dbc16aba9000417c8e829643a5948ec0",
+            "spanID": "d8012c6e6d5848ec",
+            "parentSpanID": null,
+            "operationName": "POST /email",
+            "startTime": 1700000710000000,
+            "duration": 3376,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/email"
+              },
+              {
+                "key": "http.target",
+                "value": "/email"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "dbc16aba9000417c8e829643a5948ec0",
+            "spanID": "bde975d1da1c4df5",
+            "parentSpanID": "d8012c6e6d5848ec",
+            "operationName": "INSERT notifications",
+            "startTime": 1700000710000500,
+            "duration": 2776,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO notifications (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "d8012c6e6d5848ec"
+              }
+            ]
+          },
+          {
+            "traceID": "dbc16aba9000417c8e829643a5948ec0",
+            "spanID": "0274387f8e4b4571",
+            "parentSpanID": "d8012c6e6d5848ec",
+            "operationName": "SELECT notifications",
+            "startTime": 1700000710000500,
+            "duration": 2365,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM notifications WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "d8012c6e6d5848ec"
+              }
+            ]
+          },
+          {
+            "traceID": "dbc16aba9000417c8e829643a5948ec0",
+            "spanID": "1209f34319d244dc",
+            "parentSpanID": "d8012c6e6d5848ec",
+            "operationName": "INSERT notifications",
+            "startTime": 1700000710000500,
+            "duration": 1441,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO notifications (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "d8012c6e6d5848ec"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "930379b9b33548559da35242512f2028",
+        "spans": [
+          {
+            "traceID": "930379b9b33548559da35242512f2028",
+            "spanID": "f4ba02a01eb94d3f",
+            "parentSpanID": null,
+            "operationName": "POST /email",
+            "startTime": 1700000720000000,
+            "duration": 3723,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/email"
+              },
+              {
+                "key": "http.target",
+                "value": "/email"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "930379b9b33548559da35242512f2028",
+            "spanID": "526aa5a26b564c09",
+            "parentSpanID": "f4ba02a01eb94d3f",
+            "operationName": "UPDATE notifications",
+            "startTime": 1700000720000500,
+            "duration": 1509,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE notifications SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "f4ba02a01eb94d3f"
+              }
+            ]
+          },
+          {
+            "traceID": "930379b9b33548559da35242512f2028",
+            "spanID": "738ab375fe654e83",
+            "parentSpanID": "f4ba02a01eb94d3f",
+            "operationName": "UPDATE logs",
+            "startTime": 1700000720000500,
+            "duration": 1123,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE logs SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "f4ba02a01eb94d3f"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "801b1e5652aa48c6b2e57f66f3a0924b",
+        "spans": [
+          {
+            "traceID": "801b1e5652aa48c6b2e57f66f3a0924b",
+            "spanID": "e738a3b0700941f9",
+            "parentSpanID": null,
+            "operationName": "POST /notify",
+            "startTime": 1700000730000000,
+            "duration": 2495,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/notify"
+              },
+              {
+                "key": "http.target",
+                "value": "/notify"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "801b1e5652aa48c6b2e57f66f3a0924b",
+            "spanID": "d762aa6d003e4ab4",
+            "parentSpanID": "e738a3b0700941f9",
+            "operationName": "INSERT logs",
+            "startTime": 1700000730000500,
+            "duration": 1722,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO logs (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "e738a3b0700941f9"
+              }
+            ]
+          },
+          {
+            "traceID": "801b1e5652aa48c6b2e57f66f3a0924b",
+            "spanID": "894b326fd0834468",
+            "parentSpanID": "e738a3b0700941f9",
+            "operationName": "SELECT notifications",
+            "startTime": 1700000730000500,
+            "duration": 1780,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM notifications WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "e738a3b0700941f9"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "traceID": "7a84f22a897241c1aa0dde5ed62efd97",
+        "spans": [
+          {
+            "traceID": "7a84f22a897241c1aa0dde5ed62efd97",
+            "spanID": "81a293cfb6a94f91",
+            "parentSpanID": null,
+            "operationName": "POST /sms",
+            "startTime": 1700000740000000,
+            "duration": 3077,
+            "tags": [
+              {
+                "key": "http.method",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "value": "/sms"
+              },
+              {
+                "key": "http.target",
+                "value": "/sms"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": []
+          },
+          {
+            "traceID": "7a84f22a897241c1aa0dde5ed62efd97",
+            "spanID": "857d32e0bfa640e8",
+            "parentSpanID": "81a293cfb6a94f91",
+            "operationName": "INSERT notifications",
+            "startTime": 1700000740000500,
+            "duration": 1945,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "INSERT INTO notifications (col1, col2) VALUES (?, ?)"
+              },
+              {
+                "key": "db.operation",
+                "value": "INSERT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "81a293cfb6a94f91"
+              }
+            ]
+          },
+          {
+            "traceID": "7a84f22a897241c1aa0dde5ed62efd97",
+            "spanID": "4472647a179545e0",
+            "parentSpanID": "81a293cfb6a94f91",
+            "operationName": "UPDATE logs",
+            "startTime": 1700000740000500,
+            "duration": 1667,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "UPDATE logs SET col1 = ? WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "UPDATE"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "81a293cfb6a94f91"
+              }
+            ]
+          },
+          {
+            "traceID": "7a84f22a897241c1aa0dde5ed62efd97",
+            "spanID": "884850c9a68048fa",
+            "parentSpanID": "81a293cfb6a94f91",
+            "operationName": "SELECT notifications",
+            "startTime": 1700000740000500,
+            "duration": 1560,
+            "tags": [
+              {
+                "key": "db.system",
+                "value": "mysql"
+              },
+              {
+                "key": "db.name",
+                "value": "testdb"
+              },
+              {
+                "key": "db.statement",
+                "value": "SELECT * FROM notifications WHERE id = ?"
+              },
+              {
+                "key": "db.operation",
+                "value": "SELECT"
+              }
+            ],
+            "process": {
+              "serviceName": "notification-service",
+              "tags": []
+            },
+            "logs": [],
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "spanID": "81a293cfb6a94f91"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "total": 15,
+    "limit": 15,
+    "offset": 0,
+    "errors": null
+  }
+}
