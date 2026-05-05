@@ -1,0 +1,37 @@
+trace_id,span_id,service_name,db_system,db_statement,tables
+edc840ee4b5c1ed47d9e8aa65d43de4a,753a6586f33aff5a,scenario1,postgresql,SELECT * FROM customers,customers
+edc840ee4b5c1ed47d9e8aa65d43de4a,160dd067fea32a6d,scenario1,postgresql,SELECT * FROM customers,customers
+edc840ee4b5c1ed47d9e8aa65d43de4a,04fb6f2e843f02bc,scenario1,postgresql,SELECT * FROM employees,employees
+edc840ee4b5c1ed47d9e8aa65d43de4a,b0526d91db304340,scenario1,postgresql,SELECT * FROM employees,employees
+99c7234943fe630e55c82377c6939114,345e35789492d369,scenario1,postgresql,SELECT * FROM products,products
+99c7234943fe630e55c82377c6939114,ee4decc04e90af8c,scenario1,postgresql,SELECT * FROM orders,orders
+7e535ad82fcd5b0e52e5811ee60a5a89,116741f29abbebb2,scenario1,sql,POST /scenario1/employees/insert,
+7e535ad82fcd5b0e52e5811ee60a5a89,88e28323d5e74a82,scenario1,postgresql,"INSERT INTO employees (name, position, start_date) VALUES (%s, %s, %s)",employees
+c2549cbc6c702a280d84ba740f9e717f,33332bc750377309,scenario1,postgresql,SELECT * FROM products,products
+c2549cbc6c702a280d84ba740f9e717f,e5c1d07ae6c16d73,scenario1,postgresql,SELECT * FROM orders,orders
+6dc28a97eb86be1d118b375dd3c3b943,ed5cae7fb08de352,scenario1,postgresql,"INSERT INTO employees (name, position, start_date) VALUES (%s, %s, %s)",employees
+6dc28a97eb86be1d118b375dd3c3b943,fb212467a7077930,scenario1,sql,POST /scenario1/employees/insert,
+75678a77067159869bcdf0641b72686b,6b57e679055dc661,scenario1,postgresql,SELECT * FROM products,products
+75678a77067159869bcdf0641b72686b,d26239b2056449e0,scenario1,postgresql,SELECT * FROM orders,orders
+5de33e75be69e2ccd970601919e00dde,361fc0f70f218633,scenario1,postgresql,SELECT * FROM customers,customers
+5de33e75be69e2ccd970601919e00dde,d1929ce4cae29a7a,scenario1,postgresql,SELECT * FROM customers,customers
+5de33e75be69e2ccd970601919e00dde,edbae58708331a51,scenario1,postgresql,SELECT * FROM employees,employees
+5de33e75be69e2ccd970601919e00dde,23b757b99b2593fb,scenario1,postgresql,SELECT * FROM employees,employees
+835e093b140479ff22357b831eaac6ca,956ec02942345789,scenario1,postgresql,SELECT * FROM customers,customers
+835e093b140479ff22357b831eaac6ca,132fe6a31eaef8db,scenario1,postgresql,SELECT * FROM customers,customers
+835e093b140479ff22357b831eaac6ca,1abef10489678f15,scenario1,postgresql,SELECT * FROM employees,employees
+835e093b140479ff22357b831eaac6ca,df819b71ae44cc77,scenario1,postgresql,SELECT * FROM employees,employees
+20b7d293e5fe6689deff84adeb94b94e,e9429c48fd0d9518,scenario1,postgresql,SELECT * FROM products,products
+20b7d293e5fe6689deff84adeb94b94e,8a00a42c6306de43,scenario1,postgresql,SELECT * FROM orders,orders
+91e7463ab9b60256db3c7f452aa08f33,110bef828306b73a,scenario1,postgresql,SELECT * FROM products,products
+91e7463ab9b60256db3c7f452aa08f33,b02a11971d502097,scenario1,postgresql,SELECT * FROM orders,orders
+94b4e40d944d14d507682eb64161f680,39b5729ada74d075,scenario1,postgresql,SELECT * FROM customers,customers
+94b4e40d944d14d507682eb64161f680,2a604ec34cbffef6,scenario1,postgresql,SELECT * FROM customers,customers
+94b4e40d944d14d507682eb64161f680,902e7a9092bf2e49,scenario1,postgresql,SELECT * FROM employees,employees
+94b4e40d944d14d507682eb64161f680,ea9889617d4453f0,scenario1,postgresql,SELECT * FROM employees,employees
+f9b551d946c3429d0ee19e98f97c5a51,cfb330354fd2f826,scenario1,postgresql,SELECT * FROM products,products
+f9b551d946c3429d0ee19e98f97c5a51,62d6cdb3237e764b,scenario1,postgresql,SELECT * FROM orders,orders
+b2eeb472704a1d329f9182574cc92dec,6c57b259ce60c37a,scenario1,postgresql,SELECT * FROM products,products
+b2eeb472704a1d329f9182574cc92dec,ea9a3a466e76d7b6,scenario1,postgresql,SELECT * FROM orders,orders
+9d753e5776656131568f005511685653,403e43fd13d7db26,scenario1,postgresql,SELECT * FROM products,products
+9d753e5776656131568f005511685653,90eafa2b57e090a8,scenario1,postgresql,SELECT * FROM orders,orders

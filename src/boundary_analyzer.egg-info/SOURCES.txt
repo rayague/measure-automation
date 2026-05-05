@@ -3,6 +3,7 @@ pyproject.toml
 src/boundary_analyzer/__init__.py
 src/boundary_analyzer/__main__.py
 src/boundary_analyzer/cli.py
+src/boundary_analyzer/settings_loader.py
 src/boundary_analyzer.egg-info/PKG-INFO
 src/boundary_analyzer.egg-info/SOURCES.txt
 src/boundary_analyzer.egg-info/dependency_links.txt
@@ -45,3 +46,5 @@ src/boundary_analyzer/test_data/__init__.py
 src/boundary_analyzer/test_data/generate_test_traces.py
 src/boundary_analyzer/validation/__init__.py
 src/boundary_analyzer/validation/compare_metrics.py
+tests/test_dashboard_smoke.py
+tests/test_setup_instructions.py

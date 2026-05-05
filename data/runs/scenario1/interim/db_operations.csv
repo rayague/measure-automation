@@ -1,0 +1,11 @@
+trace_id,span_id,service_name,db_system,db_statement,tables
+55cc8d7605e930839c5e8a128ec10960,7f848ecb98d7e22b,scenario1,postgresql,SELECT * FROM customers,customers
+f68e0215ca58a91bc33e7f043a7be9fb,3dc4387df7683e5f,scenario1,postgresql,SELECT * FROM employees,employees
+f68e0215ca58a91bc33e7f043a7be9fb,3b942c661f3afda9,scenario1,postgresql,SELECT * FROM customers,customers
+f68e0215ca58a91bc33e7f043a7be9fb,205732c16d353db8,scenario1,postgresql,SELECT * FROM customers,customers
+f68e0215ca58a91bc33e7f043a7be9fb,400891cb90771ea1,scenario1,postgresql,SELECT * FROM employees,employees
+53385eabbaa76e8ac772e8ff785bd6cd,1d7839992d5279ea,scenario1,postgresql,SELECT * FROM customers,customers
+53385eabbaa76e8ac772e8ff785bd6cd,b21a43c563dba943,scenario1,postgresql,SELECT * FROM customers,customers
+53385eabbaa76e8ac772e8ff785bd6cd,23e3ece2706f0a30,scenario1,postgresql,SELECT * FROM employees,employees
+53385eabbaa76e8ac772e8ff785bd6cd,32cf4abf71ef430f,scenario1,postgresql,SELECT * FROM employees,employees
+65ae6a4b68fcda6a16b9171fcbde61db,612734f8de6a75bb,scenario1,postgresql,SELECT * FROM products,products

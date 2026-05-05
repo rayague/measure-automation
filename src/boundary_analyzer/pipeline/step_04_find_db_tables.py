@@ -5,11 +5,13 @@ from pathlib import Path
 import pandas as pd
 
 from boundary_analyzer.detection.db_table_extractor import extract_db_operations, save_db_operations_csv
+from boundary_analyzer.settings_loader import get_data_dir
 
 
 def main() -> int:
-    spans_path = Path("data/interim/spans.csv")
-    output_path = Path("data/interim/db_operations.csv")
+    base_dir = get_data_dir()
+    spans_path = base_dir / "interim" / "spans.csv"
+    output_path = base_dir / "interim" / "db_operations.csv"
     
     print(f"Reading spans from: {spans_path}")
     

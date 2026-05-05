@@ -1,0 +1,15 @@
+service_name,endpoint_key,span_id,trace_id
+scenario1,GET /{id}//{id},10856a6c6b182849,be92402f2cd5a04334aad348a8a8a293
+scenario1,GET /{id}/,c7e0a189b00ae0b4,3e25ab17bc99da48f14c72285a2ec3cd
+scenario1,GET /{id}/{id},e52465591da87eed,1f59584b2b3d3d995edd45c8ef98dbf0
+scenario1,GET /{id}/{id},9083cf230a99e97a,55cc8d7605e930839c5e8a128ec10960
+scenario1,GET /{id}/{id},e800f15f2fc4a478,f68e0215ca58a91bc33e7f043a7be9fb
+scenario1,GET /{id}/{id},7ee6ce5101cc206f,fa42c4c3d64f37c5d12e85a2c26b730b
+scenario1,GET /favicon.ico,66880b58c9240045,ac429a69fd92a57fda8ff21550112b08
+scenario1,GET /{id}/,64c0d73415d7ea4b,31f1194059a977fa995c1fc1de13e2ec
+scenario1,GET /{id}/{id},e64307e2c354aa92,53385eabbaa76e8ac772e8ff785bd6cd
+scenario1,GET /{id}/,5b3203d182f1f72c,2c54735710c7c0bfad2710fb84139328
+scenario1,GET /{id}/,bbf6cf24b3453542,447bc31080fe94a2006b5a692745dc03
+scenario1,GET /.well-known/{id}/com.chrome.devtools.json,b8d55e31e677daee,20a43db4e62cddf28472a0c454e3ecdd
+scenario1,GET /{id}/orders,d08e6790f67914d6,65ae6a4b68fcda6a16b9171fcbde61db
+scenario1,GET /{id}/,84f7370ab734ba55,8405384d61a860c0e2b98743c6f297b9

@@ -1,0 +1,2 @@
+service_name,scom_score,endpoints_count,tables_count,method,rank,threshold_value,threshold_method,is_suspicious
+scenario2,1.0,1,4,weighted-table-weighted-endpoint-weighted,1,1.0,percentile,False

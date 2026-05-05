@@ -1,0 +1,5 @@
+service_name,endpoint_key,table,count
+scenario1,GET /{id}/orders,orders,6
+scenario1,GET /{id}/orders,products,6
+scenario1,GET /{id}/{id},customers,12
+scenario1,GET /{id}/{id},employees,12

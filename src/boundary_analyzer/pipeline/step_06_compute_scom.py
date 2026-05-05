@@ -4,19 +4,18 @@ from pathlib import Path
 
 import pandas as pd
 
-from boundary_analyzer.metrics.scom_ultimate import (
-    compute_paper_scom,
-    compute_simple_scom,
-    compute_weighted_scom,
+from boundary_analyzer.metrics.scom import (
+    compute_scom,
     save_scom_csv,
 )
-from boundary_analyzer.settings_loader import load_settings
+from boundary_analyzer.settings_loader import get_data_dir, load_settings
 
 
 def main() -> int:
-    mapping_path = Path("data/interim/endpoint_table_map.csv")
-    endpoints_path = Path("data/interim/endpoints.csv")
-    output_path = Path("data/processed/service_scom.csv")
+    base_dir = get_data_dir()
+    mapping_path = base_dir / "interim" / "endpoint_table_map.csv"
+    endpoints_path = base_dir / "interim" / "endpoints.csv"
+    output_path = base_dir / "processed" / "service_scom.csv"
     
     print(f"Reading mapping from: {mapping_path}")
     
@@ -24,10 +23,8 @@ def main() -> int:
         print("Error: endpoint_table_map.csv not found. Run step 05 first.")
         return 1
     
-    # Load settings for SCOM method
+    # Load settings for SCOM weighting
     settings = load_settings()
-    scom_method = settings.get("scom_method", "weighted")
-    table_weighting = settings.get("table_weighting", True)
     endpoint_weighting = settings.get("endpoint_weighting", True)
     
     mapping_df = pd.read_csv(mapping_path)
@@ -40,29 +37,28 @@ def main() -> int:
     else:
         print("Warning: endpoints.csv not found; endpoints without DB ops may be missed.")
     
-    print(f"\nSCOM method: {scom_method}")
-    if scom_method == "weighted":
-        print(f"  Table weighting: {table_weighting}")
-        print(f"  Endpoint weighting: {endpoint_weighting}")
+    print(f"\nSCOM endpoint weighting: {endpoint_weighting}")
     
-    # Compute SCOM based on method
-    if scom_method == "paper":
-        scom_df = compute_paper_scom(mapping_df, endpoints_df=endpoints_df)
-    elif scom_method == "weighted":
-        scom_df = compute_weighted_scom(
-            mapping_df,
-            use_table_weighting=table_weighting,
-            use_endpoint_weighting=endpoint_weighting,
-            endpoints_df=endpoints_df,
-        )
-    else:
-        scom_df = compute_simple_scom(mapping_df, endpoints_df=endpoints_df)
+    # Compute SCOM faithfully according to the paper
+    scom_df = compute_scom(
+        mapping_df=mapping_df,
+        endpoints_df=endpoints_df,
+        use_endpoint_weighting=endpoint_weighting,
+    )
     
     print("\nSCOM Scores:")
-    print(scom_df.to_string(index=False))
+    if scom_df.empty:
+        print("  (No services to score - no DB operations found)")
+        print("  Tip: Check if database traces are being captured in Jaeger.")
+    else:
+        print(scom_df.to_string(index=False))
     
     save_scom_csv(scom_df, output_path)
     print(f"\nSaved to: {output_path}")
+    
+    # Warn if empty but allow pipeline to continue (step_07 will handle it)
+    if scom_df.empty:
+        print("\nWarning: SCOM DataFrame is empty. Pipeline will attempt to continue.")
     
     return 0
 

@@ -1,19 +1,10 @@
-jaeger_base_url: "http://localhost:16686"
-service_name: "YOUR_SERVICE_NAME"
-lookback_minutes: 10
+endpoint_weighting: true
+jaeger_base_url: http://localhost:16686
 limit_traces: 20
-output_dir: "data/raw/traces"
+lookback_minutes: 10
+output_dir: data/raw/traces
 scom_threshold: 0.5
-
-# SCOM calculation method
-# - "paper": CI/CImax normalization from the paper (endpoints < 2 => 0)
-# - "weighted": weighted Jaccard (legacy)
-# - "simple": unweighted Jaccard (legacy)
-scom_method: "weighted"  # Options: "paper", "weighted", or "simple"
-table_weighting: true    # Weight tables by frequency
-endpoint_weighting: true # Weight endpoints by call frequency
-
-# Threshold method for suspicious services
-threshold_method: "percentile"  # Options: "percentile", "zscore", or "fixed"
-threshold_percentile: 25.0      # Percentile value (bottom X% are suspicious)
-threshold_zscore: -1.5          # Z-score cutoff (below this is suspicious)
+service_name: scenario1
+threshold_method: percentile
+threshold_percentile: 25.0
+threshold_zscore: -1.5

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import requests
 from requests import RequestException
-from boundary_analyzer.settings_loader import get_settings_path, load_settings
+from boundary_analyzer.settings_loader import get_settings_path, get_traces_dir, load_settings
 
 
 def _lookback_str(minutes: int) -> str:
@@ -22,7 +22,7 @@ def main() -> int:
     service_name = str(settings["service_name"])
     lookback_minutes = int(settings.get("lookback_minutes", 10))
     limit_traces = int(settings.get("limit_traces", 20))
-    output_dir = Path(settings.get("output_dir", "data/raw/traces"))
+    output_dir = get_traces_dir(settings)
 
     output_dir.mkdir(parents=True, exist_ok=True)
 

@@ -1,0 +1,2 @@
+service_name,scom_score,endpoints_count,tables_count,method
+scenario1,0.0,3,4,weighted-table-weighted-endpoint-weighted

@@ -5,13 +5,15 @@ from pathlib import Path
 import pandas as pd
 
 from boundary_analyzer.detection.mapping_builder import build_endpoint_table_mapping, save_endpoint_table_map_csv
+from boundary_analyzer.settings_loader import get_data_dir
 
 
 def main() -> int:
-    spans_path = Path("data/interim/spans.csv")
-    endpoints_path = Path("data/interim/endpoints.csv")
-    db_ops_path = Path("data/interim/db_operations.csv")
-    output_path = Path("data/interim/endpoint_table_map.csv")
+    base_dir = get_data_dir()
+    spans_path = base_dir / "interim" / "spans.csv"
+    endpoints_path = base_dir / "interim" / "endpoints.csv"
+    db_ops_path = base_dir / "interim" / "db_operations.csv"
+    output_path = base_dir / "interim" / "endpoint_table_map.csv"
     
     # Check inputs exist
     for path in [spans_path, endpoints_path, db_ops_path]:

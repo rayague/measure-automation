@@ -1,0 +1,6 @@
+service_name,endpoint_key,table,count
+scenario1,GET /{id}/orders,orders,8
+scenario1,GET /{id}/orders,products,8
+scenario1,GET /{id}/{id},customers,8
+scenario1,GET /{id}/{id},employees,8
+scenario1,POST /{id}/{id}/insert,employees,2

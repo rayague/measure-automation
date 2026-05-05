@@ -1,5 +1,5 @@
 service_name,scom_score,endpoints_count,tables_count,method
-inventory-service,0.9562,3,3,weighted-table-weighted-endpoint-weighted
-notification-service,1.0,3,2,weighted-table-weighted-endpoint-weighted
-order-service,1.0,4,3,weighted-table-weighted-endpoint-weighted
-user-service,1.0,3,2,weighted-table-weighted-endpoint-weighted
+inventory-service,0.9167,3,3,weighted
+notification-service,1.0,3,2,weighted
+order-service,1.0,4,3,weighted
+user-service,1.0,3,2,weighted

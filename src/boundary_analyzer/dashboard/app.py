@@ -10,6 +10,7 @@ Palette: #0a0e1a bg, #00e5ff cyan accent, #ff6d00 amber alert, #1e2a3a cards.
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -1030,159 +1031,302 @@ def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
 </html>"""
 
     base_dir = data_dir or Path("data")
-    rank_df = _load_service_rank_from(base_dir)
-    mapping_df = _load_endpoint_table_map_from(base_dir)
-    summary    = create_summary_cards(rank_df)
 
-    missing_inputs: list[str] = []
-    if rank_df.empty:
-        missing_inputs.append(str(base_dir / "processed" / "service_rank.csv"))
-    if mapping_df.empty:
-        missing_inputs.append(str(base_dir / "interim" / "endpoint_table_map.csv"))
+    def _load_all() -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+        rank_df_local = _load_service_rank_from(base_dir)
+        mapping_df_local = _load_endpoint_table_map_from(base_dir)
+        summary_local = create_summary_cards(rank_df_local)
 
-    data_warning = None
-    if missing_inputs:
-        data_warning = html.Div(
-            style={
-                "border": f"1px solid {T['border_hot']}",
-                "background": T["bg_card"],
-                "padding": "14px 16px",
-                "borderRadius": "10px",
-                "marginBottom": "18px",
-            },
+        try:
+            resolved_base_dir = base_dir.resolve()
+        except OSError:
+            resolved_base_dir = base_dir
+
+        avg_scom_dbg = summary_local.get("avg_scom", 0.0)
+        print(f"[Dashboard] Loading data from: {resolved_base_dir}")
+        print(f"[Dashboard] service_rank.csv rows: {len(rank_df_local)} | avg_scom: {avg_scom_dbg}")
+        if not rank_df_local.empty and "scom_score" in rank_df_local.columns:
+            try:
+                print(
+                    f"[Dashboard] scom_score min/max: {float(rank_df_local['scom_score'].min())}/{float(rank_df_local['scom_score'].max())}"
+                )
+            except Exception:
+                print("[Dashboard] Could not compute scom_score min/max")
+
+        return rank_df_local, mapping_df_local, summary_local
+
+    def _build_data_warning(rank_df_local: pd.DataFrame, mapping_df_local: pd.DataFrame):
+        missing_inputs: list[str] = []
+        if rank_df_local.empty:
+            missing_inputs.append(str(base_dir / "processed" / "service_rank.csv"))
+
+        data_warning_local = None
+        if missing_inputs:
+            data_warning_local = html.Div(
+                style={
+                    "border": f"1px solid {T['border_hot']}",
+                    "background": T["bg_card"],
+                    "padding": "14px 16px",
+                    "borderRadius": "10px",
+                    "marginBottom": "18px",
+                },
+                children=[
+                    html.Div("No data found", style={
+                        "fontFamily": T["font_mono"],
+                        "fontSize": "12px",
+                        "color": T["text_primary"],
+                        "marginBottom": "6px",
+                    }),
+                    html.Div(
+                        "I cannot show charts because input CSV files are missing or empty.",
+                        style={"color": T["text_secondary"], "fontSize": "12px"},
+                    ),
+                    html.Div(
+                        "Run: boundary-analyzer run --skip-collect (or run full pipeline).",
+                        style={"color": T["text_muted"], "fontSize": "12px", "marginTop": "8px"},
+                    ),
+                ],
+            )
+        elif mapping_df_local.empty:
+            data_warning_local = html.Div(
+                style={
+                    "border": f"1px solid {T['amber']}",
+                    "background": T["bg_card"],
+                    "padding": "14px 16px",
+                    "borderRadius": "10px",
+                    "marginBottom": "18px",
+                },
+                children=[
+                    html.Div("ℹ️ HTTP-only mode", style={
+                        "fontFamily": T["font_mono"],
+                        "fontSize": "12px",
+                        "color": T["amber"],
+                        "marginBottom": "6px",
+                    }),
+                    html.Div(
+                        "No database operations found in traces. Showing HTTP endpoints only.",
+                        style={"color": T["text_secondary"], "fontSize": "12px"},
+                    ),
+                    html.Div(
+                        "Tip: Ensure your service has DB activity and SQLAlchemy instrumentation.",
+                        style={"color": T["text_muted"], "fontSize": "12px", "marginTop": "8px"},
+                    ),
+                ],
+            )
+
+        return data_warning_local
+
+    def _get_data_freshness() -> str:
+        """Return a human-readable freshness string from the most recent data file."""
+        rank_path = base_dir / "processed" / "service_rank.csv"
+        try:
+            if rank_path.exists():
+                mtime = rank_path.stat().st_mtime
+                dt = datetime.fromtimestamp(mtime)
+                return dt.strftime("%Y-%m-%d %H:%M:%S")
+        except OSError:
+            pass
+        return "unknown"
+
+    def _serve_layout():
+        rank_df, mapping_df, summary = _load_all()
+        data_warning = _build_data_warning(rank_df, mapping_df)
+        data_freshness = _get_data_freshness()
+        try:
+            data_source_label = str(base_dir.resolve())
+        except OSError:
+            data_source_label = str(base_dir)
+        return html.Div(
+            style={"minHeight": "100vh", "background": T["bg_base"], "position": "relative"},
             children=[
-                html.Div("No data found", style={
-                    "fontFamily": T["font_mono"],
-                    "fontSize": "12px",
-                    "color": T["text_primary"],
-                    "marginBottom": "6px",
-                }),
-                html.Div(
-                    "I cannot show charts because input CSV files are missing or empty.",
-                    style={"color": T["text_secondary"], "fontSize": "12px"},
+                html.Div(id="reload-dummy", style={"display": "none"}),
+                dcc.Location(id="url", refresh=False),
+                # ── Header ────────────────────────────────────────────────────
+                html.Header(
+                    style={
+                        "position":        "sticky",
+                        "top":             "0",
+                        "zIndex":          "100",
+                        "background":      T["bg_header"],
+                        "borderBottom":    f"1px solid {T['border']}",
+                        "backdropFilter":  "blur(20px)",
+                        "padding":         "0 40px",
+                        "height":          "64px",
+                        "display":         "flex",
+                        "alignItems":      "center",
+                        "justifyContent":  "space-between",
+                    },
+                    children=[
+                        html.Div(
+                            style={"display": "flex", "alignItems": "center", "gap": "16px"},
+                            children=[
+                                # Logo glyph
+                                html.Div("◈", style={
+                                    "fontSize":   "22px",
+                                    "color":      T["cyan"],
+                                    "lineHeight": "1",
+                                }),
+                                html.Div([
+                                    html.Span("Boundary", style={
+                                        "fontFamily":    T["font_display"],
+                                        "fontWeight":    "800",
+                                        "fontSize":      "15px",
+                                        "color":         T["text_primary"],
+                                        "letterSpacing": "-0.3px",
+                                    }),
+                                    html.Span(" Analyzer", style={
+                                        "fontFamily":    T["font_display"],
+                                        "fontWeight":    "400",
+                                        "fontSize":      "15px",
+                                        "color":         T["text_secondary"],
+                                    }),
+                                ]),
+                                html.Span("SCOM v2", style={
+                                    "fontFamily":    T["font_mono"],
+                                    "fontSize":      "9px",
+                                    "letterSpacing": "2px",
+                                    "color":         T["cyan"],
+                                    "background":    T["cyan_dim"],
+                                    "border":        f"1px solid {T['border_hot']}",
+                                    "padding":       "3px 8px",
+                                    "borderRadius":  "4px",
+                                }),
+                            ],
+                        ),
+                        html.Div(
+                            style={"display": "flex", "alignItems": "center", "gap": "16px"},
+                            children=[
+                                html.P("Microservice Cohesion Intelligence", style={
+                                    "fontFamily":    T["font_mono"],
+                                    "fontSize":      "10px",
+                                    "letterSpacing": "2px",
+                                    "color":         T["text_muted"],
+                                    "textTransform": "uppercase",
+                                    "margin":        "0",
+                                }),
+                                html.Button(
+                                    "Reload data",
+                                    id="reload-button",
+                                    n_clicks=0,
+                                    className="back-btn",
+                                ),
+                            ],
+                        ),
+                    ],
                 ),
+
+                # ── Data source indicator ─────────────────────────────────────
                 html.Div(
-                    "Run: boundary-analyzer run --skip-collect (or run full pipeline).",
-                    style={"color": T["text_muted"], "fontSize": "12px", "marginTop": "8px"},
+                    style={
+                        "background":     T["bg_card2"],
+                        "borderBottom":   f"1px solid {T['border']}",
+                        "padding":        "8px 40px",
+                        "display":        "flex",
+                        "alignItems":     "center",
+                        "justifyContent": "space-between",
+                        "gap":            "12px",
+                    },
+                    children=[
+                        html.Div(
+                            style={"display": "flex", "alignItems": "center", "gap": "8px"},
+                            children=[
+                                html.Span("DATA SOURCE", style={
+                                    "fontFamily":    T["font_mono"],
+                                    "fontSize":      "8px",
+                                    "letterSpacing": "2px",
+                                    "color":         T["text_muted"],
+                                }),
+                                html.Span(data_source_label, style={
+                                    "fontFamily":    T["font_mono"],
+                                    "fontSize":      "10px",
+                                    "color":         T["cyan"],
+                                }),
+                            ],
+                        ),
+                        html.Div(
+                            style={"display": "flex", "alignItems": "center", "gap": "8px"},
+                            children=[
+                                html.Span("LAST UPDATED", style={
+                                    "fontFamily":    T["font_mono"],
+                                    "fontSize":      "8px",
+                                    "letterSpacing": "2px",
+                                    "color":         T["text_muted"],
+                                }),
+                                html.Span(data_freshness, style={
+                                    "fontFamily":    T["font_mono"],
+                                    "fontSize":      "10px",
+                                    "color":         T["amber"],
+                                }),
+                            ],
+                        ),
+                    ],
+                ),
+
+                # ── Main content ──────────────────────────────────────────────
+                html.Main(
+                    style={
+                        "padding":    "32px 40px",
+                        "maxWidth":   "1400px",
+                        "margin":     "0 auto",
+                        "position":   "relative",
+                        "zIndex":     "1",
+                    },
+                    children=[
+                        dcc.Store(id="selected-service", data=None),
+
+                        data_warning,
+
+                        # Overview page
+                        html.Div(
+                            id="overview-page",
+                            children=_overview_layout(rank_df, summary),
+                        ),
+
+                        # Detail page (hidden until a service is clicked)
+                        html.Div(
+                            id="detail-page",
+                            style={"display": "none"},
+                            children=[
+                                # Fixed header so callback Inputs always exist
+                                html.Div(
+                                    style={
+                                        "display": "flex",
+                                        "alignItems": "center",
+                                        "justifyContent": "space-between",
+                                        "marginBottom": "28px",
+                                    },
+                                    children=[
+                                        html.Div(id="detail-title"),
+                                        html.Button(
+                                            "← Overview",
+                                            id="back-button",
+                                            n_clicks=0,
+                                            className="back-btn",
+                                        ),
+                                    ],
+                                ),
+                                html.Div(id="detail-content"),
+                            ],
+                        ),
+                    ],
                 ),
             ],
         )
 
-    # ── Root layout ───────────────────────────────────────────────────────────
-    app.layout = html.Div(
-        style={"minHeight": "100vh", "background": T["bg_base"], "position": "relative"},
-        children=[
-            # ── Header ────────────────────────────────────────────────────────
-            html.Header(
-                style={
-                    "position":        "sticky",
-                    "top":             "0",
-                    "zIndex":          "100",
-                    "background":      T["bg_header"],
-                    "borderBottom":    f"1px solid {T['border']}",
-                    "backdropFilter":  "blur(20px)",
-                    "padding":         "0 40px",
-                    "height":          "64px",
-                    "display":         "flex",
-                    "alignItems":      "center",
-                    "justifyContent":  "space-between",
-                },
-                children=[
-                    html.Div(
-                        style={"display": "flex", "alignItems": "center", "gap": "16px"},
-                        children=[
-                            # Logo glyph
-                            html.Div("◈", style={
-                                "fontSize":   "22px",
-                                "color":      T["cyan"],
-                                "lineHeight": "1",
-                            }),
-                            html.Div([
-                                html.Span("Boundary", style={
-                                    "fontFamily":    T["font_display"],
-                                    "fontWeight":    "800",
-                                    "fontSize":      "15px",
-                                    "color":         T["text_primary"],
-                                    "letterSpacing": "-0.3px",
-                                }),
-                                html.Span(" Analyzer", style={
-                                    "fontFamily":    T["font_display"],
-                                    "fontWeight":    "400",
-                                    "fontSize":      "15px",
-                                    "color":         T["text_secondary"],
-                                }),
-                            ]),
-                            html.Span("SCOM v2", style={
-                                "fontFamily":    T["font_mono"],
-                                "fontSize":      "9px",
-                                "letterSpacing": "2px",
-                                "color":         T["cyan"],
-                                "background":    T["cyan_dim"],
-                                "border":        f"1px solid {T['border_hot']}",
-                                "padding":       "3px 8px",
-                                "borderRadius":  "4px",
-                            }),
-                        ],
-                    ),
-                    html.P("Microservice Cohesion Intelligence", style={
-                        "fontFamily":    T["font_mono"],
-                        "fontSize":      "10px",
-                        "letterSpacing": "2px",
-                        "color":         T["text_muted"],
-                        "textTransform": "uppercase",
-                    }),
-                ],
-            ),
+    app.layout = _serve_layout
 
-            # ── Main content ──────────────────────────────────────────────────
-            html.Main(
-                style={
-                    "padding":    "32px 40px",
-                    "maxWidth":   "1400px",
-                    "margin":     "0 auto",
-                    "position":   "relative",
-                    "zIndex":     "1",
-                },
-                children=[
-                    dcc.Store(id="selected-service", data=None),
-
-                    data_warning,
-
-                    # Overview page
-                    html.Div(
-                        id="overview-page",
-                        children=_overview_layout(rank_df, summary),
-                    ),
-
-                    # Detail page (hidden until a service is clicked)
-                    html.Div(
-                        id="detail-page",
-                        style={"display": "none"},
-                        children=[
-                            # Fixed header so callback Inputs always exist
-                            html.Div(
-                                style={
-                                    "display": "flex",
-                                    "alignItems": "center",
-                                    "justifyContent": "space-between",
-                                    "marginBottom": "28px",
-                                },
-                                children=[
-                                    html.Div(id="detail-title"),
-                                    html.Button(
-                                        "← Overview",
-                                        id="back-button",
-                                        n_clicks=0,
-                                        className="back-btn",
-                                    ),
-                                ],
-                            ),
-                            html.Div(id="detail-content"),
-                        ],
-                    ),
-                ],
-            ),
-        ],
+    app.clientside_callback(
+        """
+        function(n_clicks) {
+            if (n_clicks && n_clicks > 0) {
+                window.location.reload();
+            }
+            return "";
+        }
+        """,
+        Output("reload-dummy", "children"),
+        Input("reload-button", "n_clicks"),
+        prevent_initial_call=True,
     )
 
     # ── Callback: navigate between overview and detail ────────────────────────
@@ -1218,7 +1362,8 @@ def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
             row_idx = active_cell["row"]
             if row_idx < len(table_data):
                 name    = table_data[row_idx]["service_name"]
-                svc_row = rank_df[rank_df["service_name"] == name].iloc[0]
+                rank_df_local, mapping_df_local, _ = _load_all()
+                svc_row = rank_df_local[rank_df_local["service_name"] == name].iloc[0]
                 is_susp = bool(svc_row["is_suspicious"])
                 accent  = T["red"] if is_susp else T["cyan"]
 
@@ -1233,7 +1378,7 @@ def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
                     }),
                 ])
 
-                content = _detail_layout(name, rank_df, mapping_df)
+                content = _detail_layout(name, rank_df_local, mapping_df_local)
                 return content, {"display": "block"}, {"display": "none"}, title
 
         raise dash.exceptions.PreventUpdate

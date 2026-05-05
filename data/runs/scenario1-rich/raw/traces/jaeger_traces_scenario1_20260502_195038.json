@@ -1,0 +1,4614 @@
+{
+  "export_meta": {
+    "jaeger_base_url": "http://localhost:16686",
+    "service": "scenario1",
+    "lookback_minutes": 10,
+    "limit_traces": 20,
+    "export_unix_time": 1777744238,
+    "export_file": "data/runs/scenario1-rich/raw/traces/jaeger_traces_scenario1_20260502_195038.json"
+  },
+  "jaeger_response": {
+    "data": [
+      {
+        "traceID": "edc840ee4b5c1ed47d9e8aa65d43de4a",
+        "spans": [
+          {
+            "traceID": "edc840ee4b5c1ed47d9e8aa65d43de4a",
+            "spanID": "753a6586f33aff5a",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "edc840ee4b5c1ed47d9e8aa65d43de4a",
+                "spanID": "3cc079e966009aee"
+              }
+            ],
+            "startTime": 1777744081424926,
+            "duration": 22987,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM customers"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "edc840ee4b5c1ed47d9e8aa65d43de4a",
+            "spanID": "160dd067fea32a6d",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "edc840ee4b5c1ed47d9e8aa65d43de4a",
+                "spanID": "3cc079e966009aee"
+              }
+            ],
+            "startTime": 1777744081464613,
+            "duration": 17779,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM customers"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "edc840ee4b5c1ed47d9e8aa65d43de4a",
+            "spanID": "04fb6f2e843f02bc",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "edc840ee4b5c1ed47d9e8aa65d43de4a",
+                "spanID": "3cc079e966009aee"
+              }
+            ],
+            "startTime": 1777744081483046,
+            "duration": 34722,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM employees"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "edc840ee4b5c1ed47d9e8aa65d43de4a",
+            "spanID": "b0526d91db304340",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "edc840ee4b5c1ed47d9e8aa65d43de4a",
+                "spanID": "3cc079e966009aee"
+              }
+            ],
+            "startTime": 1777744081518468,
+            "duration": 12240,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM employees"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "edc840ee4b5c1ed47d9e8aa65d43de4a",
+            "spanID": "3cc079e966009aee",
+            "operationName": "GET /scenario1/employees",
+            "references": [],
+            "startTime": 1777744081049331,
+            "duration": 518811,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/employees"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/employees"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41110
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "454853676ed9c3b2b859859abc064870",
+        "spans": [
+          {
+            "traceID": "454853676ed9c3b2b859859abc064870",
+            "spanID": "1bd6e12478668d49",
+            "operationName": "GET /scenario1/",
+            "references": [],
+            "startTime": 1777744081602246,
+            "duration": 39755,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41184
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "99c7234943fe630e55c82377c6939114",
+        "spans": [
+          {
+            "traceID": "99c7234943fe630e55c82377c6939114",
+            "spanID": "345e35789492d369",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "99c7234943fe630e55c82377c6939114",
+                "spanID": "21f430c3504c157f"
+              }
+            ],
+            "startTime": 1777744081617636,
+            "duration": 52832,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM products"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "99c7234943fe630e55c82377c6939114",
+            "spanID": "ee4decc04e90af8c",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "99c7234943fe630e55c82377c6939114",
+                "spanID": "21f430c3504c157f"
+              }
+            ],
+            "startTime": 1777744081671511,
+            "duration": 3176,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM orders"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "99c7234943fe630e55c82377c6939114",
+            "spanID": "21f430c3504c157f",
+            "operationName": "GET /scenario1/orders",
+            "references": [],
+            "startTime": 1777744081432013,
+            "duration": 303748,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41156
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "7e535ad82fcd5b0e52e5811ee60a5a89",
+        "spans": [
+          {
+            "traceID": "7e535ad82fcd5b0e52e5811ee60a5a89",
+            "spanID": "116741f29abbebb2",
+            "operationName": "POST /scenario1/employees/insert",
+            "references": [],
+            "startTime": 1777744081572037,
+            "duration": 307715,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/employees/insert"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/employees/insert"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41168
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "7e535ad82fcd5b0e52e5811ee60a5a89",
+            "spanID": "88e28323d5e74a82",
+            "operationName": "INSERT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "7e535ad82fcd5b0e52e5811ee60a5a89",
+                "spanID": "116741f29abbebb2"
+              }
+            ],
+            "startTime": 1777744081718760,
+            "duration": 74306,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "INSERT INTO employees (name, position, start_date) VALUES (%s, %s, %s)"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "c2549cbc6c702a280d84ba740f9e717f",
+        "spans": [
+          {
+            "traceID": "c2549cbc6c702a280d84ba740f9e717f",
+            "spanID": "679aa97a5bddd2b3",
+            "operationName": "GET /scenario1/orders",
+            "references": [],
+            "startTime": 1777744081619193,
+            "duration": 257905,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41192
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "c2549cbc6c702a280d84ba740f9e717f",
+            "spanID": "33332bc750377309",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "c2549cbc6c702a280d84ba740f9e717f",
+                "spanID": "679aa97a5bddd2b3"
+              }
+            ],
+            "startTime": 1777744081766852,
+            "duration": 94107,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM products"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "c2549cbc6c702a280d84ba740f9e717f",
+            "spanID": "e5c1d07ae6c16d73",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "c2549cbc6c702a280d84ba740f9e717f",
+                "spanID": "679aa97a5bddd2b3"
+              }
+            ],
+            "startTime": 1777744081861566,
+            "duration": 14069,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM orders"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "6dc28a97eb86be1d118b375dd3c3b943",
+        "spans": [
+          {
+            "traceID": "6dc28a97eb86be1d118b375dd3c3b943",
+            "spanID": "ed5cae7fb08de352",
+            "operationName": "INSERT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "6dc28a97eb86be1d118b375dd3c3b943",
+                "spanID": "fb212467a7077930"
+              }
+            ],
+            "startTime": 1777744081838374,
+            "duration": 50426,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "INSERT INTO employees (name, position, start_date) VALUES (%s, %s, %s)"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "6dc28a97eb86be1d118b375dd3c3b943",
+            "spanID": "fb212467a7077930",
+            "operationName": "POST /scenario1/employees/insert",
+            "references": [],
+            "startTime": 1777744081657286,
+            "duration": 285906,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "POST"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/employees/insert"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/employees/insert"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41194
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "75678a77067159869bcdf0641b72686b",
+        "spans": [
+          {
+            "traceID": "75678a77067159869bcdf0641b72686b",
+            "spanID": "f87c98864e2c1244",
+            "operationName": "GET /scenario1/orders",
+            "references": [],
+            "startTime": 1777744081679141,
+            "duration": 302319,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41200
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "75678a77067159869bcdf0641b72686b",
+            "spanID": "6b57e679055dc661",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "75678a77067159869bcdf0641b72686b",
+                "spanID": "f87c98864e2c1244"
+              }
+            ],
+            "startTime": 1777744081875233,
+            "duration": 38551,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM products"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "75678a77067159869bcdf0641b72686b",
+            "spanID": "d26239b2056449e0",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "75678a77067159869bcdf0641b72686b",
+                "spanID": "f87c98864e2c1244"
+              }
+            ],
+            "startTime": 1777744081914549,
+            "duration": 21308,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM orders"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "d78833fcbdea9c3e24f980203cd8c81b",
+        "spans": [
+          {
+            "traceID": "d78833fcbdea9c3e24f980203cd8c81b",
+            "spanID": "311c1fbbb0e4cee2",
+            "operationName": "GET /scenario1/",
+            "references": [],
+            "startTime": 1777744081884192,
+            "duration": 2997,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41212
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "5de33e75be69e2ccd970601919e00dde",
+        "spans": [
+          {
+            "traceID": "5de33e75be69e2ccd970601919e00dde",
+            "spanID": "361fc0f70f218633",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "5de33e75be69e2ccd970601919e00dde",
+                "spanID": "71daccda19bf3a1a"
+              }
+            ],
+            "startTime": 1777744081957493,
+            "duration": 34456,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM customers"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "5de33e75be69e2ccd970601919e00dde",
+            "spanID": "d1929ce4cae29a7a",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "5de33e75be69e2ccd970601919e00dde",
+                "spanID": "71daccda19bf3a1a"
+              }
+            ],
+            "startTime": 1777744081992655,
+            "duration": 25332,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM customers"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "5de33e75be69e2ccd970601919e00dde",
+            "spanID": "edbae58708331a51",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "5de33e75be69e2ccd970601919e00dde",
+                "spanID": "71daccda19bf3a1a"
+              }
+            ],
+            "startTime": 1777744082018656,
+            "duration": 3953,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM employees"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "5de33e75be69e2ccd970601919e00dde",
+            "spanID": "23b757b99b2593fb",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "5de33e75be69e2ccd970601919e00dde",
+                "spanID": "71daccda19bf3a1a"
+              }
+            ],
+            "startTime": 1777744082023131,
+            "duration": 5443,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM employees"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "5de33e75be69e2ccd970601919e00dde",
+            "spanID": "71daccda19bf3a1a",
+            "operationName": "GET /scenario1/employees",
+            "references": [],
+            "startTime": 1777744081814200,
+            "duration": 307363,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/employees"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/employees"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41204
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "835e093b140479ff22357b831eaac6ca",
+        "spans": [
+          {
+            "traceID": "835e093b140479ff22357b831eaac6ca",
+            "spanID": "956ec02942345789",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "835e093b140479ff22357b831eaac6ca",
+                "spanID": "cad68ad6b50cc108"
+              }
+            ],
+            "startTime": 1777744082068460,
+            "duration": 34042,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM customers"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "835e093b140479ff22357b831eaac6ca",
+            "spanID": "132fe6a31eaef8db",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "835e093b140479ff22357b831eaac6ca",
+                "spanID": "cad68ad6b50cc108"
+              }
+            ],
+            "startTime": 1777744082103403,
+            "duration": 68691,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM customers"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "835e093b140479ff22357b831eaac6ca",
+            "spanID": "1abef10489678f15",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "835e093b140479ff22357b831eaac6ca",
+                "spanID": "cad68ad6b50cc108"
+              }
+            ],
+            "startTime": 1777744082172456,
+            "duration": 4208,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM employees"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "835e093b140479ff22357b831eaac6ca",
+            "spanID": "df819b71ae44cc77",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "835e093b140479ff22357b831eaac6ca",
+                "spanID": "cad68ad6b50cc108"
+              }
+            ],
+            "startTime": 1777744082177206,
+            "duration": 3908,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM employees"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "835e093b140479ff22357b831eaac6ca",
+            "spanID": "cad68ad6b50cc108",
+            "operationName": "GET /scenario1/employees",
+            "references": [],
+            "startTime": 1777744081945739,
+            "duration": 242107,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/employees"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/employees"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41228
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "20b7d293e5fe6689deff84adeb94b94e",
+        "spans": [
+          {
+            "traceID": "20b7d293e5fe6689deff84adeb94b94e",
+            "spanID": "e9429c48fd0d9518",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "20b7d293e5fe6689deff84adeb94b94e",
+                "spanID": "b617238bf8a38744"
+              }
+            ],
+            "startTime": 1777744082142014,
+            "duration": 29250,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM products"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "20b7d293e5fe6689deff84adeb94b94e",
+            "spanID": "8a00a42c6306de43",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "20b7d293e5fe6689deff84adeb94b94e",
+                "spanID": "b617238bf8a38744"
+              }
+            ],
+            "startTime": 1777744082171800,
+            "duration": 4206,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM orders"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "20b7d293e5fe6689deff84adeb94b94e",
+            "spanID": "b617238bf8a38744",
+            "operationName": "GET /scenario1/orders",
+            "references": [],
+            "startTime": 1777744082000807,
+            "duration": 179018,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41230
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "7e9621842be095ef92172632c3d1f7a4",
+        "spans": [
+          {
+            "traceID": "7e9621842be095ef92172632c3d1f7a4",
+            "spanID": "1402426b5b33e04c",
+            "operationName": "GET /scenario1/",
+            "references": [],
+            "startTime": 1777744082143174,
+            "duration": 1804,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41256
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "91e7463ab9b60256db3c7f452aa08f33",
+        "spans": [
+          {
+            "traceID": "91e7463ab9b60256db3c7f452aa08f33",
+            "spanID": "110bef828306b73a",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "91e7463ab9b60256db3c7f452aa08f33",
+                "spanID": "a75282751222f0f8"
+              }
+            ],
+            "startTime": 1777744082170867,
+            "duration": 7365,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM products"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "91e7463ab9b60256db3c7f452aa08f33",
+            "spanID": "b02a11971d502097",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "91e7463ab9b60256db3c7f452aa08f33",
+                "spanID": "a75282751222f0f8"
+              }
+            ],
+            "startTime": 1777744082178780,
+            "duration": 1930,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM orders"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "91e7463ab9b60256db3c7f452aa08f33",
+            "spanID": "a75282751222f0f8",
+            "operationName": "GET /scenario1/orders",
+            "references": [],
+            "startTime": 1777744082024490,
+            "duration": 158272,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41246
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "144482837102a8ad29b93cce4496a6c9",
+        "spans": [
+          {
+            "traceID": "144482837102a8ad29b93cce4496a6c9",
+            "spanID": "f385a08840d7313c",
+            "operationName": "GET /scenario1/",
+            "references": [],
+            "startTime": 1777744082191295,
+            "duration": 3576,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41268
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "26b06eef8fcbb903c2bf577344556a89",
+        "spans": [
+          {
+            "traceID": "26b06eef8fcbb903c2bf577344556a89",
+            "spanID": "81a5502be98fa7d2",
+            "operationName": "GET /scenario1/",
+            "references": [],
+            "startTime": 1777744082262650,
+            "duration": 2561,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41292
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "91a6f0f72e4de149a0a06da12de3e3a8",
+        "spans": [
+          {
+            "traceID": "91a6f0f72e4de149a0a06da12de3e3a8",
+            "spanID": "bac39c22c086ddba",
+            "operationName": "GET /scenario1/",
+            "references": [],
+            "startTime": 1777744082267966,
+            "duration": 2550,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41304
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "94b4e40d944d14d507682eb64161f680",
+        "spans": [
+          {
+            "traceID": "94b4e40d944d14d507682eb64161f680",
+            "spanID": "39b5729ada74d075",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "94b4e40d944d14d507682eb64161f680",
+                "spanID": "9990ac8e2c705c30"
+              }
+            ],
+            "startTime": 1777744082296875,
+            "duration": 16986,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM customers"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "94b4e40d944d14d507682eb64161f680",
+            "spanID": "2a604ec34cbffef6",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "94b4e40d944d14d507682eb64161f680",
+                "spanID": "9990ac8e2c705c30"
+              }
+            ],
+            "startTime": 1777744082314398,
+            "duration": 19709,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM customers"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "94b4e40d944d14d507682eb64161f680",
+            "spanID": "902e7a9092bf2e49",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "94b4e40d944d14d507682eb64161f680",
+                "spanID": "9990ac8e2c705c30"
+              }
+            ],
+            "startTime": 1777744082334606,
+            "duration": 8879,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM employees"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "94b4e40d944d14d507682eb64161f680",
+            "spanID": "ea9889617d4453f0",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "94b4e40d944d14d507682eb64161f680",
+                "spanID": "9990ac8e2c705c30"
+              }
+            ],
+            "startTime": 1777744082343972,
+            "duration": 7640,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM employees"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "94b4e40d944d14d507682eb64161f680",
+            "spanID": "9990ac8e2c705c30",
+            "operationName": "GET /scenario1/employees",
+            "references": [],
+            "startTime": 1777744082231134,
+            "duration": 125992,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/employees"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/employees"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41278
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "f9b551d946c3429d0ee19e98f97c5a51",
+        "spans": [
+          {
+            "traceID": "f9b551d946c3429d0ee19e98f97c5a51",
+            "spanID": "cfb330354fd2f826",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "f9b551d946c3429d0ee19e98f97c5a51",
+                "spanID": "93a7f06137367c00"
+              }
+            ],
+            "startTime": 1777744082402059,
+            "duration": 24584,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM products"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "f9b551d946c3429d0ee19e98f97c5a51",
+            "spanID": "62d6cdb3237e764b",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "f9b551d946c3429d0ee19e98f97c5a51",
+                "spanID": "93a7f06137367c00"
+              }
+            ],
+            "startTime": 1777744082427090,
+            "duration": 8193,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM orders"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "f9b551d946c3429d0ee19e98f97c5a51",
+            "spanID": "93a7f06137367c00",
+            "operationName": "GET /scenario1/orders",
+            "references": [],
+            "startTime": 1777744082346186,
+            "duration": 96138,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41310
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "b2eeb472704a1d329f9182574cc92dec",
+        "spans": [
+          {
+            "traceID": "b2eeb472704a1d329f9182574cc92dec",
+            "spanID": "6c57b259ce60c37a",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "b2eeb472704a1d329f9182574cc92dec",
+                "spanID": "cc0db49561bcf1d7"
+              }
+            ],
+            "startTime": 1777744082464567,
+            "duration": 10013,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM products"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "b2eeb472704a1d329f9182574cc92dec",
+            "spanID": "ea9a3a466e76d7b6",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "b2eeb472704a1d329f9182574cc92dec",
+                "spanID": "cc0db49561bcf1d7"
+              }
+            ],
+            "startTime": 1777744082474950,
+            "duration": 7253,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM orders"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "b2eeb472704a1d329f9182574cc92dec",
+            "spanID": "cc0db49561bcf1d7",
+            "operationName": "GET /scenario1/orders",
+            "references": [],
+            "startTime": 1777744082415485,
+            "duration": 74173,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41314
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      },
+      {
+        "traceID": "9d753e5776656131568f005511685653",
+        "spans": [
+          {
+            "traceID": "9d753e5776656131568f005511685653",
+            "spanID": "403e43fd13d7db26",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "9d753e5776656131568f005511685653",
+                "spanID": "ee0b14b27f42f4aa"
+              }
+            ],
+            "startTime": 1777744082569654,
+            "duration": 20884,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM products"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "9d753e5776656131568f005511685653",
+            "spanID": "90eafa2b57e090a8",
+            "operationName": "SELECT",
+            "references": [
+              {
+                "refType": "CHILD_OF",
+                "traceID": "9d753e5776656131568f005511685653",
+                "spanID": "ee0b14b27f42f4aa"
+              }
+            ],
+            "startTime": 1777744082591349,
+            "duration": 8722,
+            "tags": [
+              {
+                "key": "db.name",
+                "type": "string",
+                "value": "scenariodb"
+              },
+              {
+                "key": "db.statement",
+                "type": "string",
+                "value": "SELECT * FROM orders"
+              },
+              {
+                "key": "db.system",
+                "type": "string",
+                "value": "postgresql"
+              },
+              {
+                "key": "db.user",
+                "type": "string",
+                "value": "postgres"
+              },
+              {
+                "key": "net.peer.name",
+                "type": "string",
+                "value": "scenario_db"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 5432
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.psycopg2"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "client"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          },
+          {
+            "traceID": "9d753e5776656131568f005511685653",
+            "spanID": "ee0b14b27f42f4aa",
+            "operationName": "GET /scenario1/orders",
+            "references": [],
+            "startTime": 1777744082511421,
+            "duration": 102133,
+            "tags": [
+              {
+                "key": "http.flavor",
+                "type": "string",
+                "value": "1.1"
+              },
+              {
+                "key": "http.host",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "http.method",
+                "type": "string",
+                "value": "GET"
+              },
+              {
+                "key": "http.route",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.scheme",
+                "type": "string",
+                "value": "http"
+              },
+              {
+                "key": "http.server_name",
+                "type": "string",
+                "value": "0.0.0.0"
+              },
+              {
+                "key": "http.status_code",
+                "type": "int64",
+                "value": 200
+              },
+              {
+                "key": "http.target",
+                "type": "string",
+                "value": "/scenario1/orders"
+              },
+              {
+                "key": "http.user_agent",
+                "type": "string",
+                "value": "python-requests/2.32.5"
+              },
+              {
+                "key": "net.host.name",
+                "type": "string",
+                "value": "localhost:5001"
+              },
+              {
+                "key": "net.host.port",
+                "type": "int64",
+                "value": 5000
+              },
+              {
+                "key": "net.peer.ip",
+                "type": "string",
+                "value": "172.20.0.1"
+              },
+              {
+                "key": "net.peer.port",
+                "type": "int64",
+                "value": 41322
+              },
+              {
+                "key": "otel.scope.name",
+                "type": "string",
+                "value": "opentelemetry.instrumentation.flask"
+              },
+              {
+                "key": "otel.scope.version",
+                "type": "string",
+                "value": "0.62b1"
+              },
+              {
+                "key": "span.kind",
+                "type": "string",
+                "value": "server"
+              }
+            ],
+            "logs": [],
+            "processID": "p1",
+            "warnings": null
+          }
+        ],
+        "processes": {
+          "p1": {
+            "serviceName": "scenario1",
+            "tags": [
+              {
+                "key": "telemetry.sdk.language",
+                "type": "string",
+                "value": "python"
+              },
+              {
+                "key": "telemetry.sdk.name",
+                "type": "string",
+                "value": "opentelemetry"
+              },
+              {
+                "key": "telemetry.sdk.version",
+                "type": "string",
+                "value": "1.41.1"
+              }
+            ]
+          }
+        },
+        "warnings": null
+      }
+    ],
+    "total": 0,
+    "limit": 0,
+    "offset": 0,
+    "errors": null
+  }
+}

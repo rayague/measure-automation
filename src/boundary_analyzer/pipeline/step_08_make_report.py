@@ -3,13 +3,15 @@ from __future__ import annotations
 from pathlib import Path
 
 from boundary_analyzer.reporting.report_builder import generate_report
-from boundary_analyzer.settings_loader import load_settings
+from boundary_analyzer.settings_loader import get_data_dir, get_reports_dir, load_settings
 
 
 def main() -> int:
-    rank_path = Path("data/processed/service_rank.csv")
-    suspicious_path = Path("data/processed/suspicious_services.csv")
-    output_path = Path("reports/latest/report.md")
+    base_dir = get_data_dir()
+    reports_dir = get_reports_dir()
+    rank_path = base_dir / "processed" / "service_rank.csv"
+    suspicious_path = base_dir / "processed" / "suspicious_services.csv"
+    output_path = reports_dir / "latest" / "report.md"
     
     print(f"Reading ranking from: {rank_path}")
     

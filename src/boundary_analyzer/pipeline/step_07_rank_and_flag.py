@@ -5,29 +5,51 @@ from pathlib import Path
 import pandas as pd
 
 from boundary_analyzer.metrics.threshold_ultimate import apply_threshold
-from boundary_analyzer.settings_loader import load_settings
+from boundary_analyzer.settings_loader import get_data_dir, load_settings
 
 
 def main() -> int:
-    scom_path = Path("data/processed/service_scom.csv")
-    rank_output_path = Path("data/processed/service_rank.csv")
-    suspicious_output_path = Path("data/processed/suspicious_services.csv")
+    base_dir = get_data_dir()
+    scom_path = base_dir / "processed" / "service_scom.csv"
+    rank_output_path = base_dir / "processed" / "service_rank.csv"
+    suspicious_output_path = base_dir / "processed" / "suspicious_services.csv"
     
     print(f"Reading SCOM scores from: {scom_path}")
-    
+
     if not scom_path.exists():
         print("Error: service_scom.csv not found. Run step 06 first.")
         return 1
-    
+
+    # Check if file is empty (no data or just headers)
+    if scom_path.stat().st_size == 0:
+        print("Error: service_scom.csv is empty (0 bytes). No SCOM data to process.")
+        print("This usually means no DB operations were found in traces.")
+        print("Tip: Check if database traces are appearing in Jaeger.")
+        return 3
+
     # Load settings for threshold method
     settings = load_settings()
     threshold_method = settings.get("threshold_method", "percentile")
     threshold_percentile = settings.get("threshold_percentile", 25.0)
     threshold_zscore = settings.get("threshold_zscore", -1.5)
     fixed_threshold = settings.get("scom_threshold", 0.5)
-    
-    scom_df = pd.read_csv(scom_path)
+
+    # Try to read CSV, handle empty/malformed case
+    try:
+        scom_df = pd.read_csv(scom_path)
+    except pd.errors.EmptyDataError:
+        print("Error: service_scom.csv has no columns (EmptyDataError).")
+        print("This happens when no services could be scored (no DB operations found).")
+        print("Tip: Check if database traces are appearing in Jaeger.")
+        return 3
+
     print(f"Loaded {len(scom_df)} services")
+
+    if scom_df.empty:
+        print("Error: No services found in service_scom.csv.")
+        print("This usually means no traces/spans were collected (Jaeger returned 0 traces).")
+        print("Tip: send some traffic to your service, increase lookback_minutes/limit_traces, then re-run.")
+        return 2
     
     # Add rank (sorted by SCOM, lowest first)
     scom_df = scom_df.sort_values("scom_score").reset_index(drop=True)

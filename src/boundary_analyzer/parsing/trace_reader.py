@@ -22,8 +22,19 @@ def _find_parent_span_id(span: dict[str, Any]) -> str | None:
     return None
 
 
-def _get_service_name(span: dict[str, Any]) -> str:
-    """Get service name from span process."""
+def _get_service_name(span: dict[str, Any], processes: dict[str, Any] | None = None) -> str:
+    """Get service name from span process.
+    
+    Handles both formats:
+    - Old: span has process directly: span["process"]["serviceName"]
+    - New: trace has processes dict, span has processID referencing it
+    """
+    # Try new format first (processID referencing trace-level processes)
+    process_id = span.get("processID")
+    if process_id and processes and process_id in processes:
+        return processes[process_id].get("serviceName", "")
+    
+    # Fallback to old format (process embedded in span)
     process = span.get("process", {})
     return process.get("serviceName", "")
 
@@ -57,13 +68,15 @@ def _read_one_trace_file(file_path: Path) -> list[dict[str, Any]]:
     for trace in traces:
         trace_id = trace.get("traceID", "")
         spans = trace.get("spans", [])
+        # New Jaeger format: processes are at trace level, spans reference them via processID
+        processes = trace.get("processes", {})
 
         for span in spans:
             row = {
                 "trace_id": trace_id,
                 "span_id": span.get("spanID", ""),
                 "parent_span_id": _find_parent_span_id(span),
-                "service_name": _get_service_name(span),
+                "service_name": _get_service_name(span, processes),
                 "operation_name": span.get("operationName", ""),
                 "start_time": span.get("startTime", 0),
                 "duration": span.get("duration", 0),
