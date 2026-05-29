@@ -11,10 +11,10 @@ from boundary_analyzer.detection.endpoint_normalizer import (
     extract_tags_from_span,
 )
 
-EXCLUDED_HEALTH_ROUTES: set[str] = {
-    "/health", "/health/", "/health/all", "/healthz", "/readyz", "/livez",
-    "/metrics", "/favicon.ico",
-}
+HEALTH_KEYWORDS: frozenset[str] = frozenset({
+    "health", "healthz", "readyz", "livez",
+    "metrics", "favicon.ico",
+})
 
 
 def _is_endpoint_span(
@@ -74,17 +74,17 @@ def _is_endpoint_span(
     if not has_http_tag:
         return False
 
-    # Exclude health/infrastructure routes
+    # Exclude health/infrastructure routes (segment-based matching)
     if exclude_health_routes:
         route = ""
         for tag in tags:
             k = tag.get("key", "")
-            if k == "http.route":
+            if k in ("http.route", "http.target"):
                 route = str(tag.get("value", ""))
                 break
         if not route and " " in operation:
             route = operation.split(" ", 1)[1]
-        if route in EXCLUDED_HEALTH_ROUTES:
+        if any(part in HEALTH_KEYWORDS for part in route.strip("/").split("/") if part):
             return False
 
     return True
