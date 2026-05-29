@@ -136,7 +136,8 @@ def _compute_service_scom(
 def compute_scom(
     mapping_df: pd.DataFrame,
     endpoints_df: pd.DataFrame | None = None,
-    use_endpoint_weighting: bool = True
+    use_endpoint_weighting: bool = True,
+    exclude_services: list[str] | None = None,
 ) -> pd.DataFrame:
     """Compute SCOM scores for all services faithfully based on the academic paper.
     
@@ -144,11 +145,19 @@ def compute_scom(
         mapping_df: Endpoint to DB table mapping
         endpoints_df: Traces of endpoints (used to correctly identify endpoints with no DB operations and calculate frequencies)
         use_endpoint_weighting: If True, uses endpoint invocation frequency as weights. If False, all endpoints have equal weight.
+        exclude_services: Optional list of service names to exclude from analysis (e.g. ["gateway"])
     """
     if mapping_df.empty and (endpoints_df is None or endpoints_df.empty):
         return pd.DataFrame(columns=[
             "service_name", "scom_score", "endpoints_count", "tables_count", "method"
         ])
+
+    # Exclude services before any computation
+    if exclude_services:
+        if not mapping_df.empty and "service_name" in mapping_df.columns:
+            mapping_df = mapping_df[~mapping_df["service_name"].isin(exclude_services)]
+        if endpoints_df is not None and not endpoints_df.empty and "service_name" in endpoints_df.columns:
+            endpoints_df = endpoints_df[~endpoints_df["service_name"].isin(exclude_services)]
 
     endpoint_frequencies = _get_endpoint_frequencies(endpoints_df, mapping_df) if use_endpoint_weighting else {}
     endpoint_table_sets = _build_endpoint_table_sets(mapping_df, endpoints_df)

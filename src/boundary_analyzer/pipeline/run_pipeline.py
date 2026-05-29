@@ -3,13 +3,14 @@ from __future__ import annotations
 import argparse
 import shutil
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
 from boundary_analyzer.detection.db_table_extractor import extract_db_operations
 from boundary_analyzer.detection.endpoint_extractor import extract_endpoints
 from boundary_analyzer.detection.mapping_builder import build_endpoint_table_mapping
-from boundary_analyzer.metrics.scom_ultimate import compute_paper_scom, compute_simple_scom, compute_weighted_scom
+from boundary_analyzer.metrics.scom import compute_scom
 from boundary_analyzer.metrics.threshold_ultimate import apply_threshold
 from boundary_analyzer.parsing.trace_reader import read_all_traces, save_spans_csv
 from boundary_analyzer.reporting.report_builder import generate_report
@@ -17,6 +18,10 @@ from boundary_analyzer.reporting.report_builder import generate_report
 
 def _prepare_traces(input_path: Path, traces_dir: Path) -> None:
     traces_dir.mkdir(parents=True, exist_ok=True)
+
+    # If input IS traces_dir, files are already in place — skip copy
+    if input_path.resolve() == traces_dir.resolve():
+        return
 
     if input_path.is_file():
         if input_path.suffix.lower() != ".json":
@@ -42,6 +47,9 @@ def run_pipeline(
     threshold_percentile: float = 25.0,
     threshold_zscore: float = -1.5,
     fixed_threshold: float = 0.5,
+    exclude_services: list[str] | None = None,
+    exclude_health_routes: bool = True,
+    exclude_http_client_spans: bool = True,
 ) -> int:
     raw_traces_dir = output_dir / "raw" / "traces"
     interim_dir = output_dir / "interim"
@@ -53,7 +61,11 @@ def run_pipeline(
     spans_csv = interim_dir / "spans.csv"
     save_spans_csv(spans_df, spans_csv)
 
-    endpoints_df = extract_endpoints(spans_df)
+    endpoints_df = extract_endpoints(
+        spans_df,
+        exclude_health_routes=exclude_health_routes,
+        exclude_http_client_spans=exclude_http_client_spans,
+    )
     endpoints_csv = interim_dir / "endpoints.csv"
     endpoints_csv.parent.mkdir(parents=True, exist_ok=True)
     endpoints_df.to_csv(endpoints_csv, index=False)
@@ -68,17 +80,16 @@ def run_pipeline(
     mapping_csv.parent.mkdir(parents=True, exist_ok=True)
     mapping_df.to_csv(mapping_csv, index=False)
 
+    scom_kwargs: dict[str, Any] = {
+        "exclude_services": exclude_services,
+    }
     if scom_method == "paper":
-        scom_df = compute_paper_scom(mapping_df, endpoints_df=endpoints_df)
+        scom_kwargs["use_endpoint_weighting"] = True
     elif scom_method == "weighted":
-        scom_df = compute_weighted_scom(
-            mapping_df,
-            use_table_weighting=table_weighting,
-            use_endpoint_weighting=endpoint_weighting,
-            endpoints_df=endpoints_df,
-        )
+        scom_kwargs["use_endpoint_weighting"] = endpoint_weighting
     else:
-        scom_df = compute_simple_scom(mapping_df, endpoints_df=endpoints_df)
+        scom_kwargs["use_endpoint_weighting"] = False
+    scom_df = compute_scom(mapping_df, endpoints_df=endpoints_df, **scom_kwargs)
     service_scom_csv = processed_dir / "service_scom.csv"
     service_scom_csv.parent.mkdir(parents=True, exist_ok=True)
     scom_df.to_csv(service_scom_csv, index=False)
@@ -136,6 +147,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--threshold-zscore", type=float, default=-1.5)
     ap.add_argument("--fixed-threshold", type=float, default=0.5)
 
+    ap.add_argument("--exclude-services", nargs="*", default=None,
+                    help="Service names to exclude from analysis (e.g. gateway)")
+    ap.add_argument("--no-exclude-health", action="store_false", dest="exclude_health_routes",
+                    help="Do NOT filter out health/infrastructure endpoints")
+    ap.add_argument("--no-exclude-http-client", action="store_false", dest="exclude_http_client_spans",
+                    help="Do NOT filter out HTTP client spans (http send/receive)")
+
     args = ap.parse_args(argv)
 
     traces_path = Path(args.traces)
@@ -151,6 +169,9 @@ def main(argv: list[str] | None = None) -> int:
         threshold_percentile=args.threshold_percentile,
         threshold_zscore=args.threshold_zscore,
         fixed_threshold=args.fixed_threshold,
+        exclude_services=args.exclude_services,
+        exclude_health_routes=bool(args.exclude_health_routes),
+        exclude_http_client_spans=bool(args.exclude_http_client_spans),
     )
 
 
