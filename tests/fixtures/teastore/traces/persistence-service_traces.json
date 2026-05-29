@@ -1,0 +1,292 @@
+{
+  "data": [
+    {
+      "traceID": "aa000000000000000000000000000001",
+      "spans": [
+        {
+          "traceID": "aa000000000000000000000000000001",
+          "spanID": "a000000000000001",
+          "operationName": "GET /tools.descartes.teastore.persistence/categories",
+          "references": [],
+          "startTime": 1780061414000000,
+          "duration": 50000,
+          "tags": [
+            {"key": "http.method", "type": "string", "value": "GET"},
+            {"key": "http.route", "type": "string", "value": "/tools.descartes.teastore.persistence/categories"},
+            {"key": "http.status_code", "type": "int64", "value": 200},
+            {"key": "span.kind", "type": "string", "value": "server"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "aa000000000000000000000000000001",
+          "spanID": "b000000000000001",
+          "operationName": "SELECT PERSISTENCECATEGORY",
+          "references": [{"refType": "CHILD_OF", "traceID": "aa000000000000000000000000000001", "spanID": "a000000000000001"}],
+          "startTime": 1780061414010000,
+          "duration": 30000,
+          "tags": [
+            {"key": "db.system", "type": "string", "value": "mysql"},
+            {"key": "db.statement", "type": "string", "value": "SELECT ID, NAME, DESCRIPTION FROM PERSISTENCECATEGORY"},
+            {"key": "span.kind", "type": "string", "value": "client"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "persistence-service",
+          "tags": [
+            {"key": "telemetry.sdk.language", "type": "string", "value": "java"},
+            {"key": "telemetry.sdk.name", "type": "string", "value": "opentelemetry"},
+            {"key": "telemetry.sdk.version", "type": "string", "value": "1.42.1"}
+          ]
+        }
+      }
+    },
+    {
+      "traceID": "aa000000000000000000000000000002",
+      "spans": [
+        {
+          "traceID": "aa000000000000000000000000000002",
+          "spanID": "a000000000000002",
+          "operationName": "GET /tools.descartes.teastore.persistence/products/123",
+          "references": [],
+          "startTime": 1780061414500000,
+          "duration": 40000,
+          "tags": [
+            {"key": "http.method", "type": "string", "value": "GET"},
+            {"key": "http.route", "type": "string", "value": "/tools.descartes.teastore.persistence/products/{id}"},
+            {"key": "http.status_code", "type": "int64", "value": 200},
+            {"key": "span.kind", "type": "string", "value": "server"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "aa000000000000000000000000000002",
+          "spanID": "b000000000000002",
+          "operationName": "SELECT PERSISTENCEPRODUCT",
+          "references": [{"refType": "CHILD_OF", "traceID": "aa000000000000000000000000000002", "spanID": "a000000000000002"}],
+          "startTime": 1780061414510000,
+          "duration": 25000,
+          "tags": [
+            {"key": "db.system", "type": "string", "value": "mysql"},
+            {"key": "db.statement", "type": "string", "value": "SELECT ID, NAME, LISTPRICEINCENTS FROM PERSISTENCEPRODUCT WHERE (ID = ?)"},
+            {"key": "span.kind", "type": "string", "value": "client"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "persistence-service",
+          "tags": [
+            {"key": "telemetry.sdk.language", "type": "string", "value": "java"},
+            {"key": "telemetry.sdk.name", "type": "string", "value": "opentelemetry"},
+            {"key": "telemetry.sdk.version", "type": "string", "value": "1.42.1"}
+          ]
+        }
+      }
+    },
+    {
+      "traceID": "aa000000000000000000000000000003",
+      "spans": [
+        {
+          "traceID": "aa000000000000000000000000000003",
+          "spanID": "a000000000000003",
+          "operationName": "POST /tools.descartes.teastore.persistence/users",
+          "references": [],
+          "startTime": 1780061415000000,
+          "duration": 60000,
+          "tags": [
+            {"key": "http.method", "type": "string", "value": "POST"},
+            {"key": "http.route", "type": "string", "value": "/tools.descartes.teastore.persistence/users"},
+            {"key": "http.status_code", "type": "int64", "value": 201},
+            {"key": "span.kind", "type": "string", "value": "server"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "aa000000000000000000000000000003",
+          "spanID": "b000000000000003",
+          "operationName": "INSERT PERSISTENCEUSER",
+          "references": [{"refType": "CHILD_OF", "traceID": "aa000000000000000000000000000003", "spanID": "a000000000000003"}],
+          "startTime": 1780061415020000,
+          "duration": 40000,
+          "tags": [
+            {"key": "db.system", "type": "string", "value": "mysql"},
+            {"key": "db.statement", "type": "string", "value": "INSERT INTO PERSISTENCEUSER (USERNAME, PASSWORD, REALNAME, EMAIL) VALUES (?, ?, ?, ?)"},
+            {"key": "span.kind", "type": "string", "value": "client"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "persistence-service",
+          "tags": [
+            {"key": "telemetry.sdk.language", "type": "string", "value": "java"},
+            {"key": "telemetry.sdk.name", "type": "string", "value": "opentelemetry"},
+            {"key": "telemetry.sdk.version", "type": "string", "value": "1.42.1"}
+          ]
+        }
+      }
+    },
+    {
+      "traceID": "aa000000000000000000000000000004",
+      "spans": [
+        {
+          "traceID": "aa000000000000000000000000000004",
+          "spanID": "a000000000000004",
+          "operationName": "GET /tools.descartes.teastore.persistence/users/name/alice",
+          "references": [],
+          "startTime": 1780061415500000,
+          "duration": 35000,
+          "tags": [
+            {"key": "http.method", "type": "string", "value": "GET"},
+            {"key": "http.route", "type": "string", "value": "/tools.descartes.teastore.persistence/users/name/{name}"},
+            {"key": "http.status_code", "type": "int64", "value": 200},
+            {"key": "span.kind", "type": "string", "value": "server"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "aa000000000000000000000000000004",
+          "spanID": "b000000000000004",
+          "operationName": "SELECT PERSISTENCEUSER",
+          "references": [{"refType": "CHILD_OF", "traceID": "aa000000000000000000000000000004", "spanID": "a000000000000004"}],
+          "startTime": 1780061415510000,
+          "duration": 30000,
+          "tags": [
+            {"key": "db.system", "type": "string", "value": "mysql"},
+            {"key": "db.statement", "type": "string", "value": "SELECT ID, USERNAME, PASSWORD, REALNAME, EMAIL FROM PERSISTENCEUSER WHERE (USERNAME = ?)"},
+            {"key": "span.kind", "type": "string", "value": "client"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "persistence-service",
+          "tags": [
+            {"key": "telemetry.sdk.language", "type": "string", "value": "java"},
+            {"key": "telemetry.sdk.name", "type": "string", "value": "opentelemetry"},
+            {"key": "telemetry.sdk.version", "type": "string", "value": "1.42.1"}
+          ]
+        }
+      }
+    },
+    {
+      "traceID": "aa000000000000000000000000000005",
+      "spans": [
+        {
+          "traceID": "aa000000000000000000000000000005",
+          "spanID": "a000000000000005",
+          "operationName": "POST /tools.descartes.teastore.persistence/orders",
+          "references": [],
+          "startTime": 1780061416000000,
+          "duration": 70000,
+          "tags": [
+            {"key": "http.method", "type": "string", "value": "POST"},
+            {"key": "http.route", "type": "string", "value": "/tools.descartes.teastore.persistence/orders"},
+            {"key": "http.status_code", "type": "int64", "value": 201},
+            {"key": "span.kind", "type": "string", "value": "server"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "aa000000000000000000000000000005",
+          "spanID": "b000000000000005",
+          "operationName": "INSERT PERSISTENCEORDER",
+          "references": [{"refType": "CHILD_OF", "traceID": "aa000000000000000000000000000005", "spanID": "a000000000000005"}],
+          "startTime": 1780061416020000,
+          "duration": 45000,
+          "tags": [
+            {"key": "db.system", "type": "string", "value": "mysql"},
+            {"key": "db.statement", "type": "string", "value": "INSERT INTO PERSISTENCEORDER (ORDERTIME, TOTALPRICEINCENTS, USER_ID) VALUES (?, ?, ?)"},
+            {"key": "span.kind", "type": "string", "value": "client"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "aa000000000000000000000000000005",
+          "spanID": "c000000000000005",
+          "operationName": "INSERT PERSISTENCEORDERITEM",
+          "references": [{"refType": "CHILD_OF", "traceID": "aa000000000000000000000000000005", "spanID": "a000000000000005"}],
+          "startTime": 1780061416100000,
+          "duration": 15000,
+          "tags": [
+            {"key": "db.system", "type": "string", "value": "mysql"},
+            {"key": "db.statement", "type": "string", "value": "INSERT INTO PERSISTENCEORDERITEM (QUANTITY, UNITPRICEINCENTS, PRODUCT_ID, ORDER_ID) VALUES (?, ?, ?, ?)"},
+            {"key": "span.kind", "type": "string", "value": "client"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "persistence-service",
+          "tags": [
+            {"key": "telemetry.sdk.language", "type": "string", "value": "java"},
+            {"key": "telemetry.sdk.name", "type": "string", "value": "opentelemetry"},
+            {"key": "telemetry.sdk.version", "type": "string", "value": "1.42.1"}
+          ]
+        }
+      }
+    },
+    {
+      "traceID": "aa000000000000000000000000000006",
+      "spans": [
+        {
+          "traceID": "aa000000000000000000000000000006",
+          "spanID": "a000000000000006",
+          "operationName": "GET /ready/isready",
+          "references": [],
+          "startTime": 1780061417000000,
+          "duration": 5000,
+          "tags": [
+            {"key": "http.method", "type": "string", "value": "GET"},
+            {"key": "http.route", "type": "string", "value": "/ready/isready"},
+            {"key": "http.status_code", "type": "int64", "value": 200},
+            {"key": "span.kind", "type": "string", "value": "server"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "persistence-service",
+          "tags": [
+            {"key": "telemetry.sdk.language", "type": "string", "value": "java"},
+            {"key": "telemetry.sdk.name", "type": "string", "value": "opentelemetry"},
+            {"key": "telemetry.sdk.version", "type": "string", "value": "1.42.1"}
+          ]
+        }
+      }
+    }
+  ]
+}

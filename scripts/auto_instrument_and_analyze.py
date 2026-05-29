@@ -900,6 +900,8 @@ def run_analysis_pipeline(
     exclude_services: list[str] | None = None,
     exclude_health_routes: bool = True,
     exclude_http_client_spans: bool = True,
+    exclude_unknown_endpoint: bool = True,
+    skip_no_db_services: bool = False,
 ) -> bool:
     """Run the SCOM analysis pipeline on the collected traces.
 
@@ -924,6 +926,8 @@ def run_analysis_pipeline(
             exclude_services=exclude_services,
             exclude_health_routes=exclude_health_routes,
             exclude_http_client_spans=exclude_http_client_spans,
+            exclude_unknown_endpoint=exclude_unknown_endpoint,
+            skip_no_db_services=skip_no_db_services,
         )
         if rc != 0:
             _error(f"Pipeline returned exit code {rc}.")
@@ -1084,6 +1088,18 @@ def main(argv: list[str] | None = None) -> int:
         help="Do NOT filter out HTTP client spans (http send/receive).",
     )
     parser.add_argument(
+        "--no-exclude-unknown-endpoint",
+        action="store_false",
+        dest="exclude_unknown_endpoint",
+        help="Do NOT filter out unknown_endpoint entries from SCOM computation.",
+    )
+    parser.add_argument(
+        "--skip-no-db-services",
+        action="store_true",
+        default=False,
+        help="Exclude services with no DB tables detected from SCOM ranking.",
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Force re-instrumentation even if already instrumented.",
@@ -1192,6 +1208,8 @@ def main(argv: list[str] | None = None) -> int:
         exclude_services=args.exclude_services,
         exclude_health_routes=args.exclude_health_routes,
         exclude_http_client_spans=args.exclude_http_client_spans,
+        exclude_unknown_endpoint=args.exclude_unknown_endpoint,
+        skip_no_db_services=args.skip_no_db_services,
     )
     if not pipeline_ok and not args.no_dash:
         _warn("Pipeline had issues. Dashboard may show incomplete data.")

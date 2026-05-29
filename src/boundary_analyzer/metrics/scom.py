@@ -138,6 +138,8 @@ def compute_scom(
     endpoints_df: pd.DataFrame | None = None,
     use_endpoint_weighting: bool = True,
     exclude_services: list[str] | None = None,
+    exclude_unknown_endpoint: bool = True,
+    skip_no_db_services: bool = False,
 ) -> pd.DataFrame:
     """Compute SCOM scores for all services faithfully based on the academic paper.
     
@@ -146,6 +148,8 @@ def compute_scom(
         endpoints_df: Traces of endpoints (used to correctly identify endpoints with no DB operations and calculate frequencies)
         use_endpoint_weighting: If True, uses endpoint invocation frequency as weights. If False, all endpoints have equal weight.
         exclude_services: Optional list of service names to exclude from analysis (e.g. ["gateway"])
+        exclude_unknown_endpoint: If True, filters out rows where endpoint_key == "unknown_endpoint"
+        skip_no_db_services: If True, excludes services with no DB tables detected from the results
     """
     if mapping_df.empty and (endpoints_df is None or endpoints_df.empty):
         return pd.DataFrame(columns=[
@@ -158,6 +162,13 @@ def compute_scom(
             mapping_df = mapping_df[~mapping_df["service_name"].isin(exclude_services)]
         if endpoints_df is not None and not endpoints_df.empty and "service_name" in endpoints_df.columns:
             endpoints_df = endpoints_df[~endpoints_df["service_name"].isin(exclude_services)]
+
+    # Exclude unknown endpoint entries that could not be traced back to any HTTP endpoint
+    if exclude_unknown_endpoint:
+        if not mapping_df.empty and "endpoint_key" in mapping_df.columns:
+            mapping_df = mapping_df[mapping_df["endpoint_key"] != "unknown_endpoint"]
+        if endpoints_df is not None and not endpoints_df.empty and "endpoint_key" in endpoints_df.columns:
+            endpoints_df = endpoints_df[endpoints_df["endpoint_key"] != "unknown_endpoint"]
 
     endpoint_frequencies = _get_endpoint_frequencies(endpoints_df, mapping_df) if use_endpoint_weighting else {}
     endpoint_table_sets = _build_endpoint_table_sets(mapping_df, endpoints_df)
@@ -184,7 +195,10 @@ def compute_scom(
             "method": "weighted" if use_endpoint_weighting else "unweighted"
         })
 
-    return pd.DataFrame(results)
+    df = pd.DataFrame(results)
+    if skip_no_db_services and not df.empty:
+        df = df[df["tables_count"] > 0].reset_index(drop=True)
+    return df
 
 
 def save_scom_csv(df: pd.DataFrame, output_path: Path) -> None:

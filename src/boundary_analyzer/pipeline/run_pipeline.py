@@ -50,6 +50,8 @@ def run_pipeline(
     exclude_services: list[str] | None = None,
     exclude_health_routes: bool = True,
     exclude_http_client_spans: bool = True,
+    exclude_unknown_endpoint: bool = True,
+    skip_no_db_services: bool = False,
 ) -> int:
     raw_traces_dir = output_dir / "raw" / "traces"
     interim_dir = output_dir / "interim"
@@ -82,6 +84,8 @@ def run_pipeline(
 
     scom_kwargs: dict[str, Any] = {
         "exclude_services": exclude_services,
+        "exclude_unknown_endpoint": exclude_unknown_endpoint,
+        "skip_no_db_services": skip_no_db_services,
     }
     if scom_method == "paper":
         scom_kwargs["use_endpoint_weighting"] = True
@@ -153,6 +157,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="Do NOT filter out health/infrastructure endpoints")
     ap.add_argument("--no-exclude-http-client", action="store_false", dest="exclude_http_client_spans",
                     help="Do NOT filter out HTTP client spans (http send/receive)")
+    ap.add_argument("--no-exclude-unknown-endpoint", action="store_false", dest="exclude_unknown_endpoint",
+                    help="Do NOT filter out unknown_endpoint entries from SCOM computation")
+    ap.add_argument("--skip-no-db-services", action="store_true", default=False,
+                    help="Exclude services with no DB tables detected from SCOM ranking")
 
     args = ap.parse_args(argv)
 
@@ -172,6 +180,8 @@ def main(argv: list[str] | None = None) -> int:
         exclude_services=args.exclude_services,
         exclude_health_routes=bool(args.exclude_health_routes),
         exclude_http_client_spans=bool(args.exclude_http_client_spans),
+        exclude_unknown_endpoint=bool(args.exclude_unknown_endpoint),
+        skip_no_db_services=bool(args.skip_no_db_services),
     )
 
 

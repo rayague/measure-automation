@@ -1,0 +1,100 @@
+{
+  "data": [
+    {
+      "traceID": "bb000000000000000000000000000001",
+      "spans": [
+        {
+          "traceID": "bb000000000000000000000000000001",
+          "spanID": "a100000000000001",
+          "operationName": "POST /tools.descartes.teastore.auth/useractions/login",
+          "references": [],
+          "startTime": 1780061418000000,
+          "duration": 45000,
+          "tags": [
+            {"key": "http.method", "type": "string", "value": "POST"},
+            {"key": "http.route", "type": "string", "value": "/tools.descartes.teastore.auth/useractions/login"},
+            {"key": "http.status_code", "type": "int64", "value": 200},
+            {"key": "span.kind", "type": "string", "value": "server"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "auth-service",
+          "tags": [
+            {"key": "telemetry.sdk.language", "type": "string", "value": "java"},
+            {"key": "telemetry.sdk.name", "type": "string", "value": "opentelemetry"},
+            {"key": "telemetry.sdk.version", "type": "string", "value": "1.42.1"}
+          ]
+        }
+      }
+    },
+    {
+      "traceID": "bb000000000000000000000000000002",
+      "spans": [
+        {
+          "traceID": "bb000000000000000000000000000002",
+          "spanID": "a100000000000002",
+          "operationName": "POST /tools.descartes.teastore.auth/cart/add/42",
+          "references": [],
+          "startTime": 1780061418500000,
+          "duration": 35000,
+          "tags": [
+            {"key": "http.method", "type": "string", "value": "POST"},
+            {"key": "http.route", "type": "string", "value": "/tools.descartes.teastore.auth/cart/add/{pid}"},
+            {"key": "http.status_code", "type": "int64", "value": 200},
+            {"key": "span.kind", "type": "string", "value": "server"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "auth-service",
+          "tags": [
+            {"key": "telemetry.sdk.language", "type": "string", "value": "java"},
+            {"key": "telemetry.sdk.name", "type": "string", "value": "opentelemetry"},
+            {"key": "telemetry.sdk.version", "type": "string", "value": "1.42.1"}
+          ]
+        }
+      }
+    },
+    {
+      "traceID": "bb000000000000000000000000000003",
+      "spans": [
+        {
+          "traceID": "bb000000000000000000000000000003",
+          "spanID": "a100000000000003",
+          "operationName": "GET /ready/isready",
+          "references": [],
+          "startTime": 1780061419000000,
+          "duration": 5000,
+          "tags": [
+            {"key": "http.method", "type": "string", "value": "GET"},
+            {"key": "http.route", "type": "string", "value": "/ready/isready"},
+            {"key": "http.status_code", "type": "int64", "value": 200},
+            {"key": "span.kind", "type": "string", "value": "server"}
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "auth-service",
+          "tags": [
+            {"key": "telemetry.sdk.language", "type": "string", "value": "java"},
+            {"key": "telemetry.sdk.name", "type": "string", "value": "opentelemetry"},
+            {"key": "telemetry.sdk.version", "type": "string", "value": "1.42.1"}
+          ]
+        }
+      }
+    }
+  ]
+}

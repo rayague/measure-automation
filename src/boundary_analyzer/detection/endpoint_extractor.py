@@ -13,7 +13,7 @@ from boundary_analyzer.detection.endpoint_normalizer import (
 
 HEALTH_KEYWORDS: frozenset[str] = frozenset({
     "health", "healthz", "readyz", "livez",
-    "metrics", "favicon.ico",
+    "ready", "metrics", "favicon.ico",
 })
 
 
