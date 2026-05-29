@@ -1,0 +1,325 @@
+"""Deploy TeaStore with OpenTelemetry Java agent, generate traffic, export traces.
+
+Usage:
+    python scripts/teastore/deploy_and_trace.py --output data/teastore_run_001
+
+Workflow:
+    1. Download OTel Java agent JAR if missing
+    2. Start TeaStore + Jaeger via docker compose
+    3. Wait for all services to be ready
+    4. Generate load (HTTP requests via Python requests)
+    5. Export traces from Jaeger API
+    6. Run SCOM analysis pipeline
+    7. Clean up (optional)
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+import urllib.request
+import webbrowser
+from argparse import ArgumentParser, Namespace
+from pathlib import Path
+
+OTEL_AGENT_VERSION = "v2.14.0"
+OTEL_AGENT_JAR = f"opentelemetry-javaagent-{OTEL_AGENT_VERSION}.jar"
+OTEL_AGENT_URL = (
+    f"https://github.com/open-telemetry/opentelemetry-java-instrumentation/"
+    f"releases/download/{OTEL_AGENT_VERSION}/opentelemetry-javaagent.jar"
+)
+COMPOSE_FILE = Path(__file__).resolve().parent / "docker-compose-otel.yaml"
+COMPOSE_DIR = COMPOSE_FILE.parent
+AGENT_DIR = COMPOSE_DIR / "otel-agent"
+AGENT_PATH = AGENT_DIR / OTEL_AGENT_JAR
+AGENT_SYMLINK = AGENT_DIR / "opentelemetry-javaagent.jar"
+
+WEBUI_URL = "http://localhost:8080/tools.descartes.teastore.webui/"
+JAEGER_API = "http://localhost:16686/api/traces?service=teastore-{service}&limit=1000"
+
+
+def _info(msg: str) -> None:
+    print(f"[INFO] {msg}")
+
+
+def _ok(msg: str) -> None:
+    print(f"[OK]   {msg}")
+
+
+def _warn(msg: str) -> None:
+    print(f"[WARN] {msg}")
+
+
+def _error(msg: str) -> None:
+    print(f"[ERROR] {msg}", file=sys.stderr)
+
+
+def _run(cmd: list[str], cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess:
+    return subprocess.run(cmd, cwd=cwd, check=check, capture_output=True, text=True)
+
+
+def download_otel_agent() -> Path:
+    AGENT_DIR.mkdir(parents=True, exist_ok=True)
+
+    if AGENT_SYMLINK.exists():
+        _info(f"OTel agent already exists: {AGENT_SYMLINK}")
+        return AGENT_SYMLINK
+
+    _info(f"Downloading OpenTelemetry Java agent {OTEL_AGENT_VERSION}...")
+    _info(f"  URL: {OTEL_AGENT_URL}")
+    _info(f"  -> {AGENT_PATH}")
+
+    try:
+        urllib.request.urlretrieve(OTEL_AGENT_URL, AGENT_PATH)
+    except Exception as e:
+        _error(f"Failed to download agent: {e}")
+        _error("Please download manually from:")
+        _error(f"  {OTEL_AGENT_URL}")
+        _error(f"  Save to: {AGENT_PATH}")
+        sys.exit(1)
+
+    _ok(f"Downloaded {AGENT_PATH.stat().st_size / 1024 / 1024:.1f} MB")
+
+    shutil.copy2(AGENT_PATH, AGENT_SYMLINK)
+    _ok(f"Copied to: {AGENT_SYMLINK}")
+
+    return AGENT_SYMLINK
+
+
+def docker_compose_up() -> None:
+    _info("Starting TeaStore + Jaeger via docker compose...")
+    result = _run(
+        ["docker", "compose", "-f", str(COMPOSE_FILE), "up", "-d"],
+        cwd=COMPOSE_DIR,
+    )
+    print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
+    _ok("Containers started")
+
+
+def wait_for_services(timeout: int = 300, interval: int = 5) -> float:
+    import urllib.request as req
+    import urllib.error
+
+    _info(f"Waiting for TeaStore WebUI at {WEBUI_URL} (timeout={timeout}s)...")
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            resp = req.urlopen(req.Request(WEBUI_URL), timeout=5)
+            if resp.status == 200:
+                elapsed = time.time() - start
+                _ok(f"WebUI ready after {elapsed:.0f}s")
+                return elapsed
+        except (urllib.error.URLError, OSError):
+            pass
+        time.sleep(interval)
+    raise TimeoutError(f"TeaStore WebUI not ready after {timeout}s")
+
+
+def generate_traffic(duration_sec: int = 60, interval_sec: float = 2.0) -> None:
+    import urllib.request as req
+    import urllib.error
+
+    _info(f"Generating traffic for {duration_sec}s (request every {interval_sec}s)...")
+
+    paths = [
+        "/tools.descartes.teastore.webui/",
+        "/tools.descartes.teastore.webui/category/1",
+        "/tools.descartes.teastore.webui/category/2",
+        "/tools.descartes.teastore.webui/product/1",
+        "/tools.descartes.teastore.webui/product/2",
+        "/tools.descartes.teastore.webui/cart",
+        "/tools.descartes.teastore.webui/login",
+        "/tools.descartes.teastore.webui/",
+        "/tools.descartes.teastore.webui/category/3",
+        "/tools.descartes.teastore.webui/product/3",
+    ]
+
+    start = time.time()
+    sent = 0
+    failed = 0
+    while time.time() - start < duration_sec:
+        path = paths[sent % len(paths)]
+        url = f"http://localhost:8080{path}"
+        try:
+            resp = req.urlopen(req.Request(url), timeout=5)
+            sent += 1
+            if sent % 10 == 0:
+                print(f"  ... {sent} requests sent ({failed} failed)")
+        except (urllib.error.URLError, OSError):
+            failed += 1
+        time.sleep(interval_sec)
+
+    _ok(f"Traffic done: {sent} sent, {failed} failed")
+
+
+def export_traces(output_dir: Path, services: list[str] | None = None) -> dict[str, Path]:
+    import urllib.request as req
+    import urllib.error
+
+    if services is None:
+        services = [
+            "teastore-registry", "teastore-persistence", "teastore-auth",
+            "teastore-image", "teastore-recommender", "teastore-webui",
+        ]
+
+    traces_dir = output_dir / "raw" / "traces"
+    traces_dir.mkdir(parents=True, exist_ok=True)
+
+    _info("Exporting traces from Jaeger...")
+    exported: dict[str, Path] = {}
+
+    for svc in services:
+        url = JAEGER_API.format(service=svc)
+        try:
+            resp = req.urlopen(req.Request(url), timeout=10)
+            data = json.loads(resp.read().decode())
+            traces = data.get("data", [])
+            if not traces:
+                _warn(f"  {svc}: no traces found")
+                continue
+            file_path = traces_dir / f"{svc}.json"
+            with open(file_path, "w") as f:
+                json.dump({"data": traces}, f, indent=2)
+            span_count = sum(len(t.get("spans", [])) for t in traces)
+            _ok(f"  {svc}: {len(traces)} traces, {span_count} spans -> {file_path.name}")
+            exported[svc] = file_path
+        except (urllib.error.URLError, OSError, json.JSONDecodeError) as e:
+            _warn(f"  {svc}: export failed: {e}")
+
+    total = sum(len(json.loads(p.read_bytes()).get("data", [])) for p in traces_dir.glob("*.json"))
+    _info(f"Total: {len(exported)} services, {total} traces in {traces_dir}")
+    return exported
+
+
+def run_scom_analysis(output_dir: Path, threshold: float = 0.5, skip_no_db: bool = True) -> bool:
+    _info("Running SCOM analysis pipeline...")
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+
+    try:
+        from boundary_analyzer.pipeline.run_pipeline import run_pipeline
+    except ImportError:
+        _error("Cannot import boundary_analyzer. Run from project root or install package.")
+        return False
+
+    rc = run_pipeline(
+        traces=output_dir / "raw" / "traces",
+        output_dir=output_dir,
+        scom_method="weighted",
+        threshold_method="fixed",
+        fixed_threshold=threshold,
+        exclude_services=["teastore-registry"],
+        exclude_health_routes=True,
+        exclude_http_client_spans=True,
+        exclude_unknown_endpoint=True,
+        skip_no_db_services=skip_no_db,
+    )
+
+    if rc == 0:
+        _ok("SCOM analysis complete")
+        return True
+    _error(f"Pipeline returned exit code {rc}")
+    return False
+
+
+def docker_compose_down() -> None:
+    _info("Stopping containers...")
+    result = _run(
+        ["docker", "compose", "-f", str(COMPOSE_FILE), "down", "-v"],
+        cwd=COMPOSE_DIR,
+    )
+    print(result.stdout, end="")
+    _ok("Containers stopped and cleaned up")
+
+
+def open_jaeger_ui() -> None:
+    webbrowser.open("http://localhost:16686")
+
+
+def main() -> int:
+    ap = ArgumentParser(description="Deploy TeaStore with OTel, generate traffic, export traces, run SCOM")
+    ap.add_argument("--output", default="data/teastore_run",
+                    help="Output directory for traces and SCOM results")
+    ap.add_argument("--duration", type=int, default=60,
+                    help="Traffic generation duration in seconds (default: 60)")
+    ap.add_argument("--wait", type=int, default=300,
+                    help="Max wait time for TeaStore startup in seconds (default: 300)")
+    ap.add_argument("--threshold", type=float, default=0.5,
+                    help="SCOM fixed threshold (default: 0.5)")
+    ap.add_argument("--no-skip-no-db", action="store_false", dest="skip_no_db",
+                    help="Include services with no DB tables in SCOM ranking")
+    ap.add_argument("--no-cleanup", action="store_false", dest="cleanup",
+                    help="Do NOT stop containers after finishing")
+    ap.add_argument("--skip-pipeline", action="store_true",
+                    help="Skip SCOM analysis pipeline (export traces only)")
+    ap.add_argument("--jaeger-ui", action="store_true",
+                    help="Open Jaeger UI in browser (implies --no-cleanup)")
+    ap.add_argument("--download-only", action="store_true",
+                    help="Only download the OTel agent, do not deploy")
+
+    args = ap.parse_args()
+    output_dir = Path(args.output)
+
+    if args.jaeger_ui:
+        args.cleanup = False
+
+    # Step 1: Download agent
+    download_otel_agent()
+
+    if args.download_only:
+        _ok("Agent downloaded. Exiting (--download-only).")
+        return 0
+
+    # Step 2: Start containers
+    docker_compose_up()
+
+    try:
+        # Step 3: Wait for services
+        wait_for_services(timeout=args.wait)
+
+        if args.jaeger_ui:
+            open_jaeger_ui()
+
+        # Step 4: Generate traffic
+        generate_traffic(duration_sec=args.duration)
+
+        # Step 5: Wait a moment for spans to be flushed
+        _info("Waiting 5s for span flush...")
+        time.sleep(5)
+
+        # Step 6: Export traces
+        export_traces(output_dir)
+
+        # Step 7: Run SCOM pipeline
+        if not args.skip_pipeline:
+            run_scom_analysis(output_dir, threshold=args.threshold, skip_no_db=args.skip_no_db)
+        else:
+            _info("Skipping SCOM analysis (--skip-pipeline)")
+
+    except KeyboardInterrupt:
+        _warn("Interrupted by user")
+    except TimeoutError as e:
+        _error(str(e))
+        return 1
+    except Exception as e:
+        _error(f"Unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+    finally:
+        if args.cleanup:
+            docker_compose_down()
+        else:
+            _info("Containers left running (--no-cleanup or --jaeger-ui)")
+
+    _ok("Done")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
