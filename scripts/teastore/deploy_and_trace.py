@@ -241,6 +241,68 @@ def open_jaeger_ui() -> None:
     webbrowser.open("http://localhost:16686")
 
 
+def run_teastore(
+    output: str = "data/teastore_run",
+    duration: int = 60,
+    wait: int = 300,
+    threshold: float = 0.5,
+    skip_no_db: bool = True,
+    cleanup: bool = True,
+    skip_pipeline: bool = False,
+    jaeger_ui: bool = False,
+    download_only: bool = False,
+) -> int:
+    output_dir = Path(output)
+
+    if jaeger_ui:
+        cleanup = False
+
+    download_otel_agent()
+
+    if download_only:
+        _ok("Agent downloaded. Exiting (--download-only).")
+        return 0
+
+    docker_compose_up()
+
+    try:
+        wait_for_services(timeout=wait)
+
+        if jaeger_ui:
+            open_jaeger_ui()
+
+        generate_traffic(duration_sec=duration)
+
+        _info("Waiting 5s for span flush...")
+        time.sleep(5)
+
+        export_traces(output_dir)
+
+        if not skip_pipeline:
+            run_scom_analysis(output_dir, threshold=threshold, skip_no_db=skip_no_db)
+        else:
+            _info("Skipping SCOM analysis (--skip-pipeline)")
+
+    except KeyboardInterrupt:
+        _warn("Interrupted by user")
+    except TimeoutError as e:
+        _error(str(e))
+        return 1
+    except Exception as e:
+        _error(f"Unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+    finally:
+        if cleanup:
+            docker_compose_down()
+        else:
+            _info("Containers left running (--no-cleanup or --jaeger-ui)")
+
+    _ok("Done")
+    return 0
+
+
 def main() -> int:
     ap = ArgumentParser(description="Deploy TeaStore with OTel, generate traffic, export traces, run SCOM")
     ap.add_argument("--output", default="data/teastore_run",
@@ -263,62 +325,17 @@ def main() -> int:
                     help="Only download the OTel agent, do not deploy")
 
     args = ap.parse_args()
-    output_dir = Path(args.output)
-
-    if args.jaeger_ui:
-        args.cleanup = False
-
-    # Step 1: Download agent
-    download_otel_agent()
-
-    if args.download_only:
-        _ok("Agent downloaded. Exiting (--download-only).")
-        return 0
-
-    # Step 2: Start containers
-    docker_compose_up()
-
-    try:
-        # Step 3: Wait for services
-        wait_for_services(timeout=args.wait)
-
-        if args.jaeger_ui:
-            open_jaeger_ui()
-
-        # Step 4: Generate traffic
-        generate_traffic(duration_sec=args.duration)
-
-        # Step 5: Wait a moment for spans to be flushed
-        _info("Waiting 5s for span flush...")
-        time.sleep(5)
-
-        # Step 6: Export traces
-        export_traces(output_dir)
-
-        # Step 7: Run SCOM pipeline
-        if not args.skip_pipeline:
-            run_scom_analysis(output_dir, threshold=args.threshold, skip_no_db=args.skip_no_db)
-        else:
-            _info("Skipping SCOM analysis (--skip-pipeline)")
-
-    except KeyboardInterrupt:
-        _warn("Interrupted by user")
-    except TimeoutError as e:
-        _error(str(e))
-        return 1
-    except Exception as e:
-        _error(f"Unexpected error: {e}")
-        import traceback
-        traceback.print_exc()
-        return 1
-    finally:
-        if args.cleanup:
-            docker_compose_down()
-        else:
-            _info("Containers left running (--no-cleanup or --jaeger-ui)")
-
-    _ok("Done")
-    return 0
+    return run_teastore(
+        output=args.output,
+        duration=args.duration,
+        wait=args.wait,
+        threshold=args.threshold,
+        skip_no_db=args.skip_no_db,
+        cleanup=args.cleanup,
+        skip_pipeline=args.skip_pipeline,
+        jaeger_ui=args.jaeger_ui,
+        download_only=args.download_only,
+    )
 
 
 if __name__ == "__main__":

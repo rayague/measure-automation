@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -27,6 +28,9 @@ def main() -> int:
     settings = load_settings()
     endpoint_weighting = settings.get("endpoint_weighting", True)
     
+    # Check CLI flag for skip-no-db-services
+    skip_no_db = os.environ.get("BOUNDARY_ANALYZER_SKIP_NO_DB_SERVICES", "").strip() == "1"
+    
     mapping_df = pd.read_csv(mapping_path)
     print(f"Loaded {len(mapping_df)} endpoint-table mappings")
 
@@ -38,12 +42,15 @@ def main() -> int:
         print("Warning: endpoints.csv not found; endpoints without DB ops may be missed.")
     
     print(f"\nSCOM endpoint weighting: {endpoint_weighting}")
+    if skip_no_db:
+        print("skip_no_db_services: enabled")
     
     # Compute SCOM faithfully according to the paper
     scom_df = compute_scom(
         mapping_df=mapping_df,
         endpoints_df=endpoints_df,
         use_endpoint_weighting=endpoint_weighting,
+        skip_no_db_services=skip_no_db,
     )
     
     print("\nSCOM Scores:")
