@@ -1,0 +1,3689 @@
+{
+  "data": [
+    {
+      "traceID": "252dd2722d6977299ba82111ac0f3b0a",
+      "spans": [
+        {
+          "traceID": "252dd2722d6977299ba82111ac0f3b0a",
+          "spanID": "2d16152b84258da5",
+          "operationName": "GET http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "252dd2722d6977299ba82111ac0f3b0a",
+              "spanID": "3fd140633cee479c"
+            }
+          ],
+          "startTime": 1780061419370574,
+          "duration": 29,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "252dd2722d6977299ba82111ac0f3b0a",
+          "spanID": "3fd140633cee479c",
+          "operationName": "GET",
+          "references": [],
+          "startTime": 1780061419369774,
+          "duration": 891,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.12:8002"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "GET"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "classroom-service:8002"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 404
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/metrics"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://classroom-service:8002/metrics"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "Prometheus/3.11.3"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8002
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.3"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 36396
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "252dd2722d6977299ba82111ac0f3b0a",
+          "spanID": "da2c0da60c2a67b4",
+          "operationName": "GET http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "252dd2722d6977299ba82111ac0f3b0a",
+              "spanID": "3fd140633cee479c"
+            }
+          ],
+          "startTime": 1780061419370130,
+          "duration": 40,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 404
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "0c901578f20a1cd2b8cf1a82e706cded",
+      "spans": [
+        {
+          "traceID": "0c901578f20a1cd2b8cf1a82e706cded",
+          "spanID": "8e05aba0a4c9875f",
+          "operationName": "CREATE CREATE TABLE classrooms (\n\tid UUID NOT NULL, \n\troom_number V",
+          "references": [],
+          "startTime": 1780061413865345,
+          "duration": 81691,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "\nCREATE TABLE classrooms (\n\tid UUID NOT NULL, \n\troom_number VARCHAR(20) NOT NULL, \n\tname VARCHAR(200) NOT NULL, \n\tbuilding VARCHAR(100) NOT NULL, \n\tfloor INTEGER, \n\tcapacity INTEGER NOT NULL, \n\troom_type roomtype, \n\tstatus classroomstatus, \n\tdescription TEXT, \n\thas_projector BOOLEAN, \n\thas_whiteboard BOOLEAN, \n\thas_computers BOOLEAN, \n\thas_video_conf BOOLEAN, \n\thas_ac BOOLEAN, \n\thas_accessibility BOOLEAN, \n\tis_deleted BOOLEAN, \n\tcreated_at TIMESTAMP WITHOUT TIME ZONE, \n\tupdated_at TIMESTAMP WITHOUT TIME ZONE, \n\tPRIMARY KEY (id)\n)\n\n"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "54478d76b44dfcb3c49e2d588daec7ff",
+      "spans": [
+        {
+          "traceID": "54478d76b44dfcb3c49e2d588daec7ff",
+          "spanID": "6fe9dde77973834b",
+          "operationName": "GET /classrooms/{classroom_id}",
+          "references": [],
+          "startTime": 1780061417874118,
+          "duration": 35903,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.12:8002"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "GET"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/classrooms/{classroom_id}"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "classroom-service:8002"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/classrooms/d317ddc7-659d-4c30-a36d-e1443b83d3a8"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://classroom-service:8002/classrooms/d317ddc7-659d-4c30-a36d-e1443b83d3a8"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-httpx/0.27.0"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8002
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.14"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 49918
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "54478d76b44dfcb3c49e2d588daec7ff",
+          "spanID": "8a7384ebabd05167",
+          "operationName": "SELECT SELECT classrooms.id, classrooms.room_number, classrooms.nam",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "54478d76b44dfcb3c49e2d588daec7ff",
+              "spanID": "6fe9dde77973834b"
+            }
+          ],
+          "startTime": 1780061417900527,
+          "duration": 1441,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classrooms.id, classrooms.room_number, classrooms.name, classrooms.building, classrooms.floor, classrooms.capacity, classrooms.room_type, classrooms.status, classrooms.description, classrooms.has_projector, classrooms.has_whiteboard, classrooms.has_computers, classrooms.has_video_conf, classrooms.has_ac, classrooms.has_accessibility, classrooms.is_deleted, classrooms.created_at, classrooms.updated_at \nFROM classrooms \nWHERE classrooms.id = $1::UUID AND classrooms.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "54478d76b44dfcb3c49e2d588daec7ff",
+          "spanID": "4f3420cddd0a3a89",
+          "operationName": "SELECT SELECT classroom_schedules.classroom_id AS classroom_schedul",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "54478d76b44dfcb3c49e2d588daec7ff",
+              "spanID": "6fe9dde77973834b"
+            }
+          ],
+          "startTime": 1780061417906640,
+          "duration": 1133,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classroom_schedules.classroom_id AS classroom_schedules_classroom_id, classroom_schedules.id AS classroom_schedules_id, classroom_schedules.course_name AS classroom_schedules_course_name, classroom_schedules.teacher_name AS classroom_schedules_teacher_name, classroom_schedules.day_of_week AS classroom_schedules_day_of_week, classroom_schedules.start_time AS classroom_schedules_start_time, classroom_schedules.end_time AS classroom_schedules_end_time, classroom_schedules.semester AS classroom_schedules_semester, classroom_schedules.academic_year AS classroom_schedules_academic_year, classroom_schedules.is_recurring AS classroom_schedules_is_recurring, classroom_schedules.created_at AS classroom_schedules_created_at \nFROM classroom_schedules \nWHERE classroom_schedules.classroom_id IN ($1::UUID)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "54478d76b44dfcb3c49e2d588daec7ff",
+          "spanID": "fd072c200d940d45",
+          "operationName": "GET /classrooms/{classroom_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "54478d76b44dfcb3c49e2d588daec7ff",
+              "spanID": "6fe9dde77973834b"
+            }
+          ],
+          "startTime": 1780061417909602,
+          "duration": 42,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "54478d76b44dfcb3c49e2d588daec7ff",
+          "spanID": "c6ff9cb924107952",
+          "operationName": "GET /classrooms/{classroom_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "54478d76b44dfcb3c49e2d588daec7ff",
+              "spanID": "6fe9dde77973834b"
+            }
+          ],
+          "startTime": 1780061417909957,
+          "duration": 20,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "572669b757ef24b2c0b27f6ee7c5cf8c",
+      "spans": [
+        {
+          "traceID": "572669b757ef24b2c0b27f6ee7c5cf8c",
+          "spanID": "a973c6a9dbe4e7b2",
+          "operationName": "SELECT SELECT pg_catalog.pg_type.typname \nFROM pg_catalog.pg_type J",
+          "references": [],
+          "startTime": 1780061413816359,
+          "duration": 3626,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT pg_catalog.pg_type.typname \nFROM pg_catalog.pg_type JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_type.typnamespace \nWHERE pg_catalog.pg_type.typname = $1::VARCHAR AND pg_catalog.pg_type_is_visible(pg_catalog.pg_type.oid) AND pg_catalog.pg_namespace.nspname != $2::VARCHAR"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "46d1f7182fc4170da03d4aae77b312bb",
+      "spans": [
+        {
+          "traceID": "46d1f7182fc4170da03d4aae77b312bb",
+          "spanID": "ba9e28ad4ba88902",
+          "operationName": "SELECT SELECT pg_catalog.pg_type.typname \nFROM pg_catalog.pg_type J",
+          "references": [],
+          "startTime": 1780061413836174,
+          "duration": 2780,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT pg_catalog.pg_type.typname \nFROM pg_catalog.pg_type JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_type.typnamespace \nWHERE pg_catalog.pg_type.typname = $1::VARCHAR AND pg_catalog.pg_type_is_visible(pg_catalog.pg_type.oid) AND pg_catalog.pg_namespace.nspname != $2::VARCHAR"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "9206b3089e00a869edf6778416ab591d",
+      "spans": [
+        {
+          "traceID": "9206b3089e00a869edf6778416ab591d",
+          "spanID": "e6f601ee6f630331",
+          "operationName": "DELETE /classrooms/{classroom_id}/schedules/{schedule_id}",
+          "references": [],
+          "startTime": 1780061417602695,
+          "duration": 27984,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.12:8002"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "DELETE"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/classrooms/{classroom_id}/schedules/{schedule_id}"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "classroom-service:8002"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/classrooms/d317ddc7-659d-4c30-a36d-e1443b83d3a8/schedules/30d9c7be-ff79-41ff-834e-16fabec9cef7"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://classroom-service:8002/classrooms/d317ddc7-659d-4c30-a36d-e1443b83d3a8/schedules/30d9c7be-ff79-41ff-834e-16fabec9cef7"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8002
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40170
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "9206b3089e00a869edf6778416ab591d",
+          "spanID": "b4ddb94019ec1ff6",
+          "operationName": "DELETE DELETE FROM classroom_schedules WHERE classroom_schedules.id",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "9206b3089e00a869edf6778416ab591d",
+              "spanID": "e6f601ee6f630331"
+            }
+          ],
+          "startTime": 1780061417626179,
+          "duration": 1923,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "DELETE FROM classroom_schedules WHERE classroom_schedules.id = $1::UUID"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "9206b3089e00a869edf6778416ab591d",
+          "spanID": "54e8ccf8524d857a",
+          "operationName": "DELETE /classrooms/{classroom_id}/schedules/{schedule_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "9206b3089e00a869edf6778416ab591d",
+              "spanID": "e6f601ee6f630331"
+            }
+          ],
+          "startTime": 1780061417630316,
+          "duration": 42,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "9206b3089e00a869edf6778416ab591d",
+          "spanID": "e2892b71d6bb9f51",
+          "operationName": "DELETE /classrooms/{classroom_id}/schedules/{schedule_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "9206b3089e00a869edf6778416ab591d",
+              "spanID": "e6f601ee6f630331"
+            }
+          ],
+          "startTime": 1780061417630625,
+          "duration": 17,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "51316bb539d3b3e06dee71d9d0e6f22b",
+      "spans": [
+        {
+          "traceID": "51316bb539d3b3e06dee71d9d0e6f22b",
+          "spanID": "bbdcc9c0308d46bd",
+          "operationName": "GET /health http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "51316bb539d3b3e06dee71d9d0e6f22b",
+              "spanID": "c341d3a5bb1fdb57"
+            }
+          ],
+          "startTime": 1780061414899021,
+          "duration": 93,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "51316bb539d3b3e06dee71d9d0e6f22b",
+          "spanID": "8858c5d8aa5581ac",
+          "operationName": "GET /health http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "51316bb539d3b3e06dee71d9d0e6f22b",
+              "spanID": "c341d3a5bb1fdb57"
+            }
+          ],
+          "startTime": 1780061414899901,
+          "duration": 62,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "51316bb539d3b3e06dee71d9d0e6f22b",
+          "spanID": "c341d3a5bb1fdb57",
+          "operationName": "GET /health",
+          "references": [],
+          "startTime": 1780061414897349,
+          "duration": 2757,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.12:8002"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "GET"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/health"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "localhost:8002"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/health"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://localhost:8002/health"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8002
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.1"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 58170
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "b0b7c0ded9fdc7c1d1b7f6cf4b6748ae",
+      "spans": [
+        {
+          "traceID": "b0b7c0ded9fdc7c1d1b7f6cf4b6748ae",
+          "spanID": "82f49d0587f8f804",
+          "operationName": "CREATE CREATE TYPE classroomstatus AS ENUM ('AVAILABLE', 'OCCUPIED'",
+          "references": [],
+          "startTime": 1780061413840106,
+          "duration": 3269,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "CREATE TYPE classroomstatus AS ENUM ('AVAILABLE', 'OCCUPIED', 'MAINTENANCE', 'RESERVED', 'CLOSED')"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "254deaf50566b2b403df287474d07508",
+      "spans": [
+        {
+          "traceID": "254deaf50566b2b403df287474d07508",
+          "spanID": "ee852d0bf5ad08d3",
+          "operationName": "SELECT SELECT classrooms.id, classrooms.room_number, classrooms.nam",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "254deaf50566b2b403df287474d07508",
+              "spanID": "ec71a1830c34d9f0"
+            }
+          ],
+          "startTime": 1780061417356545,
+          "duration": 2079,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classrooms.id, classrooms.room_number, classrooms.name, classrooms.building, classrooms.floor, classrooms.capacity, classrooms.room_type, classrooms.status, classrooms.description, classrooms.has_projector, classrooms.has_whiteboard, classrooms.has_computers, classrooms.has_video_conf, classrooms.has_ac, classrooms.has_accessibility, classrooms.is_deleted, classrooms.created_at, classrooms.updated_at \nFROM classrooms \nWHERE classrooms.id = $1::UUID AND classrooms.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "254deaf50566b2b403df287474d07508",
+          "spanID": "e310e9033c52a873",
+          "operationName": "SELECT SELECT classroom_schedules.classroom_id AS classroom_schedul",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "254deaf50566b2b403df287474d07508",
+              "spanID": "ec71a1830c34d9f0"
+            }
+          ],
+          "startTime": 1780061417361916,
+          "duration": 1190,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classroom_schedules.classroom_id AS classroom_schedules_classroom_id, classroom_schedules.id AS classroom_schedules_id, classroom_schedules.course_name AS classroom_schedules_course_name, classroom_schedules.teacher_name AS classroom_schedules_teacher_name, classroom_schedules.day_of_week AS classroom_schedules_day_of_week, classroom_schedules.start_time AS classroom_schedules_start_time, classroom_schedules.end_time AS classroom_schedules_end_time, classroom_schedules.semester AS classroom_schedules_semester, classroom_schedules.academic_year AS classroom_schedules_academic_year, classroom_schedules.is_recurring AS classroom_schedules_is_recurring, classroom_schedules.created_at AS classroom_schedules_created_at \nFROM classroom_schedules \nWHERE classroom_schedules.classroom_id IN ($1::UUID)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "254deaf50566b2b403df287474d07508",
+          "spanID": "d6de5c208695711f",
+          "operationName": "GET /classrooms/{classroom_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "254deaf50566b2b403df287474d07508",
+              "spanID": "ec71a1830c34d9f0"
+            }
+          ],
+          "startTime": 1780061417365728,
+          "duration": 54,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "254deaf50566b2b403df287474d07508",
+          "spanID": "9758f211c716434b",
+          "operationName": "GET /classrooms/{classroom_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "254deaf50566b2b403df287474d07508",
+              "spanID": "ec71a1830c34d9f0"
+            }
+          ],
+          "startTime": 1780061417366141,
+          "duration": 34,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "254deaf50566b2b403df287474d07508",
+          "spanID": "ec71a1830c34d9f0",
+          "operationName": "GET /classrooms/{classroom_id}",
+          "references": [],
+          "startTime": 1780061417329422,
+          "duration": 36828,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.12:8002"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "GET"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/classrooms/{classroom_id}"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "classroom-service:8002"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/classrooms/d317ddc7-659d-4c30-a36d-e1443b83d3a8"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://classroom-service:8002/classrooms/d317ddc7-659d-4c30-a36d-e1443b83d3a8"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8002
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40140
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "b384692616b0975bbc9f09fa74a3b1f9",
+      "spans": [
+        {
+          "traceID": "b384692616b0975bbc9f09fa74a3b1f9",
+          "spanID": "c5ad6b0e327ec278",
+          "operationName": "SELECT SELECT pg_catalog.pg_type.typname \nFROM pg_catalog.pg_type J",
+          "references": [],
+          "startTime": 1780061413846752,
+          "duration": 4755,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT pg_catalog.pg_type.typname \nFROM pg_catalog.pg_type JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_type.typnamespace \nWHERE pg_catalog.pg_type.typname = $1::VARCHAR AND pg_catalog.pg_type_is_visible(pg_catalog.pg_type.oid) AND pg_catalog.pg_namespace.nspname != $2::VARCHAR"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "a491417e96004e18d504639d406e255d",
+      "spans": [
+        {
+          "traceID": "a491417e96004e18d504639d406e255d",
+          "spanID": "c1da334fbddb349c",
+          "operationName": "CREATE CREATE TABLE classroom_schedules (\n\tid UUID NOT NULL, \n\tclas",
+          "references": [],
+          "startTime": 1780061413987747,
+          "duration": 35322,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "\nCREATE TABLE classroom_schedules (\n\tid UUID NOT NULL, \n\tclassroom_id UUID NOT NULL, \n\tcourse_name VARCHAR(200) NOT NULL, \n\tteacher_name VARCHAR(200), \n\tday_of_week dayofweek NOT NULL, \n\tstart_time TIME WITHOUT TIME ZONE NOT NULL, \n\tend_time TIME WITHOUT TIME ZONE NOT NULL, \n\tsemester VARCHAR(20), \n\tacademic_year VARCHAR(9), \n\tis_recurring BOOLEAN, \n\tcreated_at TIMESTAMP WITHOUT TIME ZONE, \n\tPRIMARY KEY (id), \n\tFOREIGN KEY(classroom_id) REFERENCES classrooms (id)\n)\n\n"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "e9a6844319a7b493ecee0568898f0794",
+      "spans": [
+        {
+          "traceID": "e9a6844319a7b493ecee0568898f0794",
+          "spanID": "532ad52438a0fbde",
+          "operationName": "CREATE CREATE TYPE dayofweek AS ENUM ('MONDAY', 'TUESDAY', 'WEDNESD",
+          "references": [],
+          "startTime": 1780061413853316,
+          "duration": 3554,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "CREATE TYPE dayofweek AS ENUM ('MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY')"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+      "spans": [
+        {
+          "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+          "spanID": "663ab87a513dacf8",
+          "operationName": "INSERT INSERT INTO classroom_schedules (id, classroom_id, course_na",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+              "spanID": "b157a715a6b1b3d3"
+            }
+          ],
+          "startTime": 1780061417537894,
+          "duration": 4797,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "INSERT INTO classroom_schedules (id, classroom_id, course_name, teacher_name, day_of_week, start_time, end_time, semester, academic_year, is_recurring, created_at) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::VARCHAR, $5::dayofweek, $6::TIME WITHOUT TIME ZONE, $7::TIME WITHOUT TIME ZONE, $8::VARCHAR, $9::VARCHAR, $10::BOOLEAN, $11::TIMESTAMP WITHOUT TIME ZONE)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+          "spanID": "44bee1aa101f9977",
+          "operationName": "SELECT SELECT classroom_schedules.id, classroom_schedules.classroom",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+              "spanID": "b157a715a6b1b3d3"
+            }
+          ],
+          "startTime": 1780061417545549,
+          "duration": 1814,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classroom_schedules.id, classroom_schedules.classroom_id, classroom_schedules.course_name, classroom_schedules.teacher_name, classroom_schedules.day_of_week, classroom_schedules.start_time, classroom_schedules.end_time, classroom_schedules.semester, classroom_schedules.academic_year, classroom_schedules.is_recurring, classroom_schedules.created_at \nFROM classroom_schedules \nWHERE classroom_schedules.id = $1::UUID"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+          "spanID": "c6982924dc59d7fc",
+          "operationName": "POST /classrooms/{classroom_id}/schedules http receive",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+              "spanID": "b157a715a6b1b3d3"
+            }
+          ],
+          "startTime": 1780061417494752,
+          "duration": 80,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.request"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+          "spanID": "0e1452f46f1833ef",
+          "operationName": "POST /classrooms/{classroom_id}/schedules http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+              "spanID": "b157a715a6b1b3d3"
+            }
+          ],
+          "startTime": 1780061417553163,
+          "duration": 74,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 201
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+          "spanID": "87ba6ea2c9cb1be6",
+          "operationName": "POST /classrooms/{classroom_id}/schedules http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+              "spanID": "b157a715a6b1b3d3"
+            }
+          ],
+          "startTime": 1780061417553839,
+          "duration": 34,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+          "spanID": "b157a715a6b1b3d3",
+          "operationName": "POST /classrooms/{classroom_id}/schedules",
+          "references": [],
+          "startTime": 1780061417494531,
+          "duration": 59421,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.12:8002"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "POST"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/classrooms/{classroom_id}/schedules"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "classroom-service:8002"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 201
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/classrooms/d317ddc7-659d-4c30-a36d-e1443b83d3a8/schedules"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://classroom-service:8002/classrooms/d317ddc7-659d-4c30-a36d-e1443b83d3a8/schedules"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8002
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40168
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+          "spanID": "8f9f8a00ed9f01a6",
+          "operationName": "SELECT SELECT classrooms.id, classrooms.room_number, classrooms.nam",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+              "spanID": "b157a715a6b1b3d3"
+            }
+          ],
+          "startTime": 1780061417524783,
+          "duration": 3515,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classrooms.id, classrooms.room_number, classrooms.name, classrooms.building, classrooms.floor, classrooms.capacity, classrooms.room_type, classrooms.status, classrooms.description, classrooms.has_projector, classrooms.has_whiteboard, classrooms.has_computers, classrooms.has_video_conf, classrooms.has_ac, classrooms.has_accessibility, classrooms.is_deleted, classrooms.created_at, classrooms.updated_at \nFROM classrooms \nWHERE classrooms.id = $1::UUID AND classrooms.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+          "spanID": "92f7af1a94fe0efb",
+          "operationName": "SELECT SELECT classroom_schedules.classroom_id AS classroom_schedul",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "086bbe4ae34afd24e47bdbead9e04c70",
+              "spanID": "b157a715a6b1b3d3"
+            }
+          ],
+          "startTime": 1780061417531230,
+          "duration": 1870,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classroom_schedules.classroom_id AS classroom_schedules_classroom_id, classroom_schedules.id AS classroom_schedules_id, classroom_schedules.course_name AS classroom_schedules_course_name, classroom_schedules.teacher_name AS classroom_schedules_teacher_name, classroom_schedules.day_of_week AS classroom_schedules_day_of_week, classroom_schedules.start_time AS classroom_schedules_start_time, classroom_schedules.end_time AS classroom_schedules_end_time, classroom_schedules.semester AS classroom_schedules_semester, classroom_schedules.academic_year AS classroom_schedules_academic_year, classroom_schedules.is_recurring AS classroom_schedules_is_recurring, classroom_schedules.created_at AS classroom_schedules_created_at \nFROM classroom_schedules \nWHERE classroom_schedules.classroom_id IN ($1::UUID)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "f198338872ec96641627aa1ff215aad4",
+      "spans": [
+        {
+          "traceID": "f198338872ec96641627aa1ff215aad4",
+          "spanID": "9a6bd3c9d635ff96",
+          "operationName": "SELECT SELECT pg_catalog.pg_class.relname \nFROM pg_catalog.pg_class",
+          "references": [],
+          "startTime": 1780061413775537,
+          "duration": 28203,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT pg_catalog.pg_class.relname \nFROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace \nWHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "f8e5747012a28eb933c148834127bbcb",
+      "spans": [
+        {
+          "traceID": "f8e5747012a28eb933c148834127bbcb",
+          "spanID": "ec402fe415860a9a",
+          "operationName": "SELECT SELECT pg_catalog.pg_class.relname \nFROM pg_catalog.pg_class",
+          "references": [],
+          "startTime": 1780061413804698,
+          "duration": 7045,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT pg_catalog.pg_class.relname \nFROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace \nWHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "d2a38fd76906e8dee07c1e8d4133b338",
+      "spans": [
+        {
+          "traceID": "d2a38fd76906e8dee07c1e8d4133b338",
+          "spanID": "e58164da015c555d",
+          "operationName": "CREATE CREATE UNIQUE INDEX ix_classrooms_room_number ON classrooms ",
+          "references": [],
+          "startTime": 1780061413948240,
+          "duration": 27386,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "CREATE UNIQUE INDEX ix_classrooms_room_number ON classrooms (room_number)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+      "spans": [
+        {
+          "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+          "spanID": "a42966d67c18b3e0",
+          "operationName": "SELECT SELECT classroom_schedules.classroom_id AS classroom_schedul",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+              "spanID": "b902d741fbd328cf"
+            }
+          ],
+          "startTime": 1780061417456665,
+          "duration": 1196,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classroom_schedules.classroom_id AS classroom_schedules_classroom_id, classroom_schedules.id AS classroom_schedules_id, classroom_schedules.course_name AS classroom_schedules_course_name, classroom_schedules.teacher_name AS classroom_schedules_teacher_name, classroom_schedules.day_of_week AS classroom_schedules_day_of_week, classroom_schedules.start_time AS classroom_schedules_start_time, classroom_schedules.end_time AS classroom_schedules_end_time, classroom_schedules.semester AS classroom_schedules_semester, classroom_schedules.academic_year AS classroom_schedules_academic_year, classroom_schedules.is_recurring AS classroom_schedules_is_recurring, classroom_schedules.created_at AS classroom_schedules_created_at \nFROM classroom_schedules \nWHERE classroom_schedules.classroom_id IN ($1::UUID)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+          "spanID": "00b88e1c3e8c45df",
+          "operationName": "PUT /classrooms/{classroom_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+              "spanID": "b902d741fbd328cf"
+            }
+          ],
+          "startTime": 1780061417466087,
+          "duration": 65,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+          "spanID": "abe2bdf0783cacc8",
+          "operationName": "PUT /classrooms/{classroom_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+              "spanID": "b902d741fbd328cf"
+            }
+          ],
+          "startTime": 1780061417466520,
+          "duration": 18,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+          "spanID": "9ed91eacb78ff6f8",
+          "operationName": "SELECT SELECT classrooms.id, classrooms.room_number, classrooms.nam",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+              "spanID": "b902d741fbd328cf"
+            }
+          ],
+          "startTime": 1780061417436427,
+          "duration": 1881,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classrooms.id, classrooms.room_number, classrooms.name, classrooms.building, classrooms.floor, classrooms.capacity, classrooms.room_type, classrooms.status, classrooms.description, classrooms.has_projector, classrooms.has_whiteboard, classrooms.has_computers, classrooms.has_video_conf, classrooms.has_ac, classrooms.has_accessibility, classrooms.is_deleted, classrooms.created_at, classrooms.updated_at \nFROM classrooms \nWHERE classrooms.id = $1::UUID AND classrooms.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+          "spanID": "dd74783f3a8d824b",
+          "operationName": "PUT /classrooms/{classroom_id} http receive",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+              "spanID": "b902d741fbd328cf"
+            }
+          ],
+          "startTime": 1780061417414833,
+          "duration": 84,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.request"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+          "spanID": "b902d741fbd328cf",
+          "operationName": "PUT /classrooms/{classroom_id}",
+          "references": [],
+          "startTime": 1780061417414624,
+          "duration": 51957,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.12:8002"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "PUT"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/classrooms/{classroom_id}"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "classroom-service:8002"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/classrooms/d317ddc7-659d-4c30-a36d-e1443b83d3a8"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://classroom-service:8002/classrooms/d317ddc7-659d-4c30-a36d-e1443b83d3a8"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8002
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40154
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+          "spanID": "d74dfaadef3c790f",
+          "operationName": "SELECT SELECT classroom_schedules.classroom_id AS classroom_schedul",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+              "spanID": "b902d741fbd328cf"
+            }
+          ],
+          "startTime": 1780061417439786,
+          "duration": 1074,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classroom_schedules.classroom_id AS classroom_schedules_classroom_id, classroom_schedules.id AS classroom_schedules_id, classroom_schedules.course_name AS classroom_schedules_course_name, classroom_schedules.teacher_name AS classroom_schedules_teacher_name, classroom_schedules.day_of_week AS classroom_schedules_day_of_week, classroom_schedules.start_time AS classroom_schedules_start_time, classroom_schedules.end_time AS classroom_schedules_end_time, classroom_schedules.semester AS classroom_schedules_semester, classroom_schedules.academic_year AS classroom_schedules_academic_year, classroom_schedules.is_recurring AS classroom_schedules_is_recurring, classroom_schedules.created_at AS classroom_schedules_created_at \nFROM classroom_schedules \nWHERE classroom_schedules.classroom_id IN ($1::UUID)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+          "spanID": "7fecd7fa715ec5f4",
+          "operationName": "UPDATE UPDATE classrooms SET capacity=$1::INTEGER, updated_at=$2::T",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+              "spanID": "b902d741fbd328cf"
+            }
+          ],
+          "startTime": 1780061417444363,
+          "duration": 3166,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "UPDATE classrooms SET capacity=$1::INTEGER, updated_at=$2::TIMESTAMP WITHOUT TIME ZONE WHERE classrooms.id = $3::UUID"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+          "spanID": "ac4bc0bd2c3f6d74",
+          "operationName": "SELECT SELECT classrooms.id, classrooms.room_number, classrooms.nam",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "bcef6d5d759ecfc9d7b625588c117830",
+              "spanID": "b902d741fbd328cf"
+            }
+          ],
+          "startTime": 1780061417450134,
+          "duration": 3749,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classrooms.id, classrooms.room_number, classrooms.name, classrooms.building, classrooms.floor, classrooms.capacity, classrooms.room_type, classrooms.status, classrooms.description, classrooms.has_projector, classrooms.has_whiteboard, classrooms.has_computers, classrooms.has_video_conf, classrooms.has_ac, classrooms.has_accessibility, classrooms.is_deleted, classrooms.created_at, classrooms.updated_at \nFROM classrooms \nWHERE classrooms.id = $1::UUID AND classrooms.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "f5d12d4592b28f4b629aebd9fa65ea32",
+      "spans": [
+        {
+          "traceID": "f5d12d4592b28f4b629aebd9fa65ea32",
+          "spanID": "bf0d86317525f815",
+          "operationName": "CREATE CREATE TYPE roomtype AS ENUM ('LECTURE_HALL', 'SEMINAR_ROOM'",
+          "references": [],
+          "startTime": 1780061413821423,
+          "duration": 11180,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "CREATE TYPE roomtype AS ENUM ('LECTURE_HALL', 'SEMINAR_ROOM', 'LABORATORY', 'COMPUTER_LAB', 'GYM', 'WORKSHOP', 'LIBRARY')"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "9b479834ed5f3901ee24b93d92959e37",
+      "spans": [
+        {
+          "traceID": "9b479834ed5f3901ee24b93d92959e37",
+          "spanID": "f5c4a218f8ecb9c4",
+          "operationName": "SELECT SELECT classrooms.id, classrooms.room_number, classrooms.nam",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "9b479834ed5f3901ee24b93d92959e37",
+              "spanID": "104cfcd18048ac45"
+            }
+          ],
+          "startTime": 1780061417105032,
+          "duration": 52940,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classrooms.id, classrooms.room_number, classrooms.name, classrooms.building, classrooms.floor, classrooms.capacity, classrooms.room_type, classrooms.status, classrooms.description, classrooms.has_projector, classrooms.has_whiteboard, classrooms.has_computers, classrooms.has_video_conf, classrooms.has_ac, classrooms.has_accessibility, classrooms.is_deleted, classrooms.created_at, classrooms.updated_at \nFROM classrooms \nWHERE classrooms.room_number = $1::VARCHAR AND classrooms.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "9b479834ed5f3901ee24b93d92959e37",
+          "spanID": "cdba7c4fe6a849ad",
+          "operationName": "SELECT SELECT classrooms.id, classrooms.room_number, classrooms.nam",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "9b479834ed5f3901ee24b93d92959e37",
+              "spanID": "104cfcd18048ac45"
+            }
+          ],
+          "startTime": 1780061417168423,
+          "duration": 2290,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classrooms.id, classrooms.room_number, classrooms.name, classrooms.building, classrooms.floor, classrooms.capacity, classrooms.room_type, classrooms.status, classrooms.description, classrooms.has_projector, classrooms.has_whiteboard, classrooms.has_computers, classrooms.has_video_conf, classrooms.has_ac, classrooms.has_accessibility, classrooms.is_deleted, classrooms.created_at, classrooms.updated_at \nFROM classrooms \nWHERE classrooms.id = $1::UUID"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "9b479834ed5f3901ee24b93d92959e37",
+          "spanID": "66a709ff368fb0ef",
+          "operationName": "SELECT SELECT classrooms.id, classrooms.room_number, classrooms.nam",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "9b479834ed5f3901ee24b93d92959e37",
+              "spanID": "104cfcd18048ac45"
+            }
+          ],
+          "startTime": 1780061417173706,
+          "duration": 1159,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classrooms.id, classrooms.room_number, classrooms.name, classrooms.building, classrooms.floor, classrooms.capacity, classrooms.room_type, classrooms.status, classrooms.description, classrooms.has_projector, classrooms.has_whiteboard, classrooms.has_computers, classrooms.has_video_conf, classrooms.has_ac, classrooms.has_accessibility, classrooms.is_deleted, classrooms.created_at, classrooms.updated_at \nFROM classrooms \nWHERE classrooms.id = $1::UUID"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "9b479834ed5f3901ee24b93d92959e37",
+          "spanID": "b453e896c314d064",
+          "operationName": "SELECT SELECT classroom_schedules.classroom_id AS classroom_schedul",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "9b479834ed5f3901ee24b93d92959e37",
+              "spanID": "104cfcd18048ac45"
+            }
+          ],
+          "startTime": 1780061417178801,
+          "duration": 26135,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classroom_schedules.classroom_id AS classroom_schedules_classroom_id, classroom_schedules.id AS classroom_schedules_id, classroom_schedules.course_name AS classroom_schedules_course_name, classroom_schedules.teacher_name AS classroom_schedules_teacher_name, classroom_schedules.day_of_week AS classroom_schedules_day_of_week, classroom_schedules.start_time AS classroom_schedules_start_time, classroom_schedules.end_time AS classroom_schedules_end_time, classroom_schedules.semester AS classroom_schedules_semester, classroom_schedules.academic_year AS classroom_schedules_academic_year, classroom_schedules.is_recurring AS classroom_schedules_is_recurring, classroom_schedules.created_at AS classroom_schedules_created_at \nFROM classroom_schedules \nWHERE classroom_schedules.classroom_id IN ($1::UUID)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "9b479834ed5f3901ee24b93d92959e37",
+          "spanID": "858743b19b6ec2cc",
+          "operationName": "POST /classrooms/ http receive",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "9b479834ed5f3901ee24b93d92959e37",
+              "spanID": "104cfcd18048ac45"
+            }
+          ],
+          "startTime": 1780061417018406,
+          "duration": 88,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.request"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "9b479834ed5f3901ee24b93d92959e37",
+          "spanID": "7f22035255e8479b",
+          "operationName": "POST /classrooms/ http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "9b479834ed5f3901ee24b93d92959e37",
+              "spanID": "104cfcd18048ac45"
+            }
+          ],
+          "startTime": 1780061417209036,
+          "duration": 66,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 201
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "9b479834ed5f3901ee24b93d92959e37",
+          "spanID": "4811bf0e314af7c0",
+          "operationName": "INSERT INSERT INTO classrooms (id, room_number, name, building, flo",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "9b479834ed5f3901ee24b93d92959e37",
+              "spanID": "104cfcd18048ac45"
+            }
+          ],
+          "startTime": 1780061417162127,
+          "duration": 3024,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "INSERT INTO classrooms (id, room_number, name, building, floor, capacity, room_type, status, description, has_projector, has_whiteboard, has_computers, has_video_conf, has_ac, has_accessibility, is_deleted, created_at, updated_at) VALUES ($1::UUID, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::INTEGER, $6::INTEGER, $7::roomtype, $8::classroomstatus, $9::VARCHAR, $10::BOOLEAN, $11::BOOLEAN, $12::BOOLEAN, $13::BOOLEAN, $14::BOOLEAN, $15::BOOLEAN, $16::BOOLEAN, $17::TIMESTAMP WITHOUT TIME ZONE, $18::TIMESTAMP WITHOUT TIME ZONE)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "9b479834ed5f3901ee24b93d92959e37",
+          "spanID": "0402d49f9e60b7c9",
+          "operationName": "POST /classrooms/ http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "9b479834ed5f3901ee24b93d92959e37",
+              "spanID": "104cfcd18048ac45"
+            }
+          ],
+          "startTime": 1780061417209513,
+          "duration": 37,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "9b479834ed5f3901ee24b93d92959e37",
+          "spanID": "104cfcd18048ac45",
+          "operationName": "POST /classrooms/",
+          "references": [],
+          "startTime": 1780061417018106,
+          "duration": 191529,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.12:8002"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "POST"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/classrooms/"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "classroom-service:8002"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 201
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/classrooms/"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://classroom-service:8002/classrooms/"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8002
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40124
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "72c67a87699cc012344285af9dbaa404",
+      "spans": [
+        {
+          "traceID": "72c67a87699cc012344285af9dbaa404",
+          "spanID": "2bb69d065f6daa57",
+          "operationName": "GET /classrooms/",
+          "references": [],
+          "startTime": 1780061417244252,
+          "duration": 57364,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.12:8002"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "GET"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/classrooms/"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "classroom-service:8002"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/classrooms/"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://classroom-service:8002/classrooms/"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8002
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40126
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "72c67a87699cc012344285af9dbaa404",
+          "spanID": "b7ea582442c2f8b9",
+          "operationName": "SELECT SELECT count(*) AS count_1 \nFROM (SELECT classrooms.id AS id",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "72c67a87699cc012344285af9dbaa404",
+              "spanID": "2bb69d065f6daa57"
+            }
+          ],
+          "startTime": 1780061417276662,
+          "duration": 4482,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT count(*) AS count_1 \nFROM (SELECT classrooms.id AS id, classrooms.room_number AS room_number, classrooms.name AS name, classrooms.building AS building, classrooms.floor AS floor, classrooms.capacity AS capacity, classrooms.room_type AS room_type, classrooms.status AS status, classrooms.description AS description, classrooms.has_projector AS has_projector, classrooms.has_whiteboard AS has_whiteboard, classrooms.has_computers AS has_computers, classrooms.has_video_conf AS has_video_conf, classrooms.has_ac AS has_ac, classrooms.has_accessibility AS has_accessibility, classrooms.is_deleted AS is_deleted, classrooms.created_at AS created_at, classrooms.updated_at AS updated_at \nFROM classrooms \nWHERE classrooms.is_deleted = false) AS anon_1"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "72c67a87699cc012344285af9dbaa404",
+          "spanID": "273e02227d10cbc6",
+          "operationName": "SELECT SELECT classrooms.id, classrooms.room_number, classrooms.nam",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "72c67a87699cc012344285af9dbaa404",
+              "spanID": "2bb69d065f6daa57"
+            }
+          ],
+          "startTime": 1780061417286988,
+          "duration": 9259,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classrooms.id, classrooms.room_number, classrooms.name, classrooms.building, classrooms.floor, classrooms.capacity, classrooms.room_type, classrooms.status, classrooms.description, classrooms.has_projector, classrooms.has_whiteboard, classrooms.has_computers, classrooms.has_video_conf, classrooms.has_ac, classrooms.has_accessibility, classrooms.is_deleted, classrooms.created_at, classrooms.updated_at \nFROM classrooms \nWHERE classrooms.is_deleted = false ORDER BY classrooms.building, classrooms.room_number \n LIMIT $1::INTEGER OFFSET $2::INTEGER"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "72c67a87699cc012344285af9dbaa404",
+          "spanID": "413ce5979355fd34",
+          "operationName": "SELECT SELECT classroom_schedules.classroom_id AS classroom_schedul",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "72c67a87699cc012344285af9dbaa404",
+              "spanID": "2bb69d065f6daa57"
+            }
+          ],
+          "startTime": 1780061417297535,
+          "duration": 1030,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT classroom_schedules.classroom_id AS classroom_schedules_classroom_id, classroom_schedules.id AS classroom_schedules_id, classroom_schedules.course_name AS classroom_schedules_course_name, classroom_schedules.teacher_name AS classroom_schedules_teacher_name, classroom_schedules.day_of_week AS classroom_schedules_day_of_week, classroom_schedules.start_time AS classroom_schedules_start_time, classroom_schedules.end_time AS classroom_schedules_end_time, classroom_schedules.semester AS classroom_schedules_semester, classroom_schedules.academic_year AS classroom_schedules_academic_year, classroom_schedules.is_recurring AS classroom_schedules_is_recurring, classroom_schedules.created_at AS classroom_schedules_created_at \nFROM classroom_schedules \nWHERE classroom_schedules.classroom_id IN ($1::UUID)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "72c67a87699cc012344285af9dbaa404",
+          "spanID": "316cf59b14b49942",
+          "operationName": "GET /classrooms/ http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "72c67a87699cc012344285af9dbaa404",
+              "spanID": "2bb69d065f6daa57"
+            }
+          ],
+          "startTime": 1780061417301020,
+          "duration": 53,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "72c67a87699cc012344285af9dbaa404",
+          "spanID": "bac5ae585ff9dd8d",
+          "operationName": "GET /classrooms/ http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "72c67a87699cc012344285af9dbaa404",
+              "spanID": "2bb69d065f6daa57"
+            }
+          ],
+          "startTime": 1780061417301461,
+          "duration": 30,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "f60f7a9f1fba07e4e601f6d913051b32",
+      "spans": [
+        {
+          "traceID": "f60f7a9f1fba07e4e601f6d913051b32",
+          "spanID": "d6481bb79c271239",
+          "operationName": "GET /health http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "f60f7a9f1fba07e4e601f6d913051b32",
+              "spanID": "282ea782bbdfc706"
+            }
+          ],
+          "startTime": 1780061418316096,
+          "duration": 48,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "f60f7a9f1fba07e4e601f6d913051b32",
+          "spanID": "19c7f9975755a677",
+          "operationName": "GET /health http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "f60f7a9f1fba07e4e601f6d913051b32",
+              "spanID": "282ea782bbdfc706"
+            }
+          ],
+          "startTime": 1780061418316477,
+          "duration": 23,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "f60f7a9f1fba07e4e601f6d913051b32",
+          "spanID": "282ea782bbdfc706",
+          "operationName": "GET /health",
+          "references": [],
+          "startTime": 1780061418315603,
+          "duration": 944,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.12:8002"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "GET"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/health"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "classroom-service:8002"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/health"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://classroom-service:8002/health"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-httpx/0.27.0"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8002
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40184
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "classroom-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    }
+  ],
+  "total": 0,
+  "limit": 0,
+  "offset": 0,
+  "errors": null
+}

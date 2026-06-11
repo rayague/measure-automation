@@ -137,3 +137,30 @@ def clean_data_dirs(
                     pass
 
     return deleted
+
+
+def get_llm_enabled(settings: dict[str, Any] | None = None) -> bool:
+    """Check if LLM features are enabled in settings.
+
+    LLM is enabled only when:
+    1. settings.yaml has llm.enabled = true (or BOUNDARY_ANALYZER_LLM_ENABLED is set)
+    2. The OPENROUTER_API_KEY environment variable is set
+    """
+    if settings is None:
+        settings = load_settings()
+
+    # Allow CLI --llm flag to override settings.yaml
+    env_override = os.environ.get("BOUNDARY_ANALYZER_LLM_ENABLED", "").strip()
+    if env_override == "1":
+        llm_enabled = True
+    else:
+        llm_config = settings.get("llm", {})
+        if not isinstance(llm_config, dict):
+            return False
+        llm_enabled = llm_config.get("enabled", False)
+
+    if not llm_enabled:
+        return False
+
+    api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+    return bool(api_key)

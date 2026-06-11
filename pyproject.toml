@@ -1,6 +1,10 @@
 [project]
 name = "boundary-analyzer"
 version = "0.2.0"
+description = "SCOM-based microservice boundary analysis from Jaeger traces"
+readme = "CHANGELOG.md"
+license = "MIT"
+authors = [{ name = "Ray Ague", email = "rayague03@gmail.com" }]
 requires-python = ">=3.11"
 dependencies = [
   "requests>=2.31.0",
@@ -9,6 +13,10 @@ dependencies = [
   "dash>=2.14.0",
   "plotly>=5.18.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/rayague/measure-automation"
+Repository = "https://github.com/rayague/measure-automation"
 
 [project.scripts]
 boundary-analyzer = "boundary_analyzer.cli:main"

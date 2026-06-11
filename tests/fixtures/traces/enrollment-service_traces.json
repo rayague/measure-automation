@@ -1,0 +1,2829 @@
+{
+  "data": [
+    {
+      "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+      "spans": [
+        {
+          "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+          "spanID": "8f3f941b2904133c",
+          "operationName": "SELECT SELECT enrollments.id, enrollments.student_id, enrollments.c",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+              "spanID": "c1f020ee833f6c0a"
+            }
+          ],
+          "startTime": 1780061417930985,
+          "duration": 1371,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT enrollments.id, enrollments.student_id, enrollments.classroom_id, enrollments.status, enrollments.enrolled_at, enrollments.confirmed_at, enrollments.cancelled_at, enrollments.completed_at, enrollments.semester, enrollments.academic_year, enrollments.grade, enrollments.notes, enrollments.enrolled_by, enrollments.is_deleted, enrollments.created_at, enrollments.updated_at \nFROM enrollments \nWHERE enrollments.id = $1::UUID"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+          "spanID": "769b9f3d2fd3bc3c",
+          "operationName": "POST /enrollments/ http receive",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+              "spanID": "c1f020ee833f6c0a"
+            }
+          ],
+          "startTime": 1780061417797665,
+          "duration": 86,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.request"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+          "spanID": "8de06aeb1f3a6c73",
+          "operationName": "POST /enrollments/ http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+              "spanID": "c1f020ee833f6c0a"
+            }
+          ],
+          "startTime": 1780061417938410,
+          "duration": 53,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 201
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+          "spanID": "350a9fecf56c91da",
+          "operationName": "POST /enrollments/ http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+              "spanID": "c1f020ee833f6c0a"
+            }
+          ],
+          "startTime": 1780061417938765,
+          "duration": 18,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+          "spanID": "c1f020ee833f6c0a",
+          "operationName": "POST /enrollments/",
+          "references": [],
+          "startTime": 1780061417797455,
+          "duration": 141371,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.14:8003"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "POST"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/enrollments/"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "enrollment-service:8003"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 201
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/enrollments/"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://enrollment-service:8003/enrollments/"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8003
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40338
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+          "spanID": "151c1502004ec224",
+          "operationName": "SELECT SELECT enrollments.id, enrollments.student_id, enrollments.c",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+              "spanID": "c1f020ee833f6c0a"
+            }
+          ],
+          "startTime": 1780061417914390,
+          "duration": 3170,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT enrollments.id, enrollments.student_id, enrollments.classroom_id, enrollments.status, enrollments.enrolled_at, enrollments.confirmed_at, enrollments.cancelled_at, enrollments.completed_at, enrollments.semester, enrollments.academic_year, enrollments.grade, enrollments.notes, enrollments.enrolled_by, enrollments.is_deleted, enrollments.created_at, enrollments.updated_at \nFROM enrollments \nWHERE enrollments.student_id = $1::UUID AND enrollments.classroom_id = $2::UUID AND enrollments.is_deleted = false AND enrollments.status != $3::enrollmentstatus"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+          "spanID": "557af5231745e235",
+          "operationName": "SELECT SELECT count(enrollments.id) AS count_1 \nFROM enrollments \nW",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+              "spanID": "c1f020ee833f6c0a"
+            }
+          ],
+          "startTime": 1780061417922482,
+          "duration": 2159,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT count(enrollments.id) AS count_1 \nFROM enrollments \nWHERE enrollments.classroom_id = $1::UUID AND enrollments.status IN ($2::enrollmentstatus, $3::enrollmentstatus) AND enrollments.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+          "spanID": "6dd7fe2b5ec02dc4",
+          "operationName": "INSERT INSERT INTO enrollments (id, student_id, classroom_id, statu",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "27743d0074baee6bbaa7c3c459e4241d",
+              "spanID": "c1f020ee833f6c0a"
+            }
+          ],
+          "startTime": 1780061417927005,
+          "duration": 1844,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "INSERT INTO enrollments (id, student_id, classroom_id, status, enrolled_at, confirmed_at, cancelled_at, completed_at, semester, academic_year, grade, notes, enrolled_by, is_deleted, created_at, updated_at) VALUES ($1::UUID, $2::UUID, $3::UUID, $4::enrollmentstatus, $5::TIMESTAMP WITHOUT TIME ZONE, $6::TIMESTAMP WITHOUT TIME ZONE, $7::TIMESTAMP WITHOUT TIME ZONE, $8::TIMESTAMP WITHOUT TIME ZONE, $9::VARCHAR, $10::VARCHAR, $11::FLOAT, $12::VARCHAR, $13::UUID, $14::BOOLEAN, $15::TIMESTAMP WITHOUT TIME ZONE, $16::TIMESTAMP WITHOUT TIME ZONE)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "005bd8b0177cb76075ed8bea2b716259",
+      "spans": [
+        {
+          "traceID": "005bd8b0177cb76075ed8bea2b716259",
+          "spanID": "4938669d0c242ace",
+          "operationName": "DELETE /enrollments/{enrollment_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "005bd8b0177cb76075ed8bea2b716259",
+              "spanID": "ab4b77527eb51475"
+            }
+          ],
+          "startTime": 1780061418170225,
+          "duration": 36,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "005bd8b0177cb76075ed8bea2b716259",
+          "spanID": "e5a678800d993031",
+          "operationName": "DELETE /enrollments/{enrollment_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "005bd8b0177cb76075ed8bea2b716259",
+              "spanID": "ab4b77527eb51475"
+            }
+          ],
+          "startTime": 1780061418170498,
+          "duration": 13,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "005bd8b0177cb76075ed8bea2b716259",
+          "spanID": "ab4b77527eb51475",
+          "operationName": "DELETE /enrollments/{enrollment_id}",
+          "references": [],
+          "startTime": 1780061418143163,
+          "duration": 27380,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.14:8003"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "DELETE"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/enrollments/{enrollment_id}"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "enrollment-service:8003"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/enrollments/62956485-9ea3-42ce-8488-9bac212213c7"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://enrollment-service:8003/enrollments/62956485-9ea3-42ce-8488-9bac212213c7"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8003
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40360
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "005bd8b0177cb76075ed8bea2b716259",
+          "spanID": "fb7d1f25ffbdc550",
+          "operationName": "SELECT SELECT enrollments.id, enrollments.student_id, enrollments.c",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "005bd8b0177cb76075ed8bea2b716259",
+              "spanID": "ab4b77527eb51475"
+            }
+          ],
+          "startTime": 1780061418159012,
+          "duration": 1150,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT enrollments.id, enrollments.student_id, enrollments.classroom_id, enrollments.status, enrollments.enrolled_at, enrollments.confirmed_at, enrollments.cancelled_at, enrollments.completed_at, enrollments.semester, enrollments.academic_year, enrollments.grade, enrollments.notes, enrollments.enrolled_by, enrollments.is_deleted, enrollments.created_at, enrollments.updated_at \nFROM enrollments \nWHERE enrollments.id = $1::UUID AND enrollments.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "005bd8b0177cb76075ed8bea2b716259",
+          "spanID": "ff1e3885e1104bae",
+          "operationName": "UPDATE UPDATE enrollments SET status=$1::enrollmentstatus, cancelle",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "005bd8b0177cb76075ed8bea2b716259",
+              "spanID": "ab4b77527eb51475"
+            }
+          ],
+          "startTime": 1780061418162514,
+          "duration": 2203,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "UPDATE enrollments SET status=$1::enrollmentstatus, cancelled_at=$2::TIMESTAMP WITHOUT TIME ZONE, is_deleted=$3::BOOLEAN, updated_at=$4::TIMESTAMP WITHOUT TIME ZONE WHERE enrollments.id = $5::UUID"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "005bd8b0177cb76075ed8bea2b716259",
+          "spanID": "c22c41524b469419",
+          "operationName": "SELECT SELECT enrollments.id, enrollments.student_id, enrollments.c",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "005bd8b0177cb76075ed8bea2b716259",
+              "spanID": "ab4b77527eb51475"
+            }
+          ],
+          "startTime": 1780061418166076,
+          "duration": 1139,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT enrollments.id, enrollments.student_id, enrollments.classroom_id, enrollments.status, enrollments.enrolled_at, enrollments.confirmed_at, enrollments.cancelled_at, enrollments.completed_at, enrollments.semester, enrollments.academic_year, enrollments.grade, enrollments.notes, enrollments.enrolled_by, enrollments.is_deleted, enrollments.created_at, enrollments.updated_at \nFROM enrollments \nWHERE enrollments.id = $1::UUID AND enrollments.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "d7462cf723c97b7849f74cb0c37ba908",
+      "spans": [
+        {
+          "traceID": "d7462cf723c97b7849f74cb0c37ba908",
+          "spanID": "2a93355cc41f4196",
+          "operationName": "SELECT SELECT pg_catalog.pg_type.typname \nFROM pg_catalog.pg_type J",
+          "references": [],
+          "startTime": 1780061413812555,
+          "duration": 4941,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT pg_catalog.pg_type.typname \nFROM pg_catalog.pg_type JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_type.typnamespace \nWHERE pg_catalog.pg_type.typname = $1::VARCHAR AND pg_catalog.pg_type_is_visible(pg_catalog.pg_type.oid) AND pg_catalog.pg_namespace.nspname != $2::VARCHAR"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "5c9e189e89480eb8205c773bfba9b165",
+      "spans": [
+        {
+          "traceID": "5c9e189e89480eb8205c773bfba9b165",
+          "spanID": "56d3d1565d24a992",
+          "operationName": "CREATE CREATE TYPE enrollmentstatus AS ENUM ('PENDING', 'CONFIRMED'",
+          "references": [],
+          "startTime": 1780061413819011,
+          "duration": 11447,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "CREATE TYPE enrollmentstatus AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'WAITLISTED')"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "22938e3156cdbd21d4e06c0d2b3cc2b7",
+      "spans": [
+        {
+          "traceID": "22938e3156cdbd21d4e06c0d2b3cc2b7",
+          "spanID": "1fcfc72b4f276fe2",
+          "operationName": "GET /health http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "22938e3156cdbd21d4e06c0d2b3cc2b7",
+              "spanID": "9d4cdcb30bf4eba3"
+            }
+          ],
+          "startTime": 1780061418316611,
+          "duration": 36,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "22938e3156cdbd21d4e06c0d2b3cc2b7",
+          "spanID": "eb20d9785145622c",
+          "operationName": "GET /health http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "22938e3156cdbd21d4e06c0d2b3cc2b7",
+              "spanID": "9d4cdcb30bf4eba3"
+            }
+          ],
+          "startTime": 1780061418316890,
+          "duration": 14,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "22938e3156cdbd21d4e06c0d2b3cc2b7",
+          "spanID": "9d4cdcb30bf4eba3",
+          "operationName": "GET /health",
+          "references": [],
+          "startTime": 1780061418316141,
+          "duration": 798,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.14:8003"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "GET"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/health"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "enrollment-service:8003"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/health"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://enrollment-service:8003/health"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-httpx/0.27.0"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8003
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40368
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "b2a3d272a60cda530f2e3b0f0b841ec9",
+      "spans": [
+        {
+          "traceID": "b2a3d272a60cda530f2e3b0f0b841ec9",
+          "spanID": "3989e445b83ae97b",
+          "operationName": "SELECT SELECT enrollments.id, enrollments.student_id, enrollments.c",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "b2a3d272a60cda530f2e3b0f0b841ec9",
+              "spanID": "b84563fb9626a884"
+            }
+          ],
+          "startTime": 1780061418040016,
+          "duration": 2422,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT enrollments.id, enrollments.student_id, enrollments.classroom_id, enrollments.status, enrollments.enrolled_at, enrollments.confirmed_at, enrollments.cancelled_at, enrollments.completed_at, enrollments.semester, enrollments.academic_year, enrollments.grade, enrollments.notes, enrollments.enrolled_by, enrollments.is_deleted, enrollments.created_at, enrollments.updated_at \nFROM enrollments \nWHERE enrollments.id = $1::UUID AND enrollments.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "b2a3d272a60cda530f2e3b0f0b841ec9",
+          "spanID": "fe3f3361d2a84984",
+          "operationName": "GET /enrollments/{enrollment_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "b2a3d272a60cda530f2e3b0f0b841ec9",
+              "spanID": "b84563fb9626a884"
+            }
+          ],
+          "startTime": 1780061418044552,
+          "duration": 88,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "b2a3d272a60cda530f2e3b0f0b841ec9",
+          "spanID": "50b22b14df3f9482",
+          "operationName": "GET /enrollments/{enrollment_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "b2a3d272a60cda530f2e3b0f0b841ec9",
+              "spanID": "b84563fb9626a884"
+            }
+          ],
+          "startTime": 1780061418045120,
+          "duration": 34,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "b2a3d272a60cda530f2e3b0f0b841ec9",
+          "spanID": "b84563fb9626a884",
+          "operationName": "GET /enrollments/{enrollment_id}",
+          "references": [],
+          "startTime": 1780061418015463,
+          "duration": 29772,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.14:8003"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "GET"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/enrollments/{enrollment_id}"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "enrollment-service:8003"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/enrollments/62956485-9ea3-42ce-8488-9bac212213c7"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://enrollment-service:8003/enrollments/62956485-9ea3-42ce-8488-9bac212213c7"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8003
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40350
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "7a166be5c3c5aba70e52a1bf00758cef",
+      "spans": [
+        {
+          "traceID": "7a166be5c3c5aba70e52a1bf00758cef",
+          "spanID": "228aa8c67dedea82",
+          "operationName": "GET http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "7a166be5c3c5aba70e52a1bf00758cef",
+              "spanID": "858cb2d54cd655e8"
+            }
+          ],
+          "startTime": 1780061418825947,
+          "duration": 51,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 404
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "7a166be5c3c5aba70e52a1bf00758cef",
+          "spanID": "51c798e82be51108",
+          "operationName": "GET http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "7a166be5c3c5aba70e52a1bf00758cef",
+              "spanID": "858cb2d54cd655e8"
+            }
+          ],
+          "startTime": 1780061418826333,
+          "duration": 23,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "7a166be5c3c5aba70e52a1bf00758cef",
+          "spanID": "858cb2d54cd655e8",
+          "operationName": "GET",
+          "references": [],
+          "startTime": 1780061418825539,
+          "duration": 863,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.14:8003"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "GET"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "enrollment-service:8003"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 404
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/metrics"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://enrollment-service:8003/metrics"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "Prometheus/3.11.3"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8003
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.3"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 35900
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "0096d0c6d8df8663f9f8b53b08760e9e",
+      "spans": [
+        {
+          "traceID": "0096d0c6d8df8663f9f8b53b08760e9e",
+          "spanID": "79401af1291d91e0",
+          "operationName": "SELECT SELECT pg_catalog.pg_class.relname \nFROM pg_catalog.pg_class",
+          "references": [],
+          "startTime": 1780061413774641,
+          "duration": 32833,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT pg_catalog.pg_class.relname \nFROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace \nWHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "194d4505e310f40bfb9b1632aa706b2f",
+      "spans": [
+        {
+          "traceID": "194d4505e310f40bfb9b1632aa706b2f",
+          "spanID": "e158723ab5269081",
+          "operationName": "CREATE CREATE INDEX ix_enrollments_student_id ON enrollments (stude",
+          "references": [],
+          "startTime": 1780061413926506,
+          "duration": 34442,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "CREATE INDEX ix_enrollments_student_id ON enrollments (student_id)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "30fe26dbed6f053aefe161a54f309eee",
+      "spans": [
+        {
+          "traceID": "30fe26dbed6f053aefe161a54f309eee",
+          "spanID": "9c0782c7f84ffb39",
+          "operationName": "CREATE CREATE INDEX ix_enrollments_classroom_id ON enrollments (cla",
+          "references": [],
+          "startTime": 1780061413962127,
+          "duration": 27941,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "CREATE INDEX ix_enrollments_classroom_id ON enrollments (classroom_id)"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "43c244a62e62a5fb82cb807a46dbf87d",
+      "spans": [
+        {
+          "traceID": "43c244a62e62a5fb82cb807a46dbf87d",
+          "spanID": "5c37f377de21138b",
+          "operationName": "GET /health http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "43c244a62e62a5fb82cb807a46dbf87d",
+              "spanID": "02c309de01aab518"
+            }
+          ],
+          "startTime": 1780061414917988,
+          "duration": 43,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "43c244a62e62a5fb82cb807a46dbf87d",
+          "spanID": "02c309de01aab518",
+          "operationName": "GET /health",
+          "references": [],
+          "startTime": 1780061414916615,
+          "duration": 1502,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.14:8003"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "GET"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/health"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "localhost:8003"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/health"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://localhost:8003/health"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8003
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.1"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 45636
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "43c244a62e62a5fb82cb807a46dbf87d",
+          "spanID": "6793c43da0a4a0b2",
+          "operationName": "GET /health http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "43c244a62e62a5fb82cb807a46dbf87d",
+              "spanID": "02c309de01aab518"
+            }
+          ],
+          "startTime": 1780061414917292,
+          "duration": 200,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "5c3b7eab59692d45184b5486b9b144b7",
+      "spans": [
+        {
+          "traceID": "5c3b7eab59692d45184b5486b9b144b7",
+          "spanID": "516ae653ac378738",
+          "operationName": "SELECT SELECT enrollments.id, enrollments.student_id, enrollments.c",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "5c3b7eab59692d45184b5486b9b144b7",
+              "spanID": "a09b4d128fa5e86b"
+            }
+          ],
+          "startTime": 1780061418363649,
+          "duration": 1024,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT enrollments.id, enrollments.student_id, enrollments.classroom_id, enrollments.status, enrollments.enrolled_at, enrollments.confirmed_at, enrollments.cancelled_at, enrollments.completed_at, enrollments.semester, enrollments.academic_year, enrollments.grade, enrollments.notes, enrollments.enrolled_by, enrollments.is_deleted, enrollments.created_at, enrollments.updated_at \nFROM enrollments \nWHERE enrollments.id = $1::UUID AND enrollments.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "5c3b7eab59692d45184b5486b9b144b7",
+          "spanID": "d3371a6e96cde2cb",
+          "operationName": "DELETE /enrollments/{enrollment_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "5c3b7eab59692d45184b5486b9b144b7",
+              "spanID": "a09b4d128fa5e86b"
+            }
+          ],
+          "startTime": 1780061418366360,
+          "duration": 41,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 404
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "5c3b7eab59692d45184b5486b9b144b7",
+          "spanID": "29c4758bcdf769b8",
+          "operationName": "DELETE /enrollments/{enrollment_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "5c3b7eab59692d45184b5486b9b144b7",
+              "spanID": "a09b4d128fa5e86b"
+            }
+          ],
+          "startTime": 1780061418366767,
+          "duration": 28,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "5c3b7eab59692d45184b5486b9b144b7",
+          "spanID": "a09b4d128fa5e86b",
+          "operationName": "DELETE /enrollments/{enrollment_id}",
+          "references": [],
+          "startTime": 1780061418346875,
+          "duration": 19988,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.14:8003"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "DELETE"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/enrollments/{enrollment_id}"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "enrollment-service:8003"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 404
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/enrollments/62956485-9ea3-42ce-8488-9bac212213c7"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://enrollment-service:8003/enrollments/62956485-9ea3-42ce-8488-9bac212213c7"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8003
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40376
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "9eb7770d3b1be93fb2fe9de474b6f697",
+      "spans": [
+        {
+          "traceID": "9eb7770d3b1be93fb2fe9de474b6f697",
+          "spanID": "91fa023c8b1caf96",
+          "operationName": "CREATE CREATE TABLE enrollments (\n\tid UUID NOT NULL, \n\tstudent_id U",
+          "references": [],
+          "startTime": 1780061413833774,
+          "duration": 78606,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "\nCREATE TABLE enrollments (\n\tid UUID NOT NULL, \n\tstudent_id UUID NOT NULL, \n\tclassroom_id UUID NOT NULL, \n\tstatus enrollmentstatus, \n\tenrolled_at TIMESTAMP WITHOUT TIME ZONE, \n\tconfirmed_at TIMESTAMP WITHOUT TIME ZONE, \n\tcancelled_at TIMESTAMP WITHOUT TIME ZONE, \n\tcompleted_at TIMESTAMP WITHOUT TIME ZONE, \n\tsemester VARCHAR(20), \n\tacademic_year VARCHAR(9), \n\tgrade FLOAT, \n\tnotes TEXT, \n\tenrolled_by UUID, \n\tis_deleted BOOLEAN, \n\tcreated_at TIMESTAMP WITHOUT TIME ZONE, \n\tupdated_at TIMESTAMP WITHOUT TIME ZONE, \n\tPRIMARY KEY (id)\n)\n\n"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+      "spans": [
+        {
+          "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+          "spanID": "fa23662cde27000b",
+          "operationName": "PUT /enrollments/{enrollment_id}",
+          "references": [],
+          "startTime": 1780061418081056,
+          "duration": 29350,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.14:8003"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "PUT"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/enrollments/{enrollment_id}"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "enrollment-service:8003"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/enrollments/62956485-9ea3-42ce-8488-9bac212213c7"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://enrollment-service:8003/enrollments/62956485-9ea3-42ce-8488-9bac212213c7"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8003
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40354
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+          "spanID": "ffdcbf5764e1c570",
+          "operationName": "SELECT SELECT enrollments.id, enrollments.student_id, enrollments.c",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+              "spanID": "fa23662cde27000b"
+            }
+          ],
+          "startTime": 1780061418097172,
+          "duration": 1067,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT enrollments.id, enrollments.student_id, enrollments.classroom_id, enrollments.status, enrollments.enrolled_at, enrollments.confirmed_at, enrollments.cancelled_at, enrollments.completed_at, enrollments.semester, enrollments.academic_year, enrollments.grade, enrollments.notes, enrollments.enrolled_by, enrollments.is_deleted, enrollments.created_at, enrollments.updated_at \nFROM enrollments \nWHERE enrollments.id = $1::UUID AND enrollments.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+          "spanID": "197c321f628bf9dc",
+          "operationName": "UPDATE UPDATE enrollments SET status=$1::enrollmentstatus, updated_",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+              "spanID": "fa23662cde27000b"
+            }
+          ],
+          "startTime": 1780061418100731,
+          "duration": 2552,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "UPDATE enrollments SET status=$1::enrollmentstatus, updated_at=$2::TIMESTAMP WITHOUT TIME ZONE WHERE enrollments.id = $3::UUID"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+          "spanID": "f5373f32eb52f3c1",
+          "operationName": "SELECT SELECT enrollments.id, enrollments.student_id, enrollments.c",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+              "spanID": "fa23662cde27000b"
+            }
+          ],
+          "startTime": 1780061418104121,
+          "duration": 1041,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT enrollments.id, enrollments.student_id, enrollments.classroom_id, enrollments.status, enrollments.enrolled_at, enrollments.confirmed_at, enrollments.cancelled_at, enrollments.completed_at, enrollments.semester, enrollments.academic_year, enrollments.grade, enrollments.notes, enrollments.enrolled_by, enrollments.is_deleted, enrollments.created_at, enrollments.updated_at \nFROM enrollments \nWHERE enrollments.id = $1::UUID AND enrollments.is_deleted = false"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+          "spanID": "a664082caa99c35d",
+          "operationName": "PUT /enrollments/{enrollment_id} http receive",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+              "spanID": "fa23662cde27000b"
+            }
+          ],
+          "startTime": 1780061418081264,
+          "duration": 69,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.request"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+          "spanID": "92bb41a5e6616c29",
+          "operationName": "PUT /enrollments/{enrollment_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+              "spanID": "fa23662cde27000b"
+            }
+          ],
+          "startTime": 1780061418110060,
+          "duration": 42,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+          "spanID": "3a04697cfdd9b4b6",
+          "operationName": "PUT /enrollments/{enrollment_id} http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "3ba29148c1a5ae13da6c5e9796c1a2b0",
+              "spanID": "fa23662cde27000b"
+            }
+          ],
+          "startTime": 1780061418110358,
+          "duration": 14,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    },
+    {
+      "traceID": "f2c86ef46160dd946dc1235f30d0c40d",
+      "spans": [
+        {
+          "traceID": "f2c86ef46160dd946dc1235f30d0c40d",
+          "spanID": "768d478e3262e194",
+          "operationName": "GET /enrollments/",
+          "references": [],
+          "startTime": 1780061417655542,
+          "duration": 116598,
+          "tags": [
+            {
+              "key": "http.flavor",
+              "type": "string",
+              "value": "1.1"
+            },
+            {
+              "key": "http.host",
+              "type": "string",
+              "value": "172.20.0.14:8003"
+            },
+            {
+              "key": "http.method",
+              "type": "string",
+              "value": "GET"
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/enrollments/"
+            },
+            {
+              "key": "http.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "http.server_name",
+              "type": "string",
+              "value": "enrollment-service:8003"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.target",
+              "type": "string",
+              "value": "/enrollments/"
+            },
+            {
+              "key": "http.url",
+              "type": "string",
+              "value": "http://enrollment-service:8003/enrollments/"
+            },
+            {
+              "key": "http.user_agent",
+              "type": "string",
+              "value": "python-requests/2.33.1"
+            },
+            {
+              "key": "net.host.port",
+              "type": "int64",
+              "value": 8003
+            },
+            {
+              "key": "net.peer.ip",
+              "type": "string",
+              "value": "172.20.0.15"
+            },
+            {
+              "key": "net.peer.port",
+              "type": "int64",
+              "value": 40330
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "f2c86ef46160dd946dc1235f30d0c40d",
+          "spanID": "894aea280b2d3450",
+          "operationName": "SELECT SELECT count(*) AS count_1 \nFROM (SELECT enrollments.id AS i",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "f2c86ef46160dd946dc1235f30d0c40d",
+              "spanID": "768d478e3262e194"
+            }
+          ],
+          "startTime": 1780061417695059,
+          "duration": 4553,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT count(*) AS count_1 \nFROM (SELECT enrollments.id AS id, enrollments.student_id AS student_id, enrollments.classroom_id AS classroom_id, enrollments.status AS status, enrollments.enrolled_at AS enrolled_at, enrollments.confirmed_at AS confirmed_at, enrollments.cancelled_at AS cancelled_at, enrollments.completed_at AS completed_at, enrollments.semester AS semester, enrollments.academic_year AS academic_year, enrollments.grade AS grade, enrollments.notes AS notes, enrollments.enrolled_by AS enrolled_by, enrollments.is_deleted AS is_deleted, enrollments.created_at AS created_at, enrollments.updated_at AS updated_at \nFROM enrollments \nWHERE enrollments.is_deleted = false) AS anon_1"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "f2c86ef46160dd946dc1235f30d0c40d",
+          "spanID": "7609fb862bdffaaf",
+          "operationName": "SELECT SELECT enrollments.id, enrollments.student_id, enrollments.c",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "f2c86ef46160dd946dc1235f30d0c40d",
+              "spanID": "768d478e3262e194"
+            }
+          ],
+          "startTime": 1780061417703023,
+          "duration": 66707,
+          "tags": [
+            {
+              "key": "db.statement",
+              "type": "string",
+              "value": "SELECT enrollments.id, enrollments.student_id, enrollments.classroom_id, enrollments.status, enrollments.enrolled_at, enrollments.confirmed_at, enrollments.cancelled_at, enrollments.completed_at, enrollments.semester, enrollments.academic_year, enrollments.grade, enrollments.notes, enrollments.enrolled_by, enrollments.is_deleted, enrollments.created_at, enrollments.updated_at \nFROM enrollments \nWHERE enrollments.is_deleted = false ORDER BY enrollments.created_at DESC \n LIMIT $1::INTEGER OFFSET $2::INTEGER"
+            },
+            {
+              "key": "db.system",
+              "type": "string",
+              "value": "postgresql"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "otel_instrumentation"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "f2c86ef46160dd946dc1235f30d0c40d",
+          "spanID": "64d18a6d19b67f53",
+          "operationName": "GET /enrollments/ http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "f2c86ef46160dd946dc1235f30d0c40d",
+              "spanID": "768d478e3262e194"
+            }
+          ],
+          "startTime": 1780061417771499,
+          "duration": 65,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.start"
+            },
+            {
+              "key": "http.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "f2c86ef46160dd946dc1235f30d0c40d",
+          "spanID": "f24bbfa6e973e144",
+          "operationName": "GET /enrollments/ http send",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "f2c86ef46160dd946dc1235f30d0c40d",
+              "spanID": "768d478e3262e194"
+            }
+          ],
+          "startTime": 1780061417772027,
+          "duration": 34,
+          "tags": [
+            {
+              "key": "asgi.event.type",
+              "type": "string",
+              "value": "http.response.body"
+            },
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "opentelemetry.instrumentation.fastapi"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "0.63b1"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "internal"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "enrollment-service",
+          "tags": [
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "python"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.42.1"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    }
+  ],
+  "total": 0,
+  "limit": 0,
+  "offset": 0,
+  "errors": null
+}

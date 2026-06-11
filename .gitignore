@@ -1,0 +1,11 @@
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+data/
+reports/
+config/settings.yaml.bak
+*.bak

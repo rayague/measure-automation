@@ -18,14 +18,9 @@ def _generate_markdown_report(
     
     report = []
     
-    # Use the same threshold that was used to flag services (if available)
+    # Use the threshold passed by the caller (already resolved in run_llm_demo.py)
     threshold_used = float(threshold)
     threshold_method = None
-    if not rank_df.empty and "threshold_value" in rank_df.columns:
-        try:
-            threshold_used = float(rank_df["threshold_value"].iloc[0])
-        except Exception:
-            threshold_used = float(threshold)
     if not rank_df.empty and "threshold_method" in rank_df.columns:
         threshold_method = str(rank_df["threshold_method"].iloc[0])
 

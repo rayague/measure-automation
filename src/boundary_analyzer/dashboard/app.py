@@ -755,7 +755,89 @@ def _build_table(df: pd.DataFrame) -> dash_table.DataTable:
 # PAGE LAYOUTS
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _overview_layout(rank_df: pd.DataFrame, summary: dict) -> html.Div:
+def _load_llm_analysis() -> str | None:
+    """Try to load the AI analysis section from the latest report."""
+    path = Path("reports/latest/report.md")
+    if not path.exists():
+        return None
+    try:
+        content = path.read_text(encoding="utf-8")
+        marker = "## AI-Powered Analysis"
+        if marker in content:
+            section = content.split(marker, 1)[1].strip()
+            next_h1 = section.find("\n# ")
+            if next_h1 != -1:
+                section = section[:next_h1]
+            return section if section.strip() else None
+    except OSError as e:
+        print(f"[Dashboard] Could not read {path}: {e}")
+        return None
+
+
+def _data_provenance_card(data_dir: Path) -> html.Div:
+    rows = []
+
+    # Data directory
+    rows.append(html.Div([
+        html.Span("Data source: ", style={"color": T["cyan"], "fontFamily": T["font_mono"], "fontSize": "11px"}),
+        html.Span(str(data_dir.resolve()), style={"color": T["text_secondary"], "fontFamily": T["font_mono"], "fontSize": "11px"}),
+    ], style={"marginBottom": "6px"}))
+
+    # Spans and traces count
+    spans_path = data_dir / "interim" / "spans.csv"
+    if spans_path.exists():
+        try:
+            import pandas as pd
+            spans_df = pd.read_csv(spans_path)
+            n_spans = len(spans_df)
+            n_traces = spans_df["trace_id"].nunique() if "trace_id" in spans_df.columns else "?"
+            rows.append(html.Div([
+                html.Span("Traces / Spans: ", style={"color": T["cyan"], "fontFamily": T["font_mono"], "fontSize": "11px"}),
+                html.Span(f"{n_traces} traces, {n_spans} spans", style={"color": T["text_secondary"], "fontFamily": T["font_mono"], "fontSize": "11px"}),
+            ], style={"marginBottom": "6px"}))
+        except Exception:
+            pass
+
+    # Services
+    rank_path = data_dir / "processed" / "service_rank.csv"
+    if rank_path.exists():
+        try:
+            import pandas as pd
+            rank_df = pd.read_csv(rank_path)
+            n_svc = len(rank_df)
+            n_susp = int(rank_df["is_suspicious"].sum()) if "is_suspicious" in rank_df.columns else "?"
+            scom_method = ""
+            if "method" in rank_df.columns:
+                methods = sorted({str(m) for m in rank_df["method"].dropna().unique()})
+                if methods:
+                    scom_method = f" — {', '.join(methods)}"
+            threshold = ""
+            if "threshold_value" in rank_df.columns:
+                threshold = f", threshold={float(rank_df['threshold_value'].iloc[0]):.4f}"
+            rows.append(html.Div([
+                html.Span("Services: ", style={"color": T["cyan"], "fontFamily": T["font_mono"], "fontSize": "11px"}),
+                html.Span(f"{n_svc} total ({n_susp} suspicious{scom_method}{threshold})",
+                         style={"color": T["text_secondary"], "fontFamily": T["font_mono"], "fontSize": "11px"}),
+            ], style={"marginBottom": "6px"}))
+        except Exception:
+            pass
+
+    # Data freshness
+    try:
+        mtime = rank_path.stat().st_mtime if rank_path.exists() else 0
+        from datetime import datetime
+        dt = datetime.fromtimestamp(mtime)
+        rows.append(html.Div([
+            html.Span("Generated: ", style={"color": T["cyan"], "fontFamily": T["font_mono"], "fontSize": "11px"}),
+            html.Span(dt.strftime("%Y-%m-%d %H:%M:%S"), style={"color": T["text_muted"], "fontFamily": T["font_mono"], "fontSize": "11px"}),
+        ]))
+    except OSError:
+        pass
+
+    return _card("Data Provenance", rows, style_extra={"marginBottom": "20px"})
+
+
+def _overview_layout(rank_df: pd.DataFrame, summary: dict, base_dir: Path) -> html.Div:
     total    = summary.get("total_services", 0)
     suspect  = summary.get("suspicious_count", 0)
     healthy  = summary.get("safe_count", 0)
@@ -806,11 +888,302 @@ def _overview_layout(rank_df: pd.DataFrame, summary: dict) -> html.Div:
                 ),
             ]),
 
+            # ── Data Provenance ────────────────────────────────────────────────
+            _data_provenance_card(base_dir),
+
             _card("Definitions — how to read these charts", [
                 _definitions_block(rank_df),
             ], style_extra={"marginBottom": "0"}),
+
+            # ── AI Analysis (optional) ─────────────────────────────────────────
+            _llm_analysis_card(),
         ],
     )
+
+
+def _render_inline(text: str) -> list:
+    """Render inline Markdown (**bold**, `code`) into Dash component list."""
+    import re
+    parts: list = []
+    pattern = re.compile(r'(\*\*(.+?)\*\*|`([^`]+?)`)')
+    last_end = 0
+    for m in pattern.finditer(text):
+        if m.start() > last_end:
+            parts.append(text[last_end:m.start()])
+        if m.group(2):
+            parts.append(html.Strong(m.group(2)))
+        elif m.group(3):
+            parts.append(html.Code(m.group(3), style={
+                "background": "rgba(0, 229, 255, 0.08)",
+                "padding": "1px 5px",
+                "borderRadius": "3px",
+                "fontFamily": T["font_mono"],
+                "fontSize": "11px",
+                "color": T["amber"],
+            }))
+        last_end = m.end()
+    if last_end < len(text):
+        parts.append(text[last_end:])
+    if not parts:
+        parts.append(text)
+    return parts
+
+
+def _llm_analysis_card() -> html.Div:
+    """Show AI-powered narrative analysis if available from the latest report."""
+    analysis = _load_llm_analysis()
+    if analysis is None:
+        return html.Div()
+
+    is_local = analysis.strip().startswith("> **Analysis mode:** Local computed")
+    badge = html.Span(
+        "LOCAL" if is_local else "LIVE AI",
+        style={
+            "fontFamily": T["font_mono"],
+            "fontSize": "9px",
+            "letterSpacing": "2px",
+            "padding": "3px 10px",
+            "borderRadius": "4px",
+            "marginLeft": "12px",
+            "verticalAlign": "middle",
+            "color": T["amber"] if is_local else T["cyan"],
+            "background": T["amber_dim"] if is_local else T["cyan_dim"],
+            "border": f"1px solid {T['amber_glow']}" if is_local else f"1px solid {T['cyan_glow']}",
+        }
+    )
+
+    lines = analysis.split("\n")
+    children = [badge]
+    in_code_block = False
+    code_lines: list[str] = []
+    in_list = False
+    list_items: list = []
+    in_table = False
+    table_rows: list[list[str]] = []
+
+    _TH_STYLE = {
+        "fontFamily": T["font_mono"],
+        "fontSize": "11px",
+        "color": T["cyan"],
+        "padding": "6px 10px",
+        "borderBottom": f"1px solid {T['border_hot']}",
+        "textAlign": "left",
+        "fontWeight": "600",
+        "letterSpacing": "1px",
+    }
+    _TD_STYLE = {
+        "fontFamily": T["font_mono"],
+        "fontSize": "11px",
+        "color": T["text_primary"],
+        "padding": "5px 10px",
+        "borderBottom": f"1px solid {T['border']}",
+    }
+    _TABLE_STYLE = {
+        "width": "100%",
+        "borderCollapse": "collapse",
+        "background": "rgba(0, 229, 255, 0.03)",
+        "borderRadius": "6px",
+        "overflow": "hidden",
+        "marginBottom": "10px",
+    }
+
+    _P_STYLE = {
+        "fontFamily": T["font_display"],
+        "fontSize": "12px",
+        "color": T["text_secondary"],
+        "lineHeight": "1.6",
+        "marginBottom": "6px",
+    }
+
+    def _flush_list() -> None:
+        nonlocal in_list, list_items
+        if list_items:
+            children.append(html.Ul(list_items, style={
+                "margin": "0 0 8px 0",
+                "paddingLeft": "20px",
+                "listStyle": "none",
+            }))
+            list_items = []
+        in_list = False
+
+    def _flush_table() -> None:
+        nonlocal in_table, table_rows
+        if not table_rows:
+            return
+        header = table_rows[0]
+        body = table_rows[1:]
+        cells: list = []
+        if header:
+            cells.append(html.Thead(
+                html.Tr([html.Th(h, style=_TH_STYLE) for h in header])
+            ))
+        if body:
+            cells.append(html.Tbody([
+                html.Tr([html.Td(c, style=_TD_STYLE) for c in row])
+                for row in body
+            ]))
+        children.append(html.Table(cells, style=_TABLE_STYLE))
+        table_rows = []
+        in_table = False
+
+    for line in lines:
+        raw = line
+        stripped = line.strip()
+
+        # Toggle code block
+        if stripped.startswith("```"):
+            if in_code_block:
+                children.append(html.Pre(
+                    "\n".join(code_lines),
+                    style={
+                        "background": "rgba(0, 229, 255, 0.04)",
+                        "border": f"1px solid {T['border']}",
+                        "borderRadius": "8px",
+                        "padding": "12px 16px",
+                        "fontFamily": T["font_mono"],
+                        "fontSize": "11px",
+                        "color": T["cyan"],
+                        "overflowX": "auto",
+                        "marginBottom": "10px",
+                        "lineHeight": "1.5",
+                    }
+                ))
+                code_lines = []
+                in_code_block = False
+            else:
+                in_code_block = True
+            continue
+
+        if in_code_block:
+            code_lines.append(raw)
+            continue
+
+        # Markdown table — accumulate consecutive | rows into a single <table>
+        if stripped.startswith("|") and stripped.endswith("|"):
+            _flush_list()
+            parts = [p.strip() for p in stripped.split("|")[1:-1]]
+            # Skip separator rows (e.g. |---|---|)
+            if not any(c.isalpha() for c in stripped.replace("|", "").replace("-", "").replace(":", "").strip()):
+                continue
+            if not in_table:
+                in_table = True
+                table_rows = [parts]
+            else:
+                table_rows.append(parts)
+            continue
+
+        # Empty line — flush any pending table or list
+        if not stripped:
+            _flush_table()
+            _flush_list()
+            continue
+
+        # Divider
+        if stripped == "---":
+            _flush_table()
+            _flush_list()
+            children.append(html.Hr(style={
+                "border": "none",
+                "borderTop": f"1px solid {T['border']}",
+                "margin": "16px 0",
+            }))
+            continue
+
+        # Blockquote
+        if stripped.startswith(">"):
+            _flush_table()
+            _flush_list()
+            quote_text = stripped.lstrip("> ").strip()
+            children.append(html.Div(
+                _render_inline(quote_text),
+                style={
+                    "fontFamily": T["font_mono"],
+                    "fontSize": "11px",
+                    "color": T["text_muted"],
+                    "fontStyle": "italic",
+                    "padding": "4px 12px",
+                    "borderLeft": f"3px solid {T['border']}",
+                    "marginBottom": "8px",
+                    "lineHeight": "1.5",
+                }
+            ))
+            continue
+
+        # Heading ## (level 2) — e.g. ## Service Cohesion Analysis
+        if stripped.startswith("## ") and not stripped.startswith("### ") and not stripped.startswith("#### "):
+            _flush_list()
+            _flush_table()
+            text = stripped[3:].strip()
+            children.append(html.H4(_render_inline(text), style={
+                "fontFamily": T["font_mono"],
+                "fontSize": "13px",
+                "color": T["cyan"],
+                "marginTop": "14px",
+                "marginBottom": "6px",
+            }))
+            continue
+
+        # Heading ### / ####
+        if stripped.startswith("### ") or stripped.startswith("#### "):
+            _flush_list()
+            _flush_table()
+            text = stripped.lstrip("# ").strip()
+            children.append(html.H5(_render_inline(text), style={
+                "fontFamily": T["font_mono"],
+                "fontSize": "12px",
+                "color": T["amber"],
+                "marginTop": "16px",
+                "marginBottom": "6px",
+            }))
+            continue
+
+        # List item
+        if stripped.startswith("- ") or stripped.startswith("* "):
+            _flush_table()
+            in_list = True
+            item_text = stripped[2:].strip()
+            list_items.append(html.Li(
+                [html.Span("▸ ", style={"color": T["cyan"], "fontSize": "10px"})]
+                + _render_inline(item_text),
+                style={
+                    "fontSize": "12px",
+                    "color": T["text_secondary"],
+                    "marginBottom": "2px",
+                    "lineHeight": "1.6",
+                }
+            ))
+            continue
+
+        # Bold heading (e.g. **inventory-service** or **Why ...**)
+        if stripped.startswith("**") and "**" in stripped[2:]:
+            _flush_table()
+            _flush_list()
+            if ":" in stripped[3:]:
+                children.append(html.H5(_render_inline(stripped), style={
+                    "fontFamily": T["font_mono"],
+                    "fontSize": "12px",
+                    "color": T["amber"],
+                    "marginTop": "12px",
+                    "marginBottom": "4px",
+                }))
+            else:
+                children.append(html.H4(_render_inline(stripped), style={
+                    "fontFamily": T["font_mono"],
+                    "fontSize": "13px",
+                    "color": T["cyan"],
+                    "marginTop": "14px",
+                    "marginBottom": "6px",
+                }))
+            continue
+
+        # Generic paragraph (with inline formatting)
+        _flush_table()
+        _flush_list()
+        children.append(html.P(_render_inline(stripped), style=_P_STYLE))
+
+    _flush_table()
+    _flush_list()
+    return _card("AI-Powered Analysis", children, style_extra={"marginBottom": "0"})
 
 
 def _definitions_block(rank_df: pd.DataFrame) -> html.Div:
@@ -1279,7 +1652,7 @@ def create_app(data_dir: Optional[Path] = None) -> dash.Dash:
                         # Overview page
                         html.Div(
                             id="overview-page",
-                            children=_overview_layout(rank_df, summary),
+                            children=_overview_layout(rank_df, summary, base_dir),
                         ),
 
                         # Detail page (hidden until a service is clicked)
@@ -1396,7 +1769,7 @@ def main(data_dir: Optional[Path] = None) -> int:
     host = os.environ.get("BOUNDARY_ANALYZER_DASH_HOST", "127.0.0.1")
     port = int(os.environ.get("BOUNDARY_ANALYZER_DASH_PORT", "8050"))
 
-    print(f"\n  ◈ Boundary Analyzer — http://{host}:{port}\n")
+    print(f"\n  ** Boundary Analyzer -- http://{host}:{port}\n")
     app.run(host=host, port=port, debug=False)
     return 0
 

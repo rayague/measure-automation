@@ -30,6 +30,11 @@ IGNORE_KEYWORDS = {
     'offset', 'distinct', 'all', 'union', 'intersect', 'except'
 }
 
+# System table prefixes to exclude (internal DB system tables, not business tables)
+SYSTEM_TABLE_PREFIXES = (
+    'pg_', 'sqlite_', 'v$',
+)
+
 
 def _is_db_span(row: pd.Series) -> bool:
     """Check if a span is a database operation span."""
@@ -100,7 +105,9 @@ def _extract_tables_from_sql(sql: str) -> list[str]:
             table_name = _unquote_sql_identifier(match).strip().lower()
             # Ignore SQL keywords
             if table_name and table_name not in IGNORE_KEYWORDS:
-                tables.add(table_name)
+                # Exclude internal DB system tables
+                if not table_name.startswith(SYSTEM_TABLE_PREFIXES):
+                    tables.add(table_name)
     
     return sorted(tables)
 

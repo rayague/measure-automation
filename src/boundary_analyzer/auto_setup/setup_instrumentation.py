@@ -593,7 +593,7 @@ def run_scom_analysis(traces_path: Path, service_name: str, output_dir: Path):
 # Tie all steps together.
 # ─────────────────────────────────────────────────────────────────────────────
 
-def main():
+def main(argv: list[str] | None = None):
     ap = argparse.ArgumentParser(
         description="Auto-setup OpenTelemetry instrumentation for microservice analysis.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -642,7 +642,10 @@ def main():
     ap.add_argument("--trace-limit", type=int, default=500,
                     help="Maximum number of traces to collect (default: 500)")
 
-    args = ap.parse_args()
+    ap.add_argument("--llm", action="store_true",
+                    help="Use AI (LLM) to generate instrumentation instead of templates. Requires OPENROUTER_API_KEY env var.")
+
+    args = ap.parse_args(argv)
 
     project_path = Path(args.project_path).resolve()
     if not project_path.exists():
@@ -688,9 +691,65 @@ def main():
     # ── STEP 3: Generate instrumentation file ─────────────────────────────────
     step(3, "Generating instrumentation file")
 
-    instrumentation_file = generate_instrumentation_file(
-        framework, project_path, service_name, args.jaeger_host
-    )
+    if args.llm and lang == "python":
+        info("Using AI (LLM) to generate instrumentation...")
+        from boundary_analyzer.llm import generate_instrumentation as llm_generate
+
+        llm_code = llm_generate(project_path, jaeger_host=args.jaeger_host)
+        if llm_code:
+            main_file = project_path / "app" / "main.py"
+            if not main_file.exists():
+                main_file = project_path / "main.py"
+            if main_file.exists():
+                original = main_file.read_text(encoding="utf-8")
+                if original == llm_code:
+                    ok("Code already instrumented — no changes needed.")
+                    instrumentation_file = main_file
+                else:
+                    # Show diff so the user can review what the LLM changed
+                    import difflib
+                    diff = difflib.unified_diff(
+                        original.splitlines(keepends=True),
+                        llm_code.splitlines(keepends=True),
+                        fromfile=str(main_file),
+                        tofile=str(main_file) + " (instrumented)",
+                    )
+                    print("\n" + "─" * 60)
+                    print("Proposed changes:")
+                    print("─" * 60)
+                    for line in diff:
+                        print("  " + line.rstrip())
+                    print("─" * 60)
+                    try:
+                        answer = input("Apply these changes? [y/N] ").strip().lower()
+                    except (KeyboardInterrupt, EOFError):
+                        answer = "n"
+
+                    if answer == "y":
+                        backup = main_file.with_suffix(".py.bak")
+                        main_file.rename(backup)
+                        main_file.write_text(llm_code, encoding="utf-8")
+                        ok(f"Instrumentation written to {main_file}")
+                        ok(f"Original backed up to {backup}")
+                        instrumentation_file = main_file
+                    else:
+                        info("Changes not applied.")
+                        llm_code = None
+            else:
+                warn("Could not find main.py to write LLM-generated code.")
+                llm_code = None
+        else:
+            warn("AI generation failed (syntax error, LLM error, or no API key).")
+
+        if llm_code is None:
+            warn("Falling back to standard template generation...")
+            instrumentation_file = generate_instrumentation_file(
+                framework, project_path, service_name, args.jaeger_host
+            )
+    else:
+        instrumentation_file = generate_instrumentation_file(
+            framework, project_path, service_name, args.jaeger_host
+        )
 
     # ── STEP 4: Start Jaeger ──────────────────────────────────────────────────
     step(4, "Starting Jaeger")

@@ -86,9 +86,11 @@ def _normalize_dynamic_parameters(route: str) -> str:
     # Replace 32-char hex strings (UUID without dashes)
     route = re.sub(r"/[0-9a-fA-F]{32}(?=/|$)", "/{uuid}", route)
     
-    # Replace other alphanumeric strings that look like IDs (common pattern)
-    # This is heuristic: strings like "abc123" after a path segment
-    route = re.sub(r"/[a-zA-Z0-9]{8,}(?=/|$)", "/{id}", route)
+    # Note: the previous heuristic replaced any 8+ alphanumeric segment with {id},
+    # which caused false positives on legitimate route segments like
+    # "employees" (9 chars), "products" (8 chars) or "scenario1" (9 chars, contains digit).
+    # The numeric and UUID patterns above correctly handle real dynamic parameters.
+    # Non-numeric, non-UUID segments are intentionally kept as-is.
     
     return route
 

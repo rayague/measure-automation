@@ -12,7 +12,7 @@ class DashboardSmokeTest(unittest.TestCase):
 
     def test_create_app_with_sample_dir(self):
         """Creating the Dash app with the sample audit output should not raise."""
-        sample = Path("data/_audit_out3")
+        sample = Path("_audit_out3")
         app = create_app(data_dir=sample)
         self.assertIsNotNone(app)
 
