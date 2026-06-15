@@ -173,9 +173,7 @@ def _data_provenance_card(data_dir: Path) -> html.Div:
     rows.append(
         html.Div(
             [
-                html.Span(
-                    "Data source: ", style={"color": T["cyan"], "fontFamily": T["font_mono"], "fontSize": "11px"}
-                ),
+                html.Span("Data source: ", style={"color": T["cyan"], "fontFamily": T["font_mono"], "fontSize": "11px"}),
                 html.Span(
                     str(data_dir.resolve()),
                     style={"color": T["text_secondary"], "fontFamily": T["font_mono"], "fontSize": "11px"},
@@ -226,9 +224,7 @@ def _data_provenance_card(data_dir: Path) -> html.Div:
             rows.append(
                 html.Div(
                     [
-                        html.Span(
-                            "Services: ", style={"color": T["cyan"], "fontFamily": T["font_mono"], "fontSize": "11px"}
-                        ),
+                        html.Span("Services: ", style={"color": T["cyan"], "fontFamily": T["font_mono"], "fontSize": "11px"}),
                         html.Span(
                             f"{n_svc} total ({n_susp} suspicious{scom_method}{threshold})",
                             style={"color": T["text_secondary"], "fontFamily": T["font_mono"], "fontSize": "11px"},
@@ -246,9 +242,7 @@ def _data_provenance_card(data_dir: Path) -> html.Div:
         rows.append(
             html.Div(
                 [
-                    html.Span(
-                        "Generated: ", style={"color": T["cyan"], "fontFamily": T["font_mono"], "fontSize": "11px"}
-                    ),
+                    html.Span("Generated: ", style={"color": T["cyan"], "fontFamily": T["font_mono"], "fontSize": "11px"}),
                     html.Span(
                         dt.strftime("%Y-%m-%d %H:%M:%S"),
                         style={"color": T["text_muted"], "fontFamily": T["font_mono"], "fontSize": "11px"},

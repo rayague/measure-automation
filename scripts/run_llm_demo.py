@@ -16,6 +16,7 @@ def _backup_report(report_path: Path) -> None:
 
 def _generate_base_report(rank_path: Path, suspicious_path: Path, output_path: Path, threshold: float) -> bool:
     from boundary_analyzer.reporting.report_builder import generate_report
+
     try:
         generate_report(rank_path, suspicious_path, output_path, threshold)
         print(f"  Report written to: {output_path}")
@@ -38,7 +39,7 @@ def _append_llm_analysis(report_path: Path, base_dir: Path) -> bool:
     has_key = bool(os.environ.get("OPENROUTER_API_KEY", "").strip())
     if not has_key:
         print("  OPENROUTER_API_KEY not set. Using local analysis (no LLM).")
-        print("  To enable AI: `$env:OPENROUTER_API_KEY = \"your-key-here\"`")
+        print('  To enable AI: `$env:OPENROUTER_API_KEY = "your-key-here"`')
     else:
         print("  Generating AI-powered narrative analysis...")
         print("  (this may take a moment due to API fallback retries)")
@@ -72,6 +73,7 @@ def _launch_dashboard(data_dir: Path) -> int:
     port = int(os.environ.get("BOUNDARY_ANALYZER_DASH_PORT", "8050"))
 
     from boundary_analyzer.dashboard.app import main as dashboard_main
+
     print(f"\n  ** Launching dashboard at http://{host}:{port}")
     print(f"  ** Data source: {data_dir.resolve()}")
     print("  ** Close the terminal to stop.\n")
@@ -79,16 +81,16 @@ def _launch_dashboard(data_dir: Path) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Generate LLM-powered analysis + launch dashboard in one command."
-    )
+    parser = argparse.ArgumentParser(description="Generate LLM-powered analysis + launch dashboard in one command.")
     parser.add_argument(
-        "--data-dir", "-d",
+        "--data-dir",
+        "-d",
         default="_audit_out3",
         help="Data directory with processed/ and interim/ folders (default: _audit_out3)",
     )
     parser.add_argument(
-        "--port", "-p",
+        "--port",
+        "-p",
         type=int,
         default=8050,
         help="Dashboard port (default: 8050)",
@@ -127,6 +129,7 @@ def main() -> int:
 
     # Detect threshold from data
     import pandas as pd
+
     rank_df = pd.read_csv(rank_path)
     threshold = args.threshold
     if threshold is None:

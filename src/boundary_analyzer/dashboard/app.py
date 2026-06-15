@@ -99,6 +99,7 @@ def _get_data_freshness(base_dir: Path) -> str:
 
 # ── Chart builders ─────────────────────────────────────────────────────────
 
+
 def _build_bar_chart(rank_df: pd.DataFrame) -> go.Figure:
     if rank_df.empty:
         return go.Figure()
@@ -308,6 +309,7 @@ def _build_heatmap(mapping_df: pd.DataFrame, service_name: str) -> go.Figure:
 
 # ── App factory ────────────────────────────────────────────────────────────
 
+
 def create_app(data_dir: Path | None = None) -> dash.Dash:
     from boundary_analyzer.dashboard.callbacks import register_callbacks
     from boundary_analyzer.dashboard.layout_components import serve_layout
@@ -316,8 +318,7 @@ def create_app(data_dir: Path | None = None) -> dash.Dash:
         __name__,
         suppress_callback_exceptions=True,
         external_stylesheets=[
-            "https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800"
-            "&family=JetBrains+Mono:wght@300;400;600&display=swap",
+            "https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;600&display=swap",
         ],
     )
 
@@ -347,6 +348,7 @@ def create_app(data_dir: Path | None = None) -> dash.Dash:
 
 
 # ── Entry point ────────────────────────────────────────────────────────────
+
 
 def main(data_dir: Path | None = None) -> int:
     app = create_app(data_dir=data_dir)

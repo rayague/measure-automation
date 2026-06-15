@@ -99,12 +99,7 @@ def _scan_sources_for_framework(root: Path) -> dict[str, set[str]]:
             continue
         for fw, indicators in _FRAMEWORK_DEPENDENCIES.items():
             for ind in indicators:
-                if (
-                    f"require('{ind}')" in content
-                    or f'require("{ind}")' in content
-                    or f"from '{ind}'" in content
-                    or f'from "{ind}"' in content
-                ):
+                if f"require('{ind}')" in content or f'require("{ind}")' in content or f"from '{ind}'" in content or f'from "{ind}"' in content:
                     found.setdefault(fw, set()).add(str(js_file))
     for ts_file in _find_ts_files(root):
         try:
@@ -275,11 +270,7 @@ class NodePlugin(LanguagePlugin):
             framework=framework or "node",
             entries=entries,
             build_tool="npm",
-            detail=(
-                f"Node.js {framework or 'project'} with {len(entries)} entry point(s)"
-                if entries
-                else f"Node.js {framework or 'project'}"
-            ),
+            detail=(f"Node.js {framework or 'project'} with {len(entries)} entry point(s)" if entries else f"Node.js {framework or 'project'}"),
         )
 
     def find_entry_points(self, root: Path) -> list[EntryPoint]:
@@ -313,9 +304,7 @@ class NodePlugin(LanguagePlugin):
     def detect_framework(self, root: Path, entry: EntryPoint) -> str:
         return entry.framework or "node"
 
-    def instrument(
-        self, entry: EntryPoint, service_name: str, otlp_endpoint: str = "http://localhost:4318"
-    ) -> Instrumentation:
+    def instrument(self, entry: EntryPoint, service_name: str, otlp_endpoint: str = "http://localhost:4318") -> Instrumentation:
         return Instrumentation(
             env_vars={
                 "OTEL_SERVICE_NAME": service_name,

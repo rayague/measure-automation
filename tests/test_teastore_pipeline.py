@@ -11,7 +11,6 @@ FIXTURES_DIR = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "
 
 
 class TeaStorePipelineTest(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         cls.tmpdir = Path(tempfile.mkdtemp(prefix="teastore_scom_"))

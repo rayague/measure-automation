@@ -12,12 +12,12 @@ from boundary_analyzer.auto.errors import AnalysisError
 
 
 class DiscoverTest(unittest.TestCase):
-
     def setUp(self):
         self.tmpdir = Path(tempfile.mkdtemp(prefix="discover_test_"))
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def _write(self, path: str, content: str) -> Path:
@@ -86,12 +86,12 @@ class DiscoverTest(unittest.TestCase):
 
 
 class DockerComposeDiscoverTest(unittest.TestCase):
-
     def setUp(self):
         self.tmpdir = Path(tempfile.mkdtemp(prefix="compose_discover_test_"))
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def _write(self, path: str, content: str) -> Path:
@@ -101,17 +101,22 @@ class DockerComposeDiscoverTest(unittest.TestCase):
         return full
 
     def test_discover_compose_app_services_finds_build_services(self):
-        self._write("docker-compose.yml", yaml.dump({
-            "services": {
-                "web": {
-                    "build": ".",
-                    "ports": ["8000:5000"],
-                },
-                "db": {
-                    "image": "postgres:15",
-                },
-            },
-        }))
+        self._write(
+            "docker-compose.yml",
+            yaml.dump(
+                {
+                    "services": {
+                        "web": {
+                            "build": ".",
+                            "ports": ["8000:5000"],
+                        },
+                        "db": {
+                            "image": "postgres:15",
+                        },
+                    },
+                }
+            ),
+        )
         result = _discover_compose_app_services(self.tmpdir)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0][0], "web")
@@ -119,12 +124,17 @@ class DockerComposeDiscoverTest(unittest.TestCase):
         self.assertEqual(result[0][2], self.tmpdir.resolve())
 
     def test_discover_compose_app_services_skips_infra(self):
-        self._write("docker-compose.yml", yaml.dump({
-            "services": {
-                "db": {"image": "postgres:15"},
-                "redis": {"image": "redis:7"},
-            },
-        }))
+        self._write(
+            "docker-compose.yml",
+            yaml.dump(
+                {
+                    "services": {
+                        "db": {"image": "postgres:15"},
+                        "redis": {"image": "redis:7"},
+                    },
+                }
+            ),
+        )
         result = _discover_compose_app_services(self.tmpdir)
         self.assertEqual(len(result), 0)
 
@@ -133,14 +143,19 @@ class DockerComposeDiscoverTest(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
     def test_discover_compose_app_services_build_with_context_dict(self):
-        self._write("docker-compose.yml", yaml.dump({
-            "services": {
-                "api": {
-                    "build": {"context": "./app", "dockerfile": "Dockerfile"},
-                    "ports": ["3000:3000"],
-                },
-            },
-        }))
+        self._write(
+            "docker-compose.yml",
+            yaml.dump(
+                {
+                    "services": {
+                        "api": {
+                            "build": {"context": "./app", "dockerfile": "Dockerfile"},
+                            "ports": ["3000:3000"],
+                        },
+                    },
+                }
+            ),
+        )
         (self.tmpdir / "app").mkdir()
         result = _discover_compose_app_services(self.tmpdir)
         self.assertEqual(len(result), 1)
@@ -149,15 +164,20 @@ class DockerComposeDiscoverTest(unittest.TestCase):
         self.assertEqual(result[0][2], (self.tmpdir / "app").resolve())
 
     def test_discover_project_with_compose(self):
-        self._write("docker-compose.yml", yaml.dump({
-            "services": {
-                "scenario2": {
-                    "build": "./app",
-                    "ports": ["5102:5000"],
-                },
-                "db": {"image": "postgres:15"},
-            },
-        }))
+        self._write(
+            "docker-compose.yml",
+            yaml.dump(
+                {
+                    "services": {
+                        "scenario2": {
+                            "build": "./app",
+                            "ports": ["5102:5000"],
+                        },
+                        "db": {"image": "postgres:15"},
+                    },
+                }
+            ),
+        )
         (self.tmpdir / "app").mkdir()
         self._write("app/requirements.txt", "flask==2.0")
         self._write("app/app.py", "from flask import Flask\napp = Flask(__name__)")
@@ -173,14 +193,19 @@ class DockerComposeDiscoverTest(unittest.TestCase):
         self.assertEqual(service.framework, "flask")
 
     def test_discover_project_with_compose_no_build_context(self):
-        self._write("docker-compose.yml", yaml.dump({
-            "services": {
-                "web": {
-                    "build": "./web",
-                    "ports": ["8080:80"],
-                },
-            },
-        }))
+        self._write(
+            "docker-compose.yml",
+            yaml.dump(
+                {
+                    "services": {
+                        "web": {
+                            "build": "./web",
+                            "ports": ["8080:80"],
+                        },
+                    },
+                }
+            ),
+        )
         (self.tmpdir / "web").mkdir()
         self._write("requirements.txt", "fastapi==0.100")
         self._write("main.py", "from fastapi import FastAPI\napp = FastAPI()")

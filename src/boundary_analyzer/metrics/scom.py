@@ -184,9 +184,7 @@ def compute_scom(
         if endpoints_df is not None and not endpoints_df.empty and "endpoint_key" in endpoints_df.columns:
             endpoints_df = endpoints_df[endpoints_df["endpoint_key"] != "unknown_endpoint"]
 
-    endpoint_frequencies_by_service = (
-        _get_endpoint_frequencies_by_service(endpoints_df, mapping_df) if use_endpoint_weighting else {}
-    )
+    endpoint_frequencies_by_service = _get_endpoint_frequencies_by_service(endpoints_df, mapping_df) if use_endpoint_weighting else {}
     endpoint_table_sets = _build_endpoint_table_sets(mapping_df, endpoints_df)
 
     results: list[dict[str, Any]] = []
@@ -202,9 +200,7 @@ def compute_scom(
 
         endpoints_count = len(endpoint_sets)
         lookup_service = service_name if service_name != "unknown_service" else ""
-        service_df = (
-            mapping_df[mapping_df["service_name"] == lookup_service] if not mapping_df.empty else pd.DataFrame()
-        )
+        service_df = mapping_df[mapping_df["service_name"] == lookup_service] if not mapping_df.empty else pd.DataFrame()
         tables_count = int(service_df["table"].nunique()) if not service_df.empty else 0
 
         results.append(

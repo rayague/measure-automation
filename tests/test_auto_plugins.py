@@ -10,7 +10,6 @@ from boundary_analyzer.auto.plugins.python import PythonPlugin
 
 
 class PluginRegistryTest(unittest.TestCase):
-
     def test_all_plugins_registered(self):
         _ensure_loaded()
         languages = list_supported_languages()

@@ -57,9 +57,7 @@ def generate_instrumentation_file(
     lang = SUPPORTED_FRAMEWORKS[framework]["lang"]
     templates_dir = Path(__file__).parent
 
-    template_file = (
-        templates_dir / f"{framework}_wrapper.{'py' if lang == 'python' else 'js' if lang == 'js' else 'php'}"
-    )
+    template_file = templates_dir / f"{framework}_wrapper.{'py' if lang == 'python' else 'js' if lang == 'js' else 'php'}"
     if not template_file.exists():
         ext = "py" if lang == "python" else "js" if lang == "js" else "php"
         template_file = templates_dir / f"generic_wrapper.{ext}"
@@ -87,12 +85,7 @@ def start_jaeger() -> bool:
     if not shutil.which("docker"):
         warn("Docker not found. Please install Docker and try again.")
         warn("Download: https://www.docker.com/products/docker-desktop")
-        tip(
-            "You can also start Jaeger manually:\n"
-            "  docker run -d --name jaeger \\\n"
-            "    -p 16686:16686 -p 4317:4317 \\\n"
-            "    jaegertracing/all-in-one:latest"
-        )
+        tip("You can also start Jaeger manually:\n  docker run -d --name jaeger \\\n    -p 16686:16686 -p 4317:4317 \\\n    jaegertracing/all-in-one:latest")
         return False
 
     subprocess.run(["docker", "rm", "-f", "jaeger"], capture_output=True)
@@ -406,9 +399,7 @@ def main(argv: list[str] | None = None) -> None:
 
         if llm_code is None:
             warn("Falling back to standard template generation...")
-            instrumentation_file = generate_instrumentation_file(
-                framework, project_path, service_name, args.jaeger_host
-            )
+            instrumentation_file = generate_instrumentation_file(framework, project_path, service_name, args.jaeger_host)
     else:
         instrumentation_file = generate_instrumentation_file(framework, project_path, service_name, args.jaeger_host)
 
@@ -420,10 +411,7 @@ def main(argv: list[str] | None = None) -> None:
         started = start_jaeger()
         if not started:
             warn("Jaeger is not running (or I could not start it).")
-            tip(
-                "You can continue if Jaeger is already running elsewhere. "
-                "If not, start Jaeger and run this command again, or use --no-jaeger."
-            )
+            tip("You can continue if Jaeger is already running elsewhere. If not, start Jaeger and run this command again, or use --no-jaeger.")
 
     step(5, "Integration instructions")
     print_integration_instructions(framework, instrumentation_file)

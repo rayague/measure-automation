@@ -6,13 +6,13 @@ from boundary_analyzer.auto.plugins.python import PythonPlugin
 
 
 class PythonPluginTest(unittest.TestCase):
-
     def setUp(self):
         self.plugin = PythonPlugin()
         self.tmpdir = Path(tempfile.mkdtemp(prefix="py_plugin_test_"))
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def _write(self, path: str, content: str) -> Path:

@@ -7,13 +7,13 @@ from boundary_analyzer.auto.plugins.dotnet import DotNetPlugin
 
 
 class DotNetPluginTest(unittest.TestCase):
-
     def setUp(self):
         self.tmpdir = Path(tempfile.mkdtemp(prefix="dotnet_test_"))
         self.plugin = DotNetPlugin()
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def _write(self, path: str, content: str) -> Path:
@@ -56,21 +56,26 @@ class DotNetPluginTest(unittest.TestCase):
 
     def test_detect_aspnet_core(self):
         self._write("WebApp.csproj", '<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup></Project>')
-        self._write("Program.cs", 'var builder = WebApplication.CreateBuilder(args);\nvar app = builder.Build();\napp.Run();')
+        self._write("Program.cs", "var builder = WebApplication.CreateBuilder(args);\nvar app = builder.Build();\napp.Run();")
         result = self.plugin.detect(self.tmpdir)
         self.assertEqual(result.framework, "aspnet-core")
         self.assertEqual(result.build_tool, "dotnet")
         self.assertEqual(len(result.entries), 1)
 
     def test_detect_aspnet_with_reference(self):
-        self._write("WebApp.csproj", '<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup></Project>')
+        self._write(
+            "WebApp.csproj", '<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup></Project>'
+        )
         self._write("Program.cs", 'Console.WriteLine("ASP.NET");')
         result = self.plugin.detect(self.tmpdir)
         self.assertEqual(result.framework, "aspnet-core")
 
     def test_detect_multi_csproj(self):
-        self._write("src/WebApp/WebApp.csproj", '<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup></Project>')
-        self._write("src/WebApp/Program.cs", 'var builder = WebApplication.CreateBuilder(args);\nvar app = builder.Build();\napp.Run();')
+        self._write(
+            "src/WebApp/WebApp.csproj",
+            '<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup></Project>',
+        )
+        self._write("src/WebApp/Program.cs", "var builder = WebApplication.CreateBuilder(args);\nvar app = builder.Build();\napp.Run();")
         self._write("src/Lib/Lib.csproj", '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup></Project>')
         result = self.plugin.detect(self.tmpdir)
         self.assertEqual(result.framework, "aspnet-core")
@@ -84,14 +89,14 @@ class DotNetPluginTest(unittest.TestCase):
 
     def test_find_entry_points_aspnet(self):
         self._write("WebApp.csproj", '<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup></Project>')
-        self._write("Program.cs", 'var builder = WebApplication.CreateBuilder(args);\napp.Run();')
+        self._write("Program.cs", "var builder = WebApplication.CreateBuilder(args);\napp.Run();")
         entries = self.plugin.find_entry_points(self.tmpdir)
         self.assertEqual(len(entries), 1)
         self.assertIn("WebApp.csproj", str(entries[0].path))
 
     def test_find_entry_points_startup(self):
         self._write("OldWeb.csproj", '<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup><TargetFramework>net6.0</TargetFramework></PropertyGroup></Project>')
-        self._write("Startup.cs", 'public class Startup { public void Configure() {} }')
+        self._write("Startup.cs", "public class Startup { public void Configure() {} }")
         entries = self.plugin.find_entry_points(self.tmpdir)
         self.assertEqual(len(entries), 1)
 
@@ -154,15 +159,13 @@ class DotNetPluginTest(unittest.TestCase):
         self.assertEqual(port, 5000)
 
     def test_guess_port_from_launch_settings(self):
-        self._write("Properties/launchSettings.json",
-                     '{"profiles": {"WebApp": {"applicationUrl": "http://localhost:8080"}}}')
+        self._write("Properties/launchSettings.json", '{"profiles": {"WebApp": {"applicationUrl": "http://localhost:8080"}}}')
         entry = EntryPoint(path=self.tmpdir / "WebApp.csproj", framework="aspnet-core")
         port = self.plugin.guess_port(entry)
         self.assertEqual(port, 8080)
 
     def test_guess_port_from_launch_settings_multi(self):
-        self._write("Properties/launchSettings.json",
-                     '{"profiles": {"WebApp": {"applicationUrl": "https://localhost:7001;http://localhost:8000"}}}')
+        self._write("Properties/launchSettings.json", '{"profiles": {"WebApp": {"applicationUrl": "https://localhost:7001;http://localhost:8000"}}}')
         entry = EntryPoint(path=self.tmpdir / "WebApp.csproj", framework="aspnet-core")
         port = self.plugin.guess_port(entry)
         self.assertEqual(port, 7001)

@@ -72,7 +72,9 @@ def main() -> int:
         if _is_cache_valid(cache, service_name, lookback_minutes):
             logger.info(
                 "Using cached traces for '%s' (fetched within last %d min). Set %s=1 to force re-fetch.",
-                service_name, lookback_minutes, ENV_SKIP_CACHE,
+                service_name,
+                lookback_minutes,
+                ENV_SKIP_CACHE,
             )
             return 0
     else:

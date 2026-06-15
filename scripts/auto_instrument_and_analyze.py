@@ -67,10 +67,7 @@ OTEL_PACKAGES = [
     "opentelemetry-instrumentation-asyncpg",
 ]
 
-OTEL_PACKAGES_NO_DB = [
-    pkg for pkg in OTEL_PACKAGES
-    if "sqlalchemy" not in pkg and "asyncpg" not in pkg
-]
+OTEL_PACKAGES_NO_DB = [pkg for pkg in OTEL_PACKAGES if "sqlalchemy" not in pkg and "asyncpg" not in pkg]
 
 JAEGER_HOST_INTERNAL = "jaeger"
 JAEGER_HOST_EXTERNAL = "localhost"
@@ -97,7 +94,7 @@ GATEWAY_BASE = "http://localhost:8000"
 GATEWAY_API = f"{GATEWAY_BASE}/api/v1"
 
 # Wrapper template for services with async SQLAlchemy + asyncpg
-WRAPPER_WITH_DB = '''\
+WRAPPER_WITH_DB = """\
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
@@ -158,10 +155,10 @@ def init_tracing(app=None):
         FastAPIInstrumentor.instrument_app(app)
     else:
         FastAPIInstrumentor().instrument()
-'''
+"""
 
 # Wrapper template for services WITHOUT SQLAlchemy (gateway)
-WRAPPER_NO_DB = '''\
+WRAPPER_NO_DB = """\
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
@@ -180,12 +177,13 @@ def init_tracing(app=None):
         FastAPIInstrumentor.instrument_app(app)
     else:
         FastAPIInstrumentor().instrument()
-'''
+"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # UTILITY HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _info(msg: str) -> None:
     logger.info(msg)
@@ -245,6 +243,7 @@ def _confirm(prompt: str, default: bool = False) -> bool:
 # STEP 1: SERVICE DISCOVERY
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def discover_services(project_path: Path) -> list[dict[str, Any]]:
     """Scan the project directory and discover all microservices.
 
@@ -271,15 +270,17 @@ def discover_services(project_path: Path) -> list[dict[str, Any]]:
         port = SERVICE_PORTS.get(name, 8000)
         health_path = SERVICE_HEALTH_PATHS.get(name, "/health")
 
-        services.append({
-            "name": name,
-            "path": entry,
-            "port": port,
-            "has_db": has_db,
-            "framework": framework,
-            "health_path": health_path,
-            "service_name": name,
-        })
+        services.append(
+            {
+                "name": name,
+                "path": entry,
+                "port": port,
+                "has_db": has_db,
+                "framework": framework,
+                "health_path": health_path,
+                "service_name": name,
+            }
+        )
 
     return services
 
@@ -287,6 +288,7 @@ def discover_services(project_path: Path) -> list[dict[str, Any]]:
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 2: JAEGER DOCKER COMPOSE OVERRIDE
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def ensure_jaeger_override(project_path: Path) -> Path:
     """Create or verify docker-compose.override.yml with Jaeger service.
@@ -342,6 +344,7 @@ def remove_jaeger_override(project_path: Path) -> None:
 # STEP 3: OTEL DEPENDENCIES
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def add_otel_to_requirements(service: dict[str, Any]) -> None:
     """Add required OTel packages to the service's requirements.txt.
 
@@ -354,8 +357,9 @@ def add_otel_to_requirements(service: dict[str, Any]) -> None:
 
     current = req_path.read_text(encoding="utf-8")
     current_lines = [line.strip() for line in current.splitlines()]
-    existing_packages = {line.split("==")[0].split(">=")[0].split("<=")[0].strip().lower()
-                         for line in current_lines if line and not line.startswith("#") and " " not in line}
+    existing_packages = {
+        line.split("==")[0].split(">=")[0].split("<=")[0].strip().lower() for line in current_lines if line and not line.startswith("#") and " " not in line
+    }
 
     packages_to_add = OTEL_PACKAGES_NO_DB if not service["has_db"] else OTEL_PACKAGES
     missing = [pkg for pkg in packages_to_add if pkg.lower() not in existing_packages]
@@ -380,6 +384,7 @@ def add_otel_to_requirements(service: dict[str, Any]) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 4: INSTRUMENTATION
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _generate_wrapper_content(service: dict[str, Any]) -> str:
     """Generate the otel_instrumentation.py content for a service."""
@@ -442,7 +447,7 @@ def _add_init_tracing_to_main(main_path: Path) -> str | None:
             # Emit init_tracing(app) right after the closing paren line
             indent = ""
             stripped = line.lstrip()
-            indent = line[:len(line) - len(stripped)]
+            indent = line[: len(line) - len(stripped)]
             result.append(f"{indent}init_tracing(app)")
             init_added = True
             skip_until = j - 1
@@ -460,14 +465,13 @@ def _add_init_tracing_to_main(main_path: Path) -> str | None:
             if ".add_middleware(" in line and not init_added:
                 indent = ""
                 stripped = line.lstrip()
-                indent = line[:len(line) - len(stripped)]
+                indent = line[: len(line) - len(stripped)]
                 result.insert(i, f"{indent}init_tracing(app)")
                 init_added = True
                 break
 
     if not init_added:
-        _warn("Could not find a suitable location to insert init_tracing(app). "
-              "Please add it manually after `app = FastAPI(...)`.")
+        _warn("Could not find a suitable location to insert init_tracing(app). Please add it manually after `app = FastAPI(...)`.")
         return None
 
     return "\n".join(result)
@@ -598,6 +602,7 @@ def instrument_service(
 # STEP 5: DOCKER COMPOSE
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def run_docker_compose(project_path: Path) -> bool:
     """Run docker compose up --build -d in the project directory.
 
@@ -618,8 +623,8 @@ def run_docker_compose(project_path: Path) -> bool:
             cwd=str(project_path),
             capture_output=True,
             text=True,
-            encoding='utf-8',
-            errors='replace',
+            encoding="utf-8",
+            errors="replace",
             timeout=600,
         )
         if result.returncode != 0:
@@ -660,6 +665,7 @@ def _find_docker_compose() -> str | None:
 # STEP 6: HEALTH CHECK
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def wait_for_services(services: list[dict[str, Any]], timeout: int = 120) -> bool:
     """Poll each service's health endpoint until all are healthy or timeout.
 
@@ -687,9 +693,7 @@ def wait_for_services(services: list[dict[str, Any]], timeout: int = 120) -> boo
                     _ok(f"{name} is healthy ({url})")
                 else:
                     all_good = False
-            except (requests.exceptions.ConnectionError,
-                    requests.exceptions.Timeout,
-                    requests.exceptions.RequestException):
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, requests.exceptions.RequestException):
                 all_good = False
 
         if all_good:
@@ -701,14 +705,14 @@ def wait_for_services(services: list[dict[str, Any]], timeout: int = 120) -> boo
         _info(f"Waiting for: {', '.join(s['name'] for s in remaining)} ({elapsed}s)")
         time.sleep(5)
 
-    _error(f"Timeout after {timeout}s. Unhealthy services: "
-           f"{', '.join(s['name'] for s in services if s['name'] not in healthy)}")
+    _error(f"Timeout after {timeout}s. Unhealthy services: {', '.join(s['name'] for s in services if s['name'] not in healthy)}")
     return False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 7: TRAFFIC GENERATION
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def generate_traffic() -> bool:
     """Generate HTTP traffic across all microservice endpoints.
@@ -727,8 +731,7 @@ def generate_traffic() -> bool:
     cid: str | None = None
     eid: str | None = None
 
-    def _req(method: str, path: str, json_data: dict | None = None,
-             auth: bool = False, label: str | None = None) -> requests.Response | None:
+    def _req(method: str, path: str, json_data: dict | None = None, auth: bool = False, label: str | None = None) -> requests.Response | None:
         nonlocal token
         url = f"{GATEWAY_API}{path}"
         headers = {"Content-Type": "application/json"}
@@ -736,8 +739,7 @@ def generate_traffic() -> bool:
             headers["Authorization"] = f"Bearer {token}"
         tag = label or f"{method} {url}"
         try:
-            resp = requests.request(method, url, json=json_data,
-                                    headers=headers, timeout=_to)
+            resp = requests.request(method, url, json=json_data, headers=headers, timeout=_to)
             if resp.ok:
                 ok.append(tag)
             else:
@@ -748,13 +750,24 @@ def generate_traffic() -> bool:
             return None
 
     # ── Auth (register may fail if already exists, login must work) ──────
-    _req("POST", "/auth/register", {
-        "username": "admin", "email": "admin@school.fr",
-        "password": "Admin1234!", "role": "admin",
-    })
-    resp = _req("POST", "/auth/login", {
-        "username": "admin", "password": "Admin1234!",
-    })
+    _req(
+        "POST",
+        "/auth/register",
+        {
+            "username": "admin",
+            "email": "admin@school.fr",
+            "password": "Admin1234!",
+            "role": "admin",
+        },
+    )
+    resp = _req(
+        "POST",
+        "/auth/login",
+        {
+            "username": "admin",
+            "password": "Admin1234!",
+        },
+    )
     if resp:
         token = resp.json().get("access_token")
     if not token:
@@ -762,11 +775,19 @@ def generate_traffic() -> bool:
 
     # ── Student CRUD (unique email per run) ──────────────────────────────
     email_student = f"jean.{ts_short}@student.fr"
-    resp = _req("POST", "/students", {
-        "first_name": "Jean", "last_name": "Dupont",
-        "email": email_student,
-        "year_of_study": 2, "major": "Informatique",
-    }, auth=True, label="POST /students (create)")
+    resp = _req(
+        "POST",
+        "/students",
+        {
+            "first_name": "Jean",
+            "last_name": "Dupont",
+            "email": email_student,
+            "year_of_study": 2,
+            "major": "Informatique",
+        },
+        auth=True,
+        label="POST /students (create)",
+    )
     if resp:
         sid = resp.json().get("id")
 
@@ -774,62 +795,91 @@ def generate_traffic() -> bool:
     _req("GET", "/students/stats", auth=True, label="GET /students/stats")
 
     if sid:
-        _req("GET", f"/students/{sid}", auth=True,
-             label=f"GET /students/{{id}} ({sid[:8]}..)")
-        _req("PUT", f"/students/{sid}", {
-            "first_name": "Jean", "last_name": "Updated",
-            "email": email_student, "year_of_study": 3, "major": "Informatique",
-        }, auth=True, label=f"PUT /students/{{id}} ({sid[:8]}..)")
+        _req("GET", f"/students/{sid}", auth=True, label=f"GET /students/{{id}} ({sid[:8]}..)")
+        _req(
+            "PUT",
+            f"/students/{sid}",
+            {
+                "first_name": "Jean",
+                "last_name": "Updated",
+                "email": email_student,
+                "year_of_study": 3,
+                "major": "Informatique",
+            },
+            auth=True,
+            label=f"PUT /students/{{id}} ({sid[:8]}..)",
+        )
 
     # ── Classroom CRUD (try multiple room numbers in case of failures) ────
     for suffix in ["A101", "B202", "C303"]:
         if cid:
             break
-        resp = _req("POST", "/classrooms", {
-            "room_number": suffix, "name": f"Salle {suffix}",
-            "building": suffix[0], "floor": 1, "capacity": 30,
-            "room_type": "computer_lab",
-            "has_projector": True, "has_computers": True,
-        }, auth=True, label=f"POST /classrooms (try {suffix})")
+        resp = _req(
+            "POST",
+            "/classrooms",
+            {
+                "room_number": suffix,
+                "name": f"Salle {suffix}",
+                "building": suffix[0],
+                "floor": 1,
+                "capacity": 30,
+                "room_type": "computer_lab",
+                "has_projector": True,
+                "has_computers": True,
+            },
+            auth=True,
+            label=f"POST /classrooms (try {suffix})",
+        )
         if resp:
             cid = resp.json().get("id")
 
     _req("GET", "/classrooms", auth=True, label="GET /classrooms (list)")
 
     if cid:
-        _req("GET", f"/classrooms/{cid}", auth=True,
-             label=f"GET /classrooms/{{id}} ({cid[:8]}..)")
-        _req("PUT", f"/classrooms/{cid}", {"capacity": 35},
-             auth=True, label=f"PUT /classrooms/{{id}} ({cid[:8]}..)")
+        _req("GET", f"/classrooms/{cid}", auth=True, label=f"GET /classrooms/{{id}} ({cid[:8]}..)")
+        _req("PUT", f"/classrooms/{cid}", {"capacity": 35}, auth=True, label=f"PUT /classrooms/{{id}} ({cid[:8]}..)")
         # Classroom schedule sub-resource
-        resp = _req("POST", f"/classrooms/{cid}/schedules", {
-            "course_name": "Maths", "teacher_name": "M. Robert",
-            "day_of_week": "monday", "start_time": "08:00",
-            "end_time": "10:00", "semester": "S1", "academic_year": "2025",
-        }, auth=True, label="POST /classrooms/{id}/schedules")
+        resp = _req(
+            "POST",
+            f"/classrooms/{cid}/schedules",
+            {
+                "course_name": "Maths",
+                "teacher_name": "M. Robert",
+                "day_of_week": "monday",
+                "start_time": "08:00",
+                "end_time": "10:00",
+                "semester": "S1",
+                "academic_year": "2025",
+            },
+            auth=True,
+            label="POST /classrooms/{id}/schedules",
+        )
         if resp:
             sched_id = resp.json().get("id")
             if sched_id:
-                _req("DELETE", f"/classrooms/{cid}/schedules/{sched_id}",
-                     auth=True, label="DELETE /classrooms/{id}/schedules/{sid}")
+                _req("DELETE", f"/classrooms/{cid}/schedules/{sched_id}", auth=True, label="DELETE /classrooms/{id}/schedules/{sid}")
 
     # ── Enrollment CRUD ───────────────────────────────────────────────────
     _req("GET", "/enrollments", auth=True, label="GET /enrollments (list)")
 
     if sid and cid:
-        resp = _req("POST", "/enrollments", {
-            "student_id": sid, "classroom_id": cid,
-        }, auth=True, label="POST /enrollments (create)")
+        resp = _req(
+            "POST",
+            "/enrollments",
+            {
+                "student_id": sid,
+                "classroom_id": cid,
+            },
+            auth=True,
+            label="POST /enrollments (create)",
+        )
         if resp:
             eid = resp.json().get("id")
 
     if eid:
-        _req("GET", f"/enrollments/{eid}", auth=True,
-             label=f"GET /enrollments/{{id}} ({eid[:8]}..)")
-        _req("PUT", f"/enrollments/{eid}", {"status": "confirmed"},
-             auth=True, label=f"PUT /enrollments/{{id}} ({eid[:8]}..)")
-        _req("DELETE", f"/enrollments/{eid}", auth=True,
-             label=f"DELETE /enrollments/{{id}} ({eid[:8]}..)")
+        _req("GET", f"/enrollments/{eid}", auth=True, label=f"GET /enrollments/{{id}} ({eid[:8]}..)")
+        _req("PUT", f"/enrollments/{eid}", {"status": "confirmed"}, auth=True, label=f"PUT /enrollments/{{id}} ({eid[:8]}..)")
+        _req("DELETE", f"/enrollments/{eid}", auth=True, label=f"DELETE /enrollments/{{id}} ({eid[:8]}..)")
 
     # ── Health (no auth) ─────────────────────────────────────────────────
     try:
@@ -841,11 +891,9 @@ def generate_traffic() -> bool:
 
     # ── Cleanup (delete created resources) ───────────────────────────────
     if eid:
-        _req("DELETE", f"/enrollments/{eid}", auth=True,
-             label=f"DELETE /enrollments/{{id}} ({eid[:8]}..)")
+        _req("DELETE", f"/enrollments/{eid}", auth=True, label=f"DELETE /enrollments/{{id}} ({eid[:8]}..)")
     if sid:
-        _req("DELETE", f"/students/{sid}", auth=True,
-             label=f"DELETE /students/{{id}} ({sid[:8]}..)")
+        _req("DELETE", f"/students/{sid}", auth=True, label=f"DELETE /students/{{id}} ({sid[:8]}..)")
 
     _info(f"Traffic summary: {len(ok)} succeeded, {len(ko)} failed.")
     if ko:
@@ -856,6 +904,7 @@ def generate_traffic() -> bool:
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 8: TRACE COLLECTION
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def collect_all_traces(
     services: list[dict[str, Any]],
@@ -888,8 +937,7 @@ def collect_all_traces(
             _warn(f"Trace collection for {svc['name']} failed.")
 
     if total_traces == 0:
-        _warn("No traces collected from any service. "
-              "Make sure traffic was sent and Jaeger is reachable.")
+        _warn("No traces collected from any service. Make sure traffic was sent and Jaeger is reachable.")
         return False
 
     _ok(f"Collected traces for {total_traces}/{len(services)} services.")
@@ -899,6 +947,7 @@ def collect_all_traces(
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 9: PIPELINE + DASHBOARD
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def run_analysis_pipeline(
     output_dir: Path,
@@ -997,6 +1046,7 @@ def launch_dashboard(data_dir: Path, host: str = "127.0.0.1", port: int = 8050) 
 # CLEANUP
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def cleanup(project_path: Path, restore_override: bool = True) -> None:
     """Restore the project to its original state."""
     if restore_override:
@@ -1008,6 +1058,7 @@ def cleanup(project_path: Path, restore_override: bool = True) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN ENTRY POINT
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
@@ -1023,7 +1074,8 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     parser.add_argument(
-        "--project-path", "-p",
+        "--project-path",
+        "-p",
         type=Path,
         default=DEFAULT_PROJECT_PATH,
         help=f"Path to the microservices-school project (default: {DEFAULT_PROJECT_PATH})",
@@ -1136,15 +1188,13 @@ def main(argv: list[str] | None = None) -> int:
     all_services = discover_services(project_path)
 
     if not all_services:
-        _error(f"No services found in {project_path}. "
-               f"Expected subdirectories with app/main.py.")
+        _error(f"No services found in {project_path}. Expected subdirectories with app/main.py.")
         return 1
 
     if args.service:
         services = [s for s in all_services if s["name"] == args.service]
         if not services:
-            _error(f"Service '{args.service}' not found. Available: "
-                   f"{', '.join(s['name'] for s in all_services)}")
+            _error(f"Service '{args.service}' not found. Available: {', '.join(s['name'] for s in all_services)}")
             return 1
     else:
         services = all_services
@@ -1167,15 +1217,13 @@ def main(argv: list[str] | None = None) -> int:
     _step(4, "Instrumenting services with OpenTelemetry")
     has_key = bool(os.environ.get("OPENROUTER_API_KEY", "").strip())
     if args.llm and not has_key:
-        _warn("--llm flag set but OPENROUTER_API_KEY is not set. "
-              "Falling back to template mode.")
+        _warn("--llm flag set but OPENROUTER_API_KEY is not set. Falling back to template mode.")
         args.llm = False
 
     for svc in services:
         _info(f"Instrumenting {svc['name']}...")
         if not instrument_service(svc, use_llm=args.llm, auto_yes=args.yes, force=args.force):
-            _warn(f"Instrumentation for {svc['name']} had issues. "
-                  "You may need to manually verify.")
+            _warn(f"Instrumentation for {svc['name']} had issues. You may need to manually verify.")
 
     # ── STEP 5: Start services via Docker Compose ───────────────────────────
     _step(5, "Starting services via Docker Compose")

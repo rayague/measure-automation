@@ -7,13 +7,13 @@ from boundary_analyzer.auto.plugins.node import NodePlugin
 
 
 class NodePluginTest(unittest.TestCase):
-
     def setUp(self):
         self.tmpdir = Path(tempfile.mkdtemp(prefix="node_test_"))
         self.plugin = NodePlugin()
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def _write(self, path: str, content: str) -> Path:
@@ -42,10 +42,13 @@ class NodePluginTest(unittest.TestCase):
         self.assertEqual(result.language, "node")
 
     def test_detect_express_from_deps(self):
-        self._write("package.json", """{
+        self._write(
+            "package.json",
+            """{
             "name": "demo",
             "dependencies": { "express": "^4.18.0" }
-        }""")
+        }""",
+        )
         self._write("index.js", "const express = require('express')")
         result = self.plugin.detect(self.tmpdir)
         self.assertEqual(result.score, 0.9)
@@ -53,54 +56,72 @@ class NodePluginTest(unittest.TestCase):
         self.assertEqual(result.framework, "express")
 
     def test_detect_fastify_from_deps(self):
-        self._write("package.json", """{
+        self._write(
+            "package.json",
+            """{
             "name": "demo",
             "dependencies": { "fastify": "^4.0.0" }
-        }""")
+        }""",
+        )
         result = self.plugin.detect(self.tmpdir)
         self.assertEqual(result.framework, "fastify")
 
     def test_detect_nestjs_from_deps(self):
-        self._write("package.json", """{
+        self._write(
+            "package.json",
+            """{
             "name": "demo",
             "dependencies": { "@nestjs/core": "^10.0.0" }
-        }""")
+        }""",
+        )
         result = self.plugin.detect(self.tmpdir)
         self.assertEqual(result.framework, "nestjs")
 
     def test_detect_koa_from_deps(self):
-        self._write("package.json", """{
+        self._write(
+            "package.json",
+            """{
             "name": "demo",
             "dependencies": { "koa": "^2.0.0" }
-        }""")
+        }""",
+        )
         result = self.plugin.detect(self.tmpdir)
         self.assertEqual(result.framework, "koa")
 
     def test_detect_unknown_framework(self):
-        self._write("package.json", """{
+        self._write(
+            "package.json",
+            """{
             "name": "demo",
             "dependencies": { "lodash": "^4.17.0" }
-        }""")
+        }""",
+        )
         self._write("index.js", "const _ = require('lodash')")
         result = self.plugin.detect(self.tmpdir)
         self.assertEqual(result.framework, "node")
 
     def test_find_entry_points_from_main_field(self):
-        self._write("package.json", """{
+        self._write(
+            "package.json",
+            """{
             "name": "demo",
             "main": "server.js",
             "dependencies": { "express": "^4.18.0" }
-        }""")
+        }""",
+        )
         self._write("server.js", "const express = require('express')")
         entries = self.plugin.find_entry_points(self.tmpdir)
         self.assertEqual(len(entries), 1)
         self.assertIn("server.js", str(entries[0].path))
 
     def test_find_entry_points_common_names(self):
-        self._write("package.json", """{
+        self._write(
+            "package.json",
+            """{
             "name": "demo",
             "dependencies": { "express": "^4.18.0" }
-        }""")
+        }""",
+        )
         self._write("app.js", "const express = require('express')")
         entries = self.plugin.find_entry_points(self.tmpdir)
         self.assertEqual(len(entries), 1)
@@ -112,10 +133,13 @@ class NodePluginTest(unittest.TestCase):
         self.assertEqual(len(entries), 0)
 
     def test_guess_port_default(self):
-        self._write("package.json", """{
+        self._write(
+            "package.json",
+            """{
             "name": "demo",
             "dependencies": { "express": "^4.18.0" }
-        }""")
+        }""",
+        )
         self._write("server.js", "const express = require('express')")
         entry = self.plugin.find_entry_points(self.tmpdir)[0]
         port = self.plugin.guess_port(entry)
@@ -130,10 +154,13 @@ class NodePluginTest(unittest.TestCase):
         self.assertEqual(port, 4000)
 
     def test_guess_port_nestjs_default(self):
-        self._write("package.json", """{
+        self._write(
+            "package.json",
+            """{
             "name": "demo",
             "dependencies": { "@nestjs/core": "^10.0.0" }
-        }""")
+        }""",
+        )
         self._write("main.ts", "import { NestFactory } from '@nestjs/core'")
         entries = self.plugin.find_entry_points(self.tmpdir)
         entry = entries[0] if entries else EntryPoint(path=self.tmpdir / "main.ts", framework="nestjs")
@@ -158,10 +185,13 @@ class NodePluginTest(unittest.TestCase):
         self.assertIn("index.js", cmd[-1])
 
     def test_run_command_npm_start(self):
-        self._write("package.json", """{
+        self._write(
+            "package.json",
+            """{
             "name": "demo",
             "scripts": { "start": "node server.js" }
-        }""")
+        }""",
+        )
         self._write("server.js", "const express = require('express')")
         entry = EntryPoint(path=self.tmpdir / "server.js", framework="express")
         cmd = self.plugin.run_command(entry)

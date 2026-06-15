@@ -63,10 +63,15 @@ class JaegerIntegrationTest(unittest.TestCase):
 
         result = subprocess.run(
             [
-                "docker", "run", "-d",
-                "--name", cls.container_name,
-                "-p", "16686:16686",
-                "-p", "4317:4317",
+                "docker",
+                "run",
+                "-d",
+                "--name",
+                cls.container_name,
+                "-p",
+                "16686:16686",
+                "-p",
+                "4317:4317",
                 "jaegertracing/all-in-one:latest",
             ],
             capture_output=True,
@@ -74,9 +79,7 @@ class JaegerIntegrationTest(unittest.TestCase):
             timeout=60,
         )
         if result.returncode != 0:
-            raise unittest.SkipTest(
-                f"Failed to start Jaeger container: {result.stderr}"
-            )
+            raise unittest.SkipTest(f"Failed to start Jaeger container: {result.stderr}")
 
         cls._wait_for_jaeger()
 
@@ -116,9 +119,7 @@ class JaegerIntegrationTest(unittest.TestCase):
         from boundary_analyzer.pipeline.step_01_collect_traces import main as collect
 
         with tempfile.TemporaryDirectory(prefix="jaeger_test_") as tmp:
-            os.environ["BOUNDARY_ANALYZER_SETTINGS"] = str(
-                Path(tmp) / "settings.yaml"
-            )
+            os.environ["BOUNDARY_ANALYZER_SETTINGS"] = str(Path(tmp) / "settings.yaml")
             settings = {
                 "jaeger_base_url": "http://localhost:16686",
                 "service_name": "nonexistent-test-service",

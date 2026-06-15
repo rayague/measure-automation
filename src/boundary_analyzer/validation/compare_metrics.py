@@ -95,9 +95,7 @@ def compare_threshold_methods(
 
     # Get threshold values
     fixed_threshold = fixed_df["threshold_value"].iloc[0] if "threshold_value" in fixed_df.columns else 0.5
-    percentile_threshold = (
-        percentile_df["threshold_value"].iloc[0] if "threshold_value" in percentile_df.columns else None
-    )
+    percentile_threshold = percentile_df["threshold_value"].iloc[0] if "threshold_value" in percentile_df.columns else None
 
     # Compare suspicious lists
     overlap = fixed_suspicious & percentile_suspicious

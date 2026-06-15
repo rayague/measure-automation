@@ -16,7 +16,6 @@ from boundary_analyzer.auto.models import (
 
 
 class EndpointTest(unittest.TestCase):
-
     def test_key_format(self):
         ep = Endpoint(method="GET", path="/users/{id}")
         self.assertEqual(ep.key(), "GET /users/{id}")
@@ -27,7 +26,6 @@ class EndpointTest(unittest.TestCase):
 
 
 class EntryPointTest(unittest.TestCase):
-
     def test_str(self):
         ep = EntryPoint(path=Path(tempfile.gettempdir()) / "main.py", framework="fastapi")
         expected = os.path.join(tempfile.gettempdir(), "main.py")
@@ -35,7 +33,6 @@ class EntryPointTest(unittest.TestCase):
 
 
 class ServiceInfoTest(unittest.TestCase):
-
     def setUp(self):
         self.service = ServiceInfo(
             name="my-service",
@@ -51,7 +48,9 @@ class ServiceInfoTest(unittest.TestCase):
 
     def test_port_none(self):
         svc = ServiceInfo(
-            name="test", language="python", framework="flask",
+            name="test",
+            language="python",
+            framework="flask",
             entry_points=[EntryPoint(path=Path("app.py"), framework="flask")],
             deployment="direct",
         )
@@ -65,18 +64,23 @@ class ServiceInfoTest(unittest.TestCase):
 
 
 class ProjectInfoTest(unittest.TestCase):
-
     def setUp(self):
         self.services = [
             ServiceInfo(
-                name="svc-a", language="python", framework="fastapi",
+                name="svc-a",
+                language="python",
+                framework="fastapi",
                 entry_points=[EntryPoint(path=Path("a.py"), framework="fastapi")],
-                deployment="direct", ports=[8000],
+                deployment="direct",
+                ports=[8000],
             ),
             ServiceInfo(
-                name="svc-b", language="python", framework="flask",
+                name="svc-b",
+                language="python",
+                framework="flask",
                 entry_points=[EntryPoint(path=Path("b.py"), framework="flask")],
-                deployment="direct", ports=[8001],
+                deployment="direct",
+                ports=[8001],
             ),
         ]
         self.project = ProjectInfo(
@@ -115,7 +119,6 @@ class ProjectInfoTest(unittest.TestCase):
 
 
 class TrafficResultTest(unittest.TestCase):
-
     def test_success_rate_zero(self):
         r = TrafficResult()
         self.assertEqual(r.success_rate, 0.0)
@@ -126,28 +129,33 @@ class TrafficResultTest(unittest.TestCase):
 
     def test_all_succeeded(self):
         r = TrafficResult(
-            total_requests=50, successful_requests=50,
-            endpoints_tested=5, endpoints_ok=5,
+            total_requests=50,
+            successful_requests=50,
+            endpoints_tested=5,
+            endpoints_ok=5,
         )
         self.assertTrue(r.all_succeeded)
 
     def test_none_succeeded(self):
         r = TrafficResult(
-            total_requests=50, successful_requests=0,
-            endpoints_tested=5, endpoints_ok=0,
+            total_requests=50,
+            successful_requests=0,
+            endpoints_tested=5,
+            endpoints_ok=0,
         )
         self.assertTrue(r.none_succeeded)
 
     def test_not_none_succeeded_when_some_ok(self):
         r = TrafficResult(
-            total_requests=50, successful_requests=30,
-            endpoints_tested=5, endpoints_ok=3,
+            total_requests=50,
+            successful_requests=30,
+            endpoints_tested=5,
+            endpoints_ok=3,
         )
         self.assertFalse(r.none_succeeded)
 
 
 class StepResultTest(unittest.TestCase):
-
     def test_success_no_errors(self):
         sr = StepResult(success=True, step_name="discover")
         self.assertFalse(sr.has_errors)
@@ -168,15 +176,13 @@ class StepResultTest(unittest.TestCase):
 
     def test_merge(self):
         sr1 = StepResult(success=True, step_name="test")
-        sr2 = StepResult(success=False, step_name="test",
-                          errors=[AnalysisError(code=ErrorCode.LANG_NOT_FOUND)])
+        sr2 = StepResult(success=False, step_name="test", errors=[AnalysisError(code=ErrorCode.LANG_NOT_FOUND)])
         sr1.merge(sr2)
         self.assertFalse(sr1.success)
         self.assertEqual(len(sr1.errors), 1)
 
 
 class AnalysisReportTest(unittest.TestCase):
-
     def setUp(self):
         self.report = AnalysisReport(
             project=ProjectInfo(services=[], root_dir=Path(tempfile.gettempdir())),
@@ -189,7 +195,8 @@ class AnalysisReportTest(unittest.TestCase):
 
     def test_not_all_success(self):
         self.report.steps["traffic"] = StepResult(
-            success=False, step_name="traffic",
+            success=False,
+            step_name="traffic",
             errors=[AnalysisError(code=ErrorCode.NO_ENDPOINTS_FOUND)],
         )
         self.assertFalse(self.report.all_success)
@@ -207,7 +214,8 @@ class AnalysisReportTest(unittest.TestCase):
 
     def test_all_errors_non_empty(self):
         self.report.steps["traffic"] = StepResult(
-            success=False, step_name="traffic",
+            success=False,
+            step_name="traffic",
             errors=[AnalysisError(code=ErrorCode.NO_TRACES)],
         )
         self.assertEqual(len(self.report.all_errors()), 1)
@@ -217,7 +225,8 @@ class AnalysisReportTest(unittest.TestCase):
 
     def test_has_any_errors_true(self):
         self.report.steps["traffic"] = StepResult(
-            success=False, step_name="traffic",
+            success=False,
+            step_name="traffic",
             errors=[AnalysisError(code=ErrorCode.NO_TRACES)],
         )
         self.assertTrue(self.report.has_any_errors)

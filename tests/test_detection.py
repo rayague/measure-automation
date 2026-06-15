@@ -235,27 +235,33 @@ class EndpointExtractorTest(unittest.TestCase):
 
     def test_extract_endpoints_bad_tags_json(self):
         # tags set to a raw invalid string that won't parse as JSON list-of-dicts
-        df = pd.DataFrame([{
-            "trace_id": "t1",
-            "span_id": "s1",
-            "parent_span_id": None,
-            "service_name": "svc1",
-            "operation_name": "GET /orders",
-            "start_time": 1000,
-            "duration": 50,
-            "tags": "not valid json",
-        }])
+        df = pd.DataFrame(
+            [
+                {
+                    "trace_id": "t1",
+                    "span_id": "s1",
+                    "parent_span_id": None,
+                    "service_name": "svc1",
+                    "operation_name": "GET /orders",
+                    "start_time": 1000,
+                    "duration": 50,
+                    "tags": "not valid json",
+                }
+            ]
+        )
         result = extract_endpoints(df)
         self.assertEqual(len(result), 1)
         self.assertTrue(result.iloc[0]["endpoint_key"].startswith("GET"))
 
     def test_save_endpoints_csv(self):
-        df = pd.DataFrame({
-            "service_name": ["svc1"],
-            "endpoint_key": ["GET /orders"],
-            "span_id": ["s1"],
-            "trace_id": ["t1"],
-        })
+        df = pd.DataFrame(
+            {
+                "service_name": ["svc1"],
+                "endpoint_key": ["GET /orders"],
+                "span_id": ["s1"],
+                "trace_id": ["t1"],
+            }
+        )
         path = self.test_dir / "endpoints.csv"
         save_endpoints_csv(df, path)
         self.assertTrue(path.exists())
@@ -263,12 +269,14 @@ class EndpointExtractorTest(unittest.TestCase):
         self.assertEqual(len(loaded), 1)
 
     def test_save_endpoints_csv_creates_dirs(self):
-        df = pd.DataFrame({
-            "service_name": ["svc1"],
-            "endpoint_key": ["GET /orders"],
-            "span_id": ["s1"],
-            "trace_id": ["t1"],
-        })
+        df = pd.DataFrame(
+            {
+                "service_name": ["svc1"],
+                "endpoint_key": ["GET /orders"],
+                "span_id": ["s1"],
+                "trace_id": ["t1"],
+            }
+        )
         path = self.test_dir / "sub" / "nested" / "endpoints.csv"
         save_endpoints_csv(df, path)
         self.assertTrue(path.exists())
@@ -499,14 +507,16 @@ class DbTableExtractorTest(unittest.TestCase):
     # ---- save_db_operations_csv ----
 
     def test_save_db_operations_csv(self):
-        df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s1"],
-            "service_name": ["svc1"],
-            "db_system": ["postgresql"],
-            "db_statement": ["SELECT 1"],
-            "tables": ["orders"],
-        })
+        df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "service_name": ["svc1"],
+                "db_system": ["postgresql"],
+                "db_statement": ["SELECT 1"],
+                "tables": ["orders"],
+            }
+        )
         path = self.test_dir / "db_ops.csv"
         save_db_operations_csv(df, path)
         self.assertTrue(path.exists())
@@ -514,14 +524,16 @@ class DbTableExtractorTest(unittest.TestCase):
         self.assertEqual(len(loaded), 1)
 
     def test_save_db_operations_csv_creates_dirs(self):
-        df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s1"],
-            "service_name": ["svc1"],
-            "db_system": ["postgresql"],
-            "db_statement": ["SELECT 1"],
-            "tables": ["orders"],
-        })
+        df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "service_name": ["svc1"],
+                "db_system": ["postgresql"],
+                "db_statement": ["SELECT 1"],
+                "tables": ["orders"],
+            }
+        )
         path = self.test_dir / "sub" / "db_ops.csv"
         save_db_operations_csv(df, path)
         self.assertTrue(path.exists())
@@ -537,12 +549,14 @@ class MappingBuilderTest(unittest.TestCase):
     # ---- _build_span_lookup ----
 
     def test_build_span_lookup(self):
-        df = pd.DataFrame({
-            "trace_id": ["t1", "t1"],
-            "span_id": ["s1", "s2"],
-            "parent_span_id": [None, "s1"],
-            "service_name": ["svc1", "svc1"],
-        })
+        df = pd.DataFrame(
+            {
+                "trace_id": ["t1", "t1"],
+                "span_id": ["s1", "s2"],
+                "parent_span_id": [None, "s1"],
+                "service_name": ["svc1", "svc1"],
+            }
+        )
         lookup = _build_span_lookup(df)
         self.assertIn(("t1", "s1"), lookup)
         self.assertIn(("t1", "s2"), lookup)
@@ -552,11 +566,13 @@ class MappingBuilderTest(unittest.TestCase):
     # ---- _build_endpoint_lookup ----
 
     def test_build_endpoint_lookup(self):
-        df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s1"],
-            "endpoint_key": ["GET /orders"],
-        })
+        df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "endpoint_key": ["GET /orders"],
+            }
+        )
         lookup = _build_endpoint_lookup(df)
         self.assertEqual(lookup[("t1", "s1")], "GET /orders")
 
@@ -599,23 +615,29 @@ class MappingBuilderTest(unittest.TestCase):
         self.assertListEqual(list(result.columns), ["service_name", "endpoint_key", "table", "count"])
 
     def test_build_mapping_normal(self):
-        spans_df = pd.DataFrame({
-            "trace_id": ["t1", "t1"],
-            "span_id": ["s1", "s2"],
-            "parent_span_id": [None, "s1"],
-            "service_name": ["svc1", "svc1"],
-        })
-        endpoints_df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s1"],
-            "service_name": ["svc1"],
-            "endpoint_key": ["GET /orders"],
-        })
-        db_ops_df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s2"],
-            "tables": ["orders,users"],
-        })
+        spans_df = pd.DataFrame(
+            {
+                "trace_id": ["t1", "t1"],
+                "span_id": ["s1", "s2"],
+                "parent_span_id": [None, "s1"],
+                "service_name": ["svc1", "svc1"],
+            }
+        )
+        endpoints_df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "service_name": ["svc1"],
+                "endpoint_key": ["GET /orders"],
+            }
+        )
+        db_ops_df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s2"],
+                "tables": ["orders,users"],
+            }
+        )
         result = build_endpoint_table_mapping(spans_df, endpoints_df, db_ops_df)
         self.assertEqual(len(result), 2)
         self.assertIn("orders", result["table"].values)
@@ -623,81 +645,101 @@ class MappingBuilderTest(unittest.TestCase):
         self.assertTrue((result["endpoint_key"] == "GET /orders").all())
 
     def test_build_mapping_aggregation(self):
-        spans_df = pd.DataFrame({
-            "trace_id": ["t1", "t1"],
-            "span_id": ["s1", "s2"],
-            "parent_span_id": [None, "s1"],
-            "service_name": ["svc1", "svc1"],
-        })
-        endpoints_df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s1"],
-            "service_name": ["svc1"],
-            "endpoint_key": ["GET /orders"],
-        })
-        db_ops_df = pd.DataFrame({
-            "trace_id": ["t1", "t1"],
-            "span_id": ["s2", "s2"],
-            "tables": ["orders", "orders"],
-        })
+        spans_df = pd.DataFrame(
+            {
+                "trace_id": ["t1", "t1"],
+                "span_id": ["s1", "s2"],
+                "parent_span_id": [None, "s1"],
+                "service_name": ["svc1", "svc1"],
+            }
+        )
+        endpoints_df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "service_name": ["svc1"],
+                "endpoint_key": ["GET /orders"],
+            }
+        )
+        db_ops_df = pd.DataFrame(
+            {
+                "trace_id": ["t1", "t1"],
+                "span_id": ["s2", "s2"],
+                "tables": ["orders", "orders"],
+            }
+        )
         result = build_endpoint_table_mapping(spans_df, endpoints_df, db_ops_df)
         self.assertEqual(len(result), 1)
         self.assertEqual(result.iloc[0]["count"], 2)
 
     def test_build_mapping_unknown_endpoint_fallback(self):
         # Span whose parent chain has no match in endpoint_lookup
-        spans_df = pd.DataFrame({
-            "trace_id": ["t1", "t1"],
-            "span_id": ["s1", "s2"],
-            "parent_span_id": [None, "s1"],
-            "service_name": ["svc1", "svc1"],
-        })
-        endpoints_df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s1"],
-            "endpoint_key": ["GET /orders"],
-            "service_name": ["svc1"],
-        })
-        db_ops_df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s2"],
-            "tables": ["orders"],
-            "service_name": ["svc1"],
-        })
+        spans_df = pd.DataFrame(
+            {
+                "trace_id": ["t1", "t1"],
+                "span_id": ["s1", "s2"],
+                "parent_span_id": [None, "s1"],
+                "service_name": ["svc1", "svc1"],
+            }
+        )
+        endpoints_df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "endpoint_key": ["GET /orders"],
+                "service_name": ["svc1"],
+            }
+        )
+        db_ops_df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s2"],
+                "tables": ["orders"],
+                "service_name": ["svc1"],
+            }
+        )
         result = build_endpoint_table_mapping(spans_df, endpoints_df, db_ops_df)
         self.assertEqual(len(result), 1)
         self.assertEqual(result.iloc[0]["endpoint_key"], "GET /orders")
 
     def test_build_mapping_nan_tables_handled(self):
-        spans_df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s1"],
-            "parent_span_id": [None],
-            "service_name": ["svc1"],
-        })
-        endpoints_df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s1"],
-            "endpoint_key": ["GET /orders"],
-            "service_name": ["svc1"],
-        })
-        db_ops_df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s1"],
-            "tables": [float("nan")],
-        })
+        spans_df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "parent_span_id": [None],
+                "service_name": ["svc1"],
+            }
+        )
+        endpoints_df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "endpoint_key": ["GET /orders"],
+                "service_name": ["svc1"],
+            }
+        )
+        db_ops_df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "tables": [float("nan")],
+            }
+        )
         result = build_endpoint_table_mapping(spans_df, endpoints_df, db_ops_df)
         self.assertTrue(result.empty)
 
     # ---- save_endpoint_table_map_csv ----
 
     def test_save_endpoint_table_map_csv(self):
-        df = pd.DataFrame({
-            "service_name": ["svc1"],
-            "endpoint_key": ["GET /orders"],
-            "table": ["orders"],
-            "count": [1],
-        })
+        df = pd.DataFrame(
+            {
+                "service_name": ["svc1"],
+                "endpoint_key": ["GET /orders"],
+                "table": ["orders"],
+                "count": [1],
+            }
+        )
         path = self.test_dir / "mapping.csv"
         save_endpoint_table_map_csv(df, path)
         self.assertTrue(path.exists())
@@ -705,12 +747,14 @@ class MappingBuilderTest(unittest.TestCase):
         self.assertEqual(len(loaded), 1)
 
     def test_save_endpoint_table_map_csv_creates_dirs(self):
-        df = pd.DataFrame({
-            "service_name": ["svc1"],
-            "endpoint_key": ["GET /orders"],
-            "table": ["orders"],
-            "count": [1],
-        })
+        df = pd.DataFrame(
+            {
+                "service_name": ["svc1"],
+                "endpoint_key": ["GET /orders"],
+                "table": ["orders"],
+                "count": [1],
+            }
+        )
         path = self.test_dir / "sub" / "nested" / "mapping.csv"
         save_endpoint_table_map_csv(df, path)
         self.assertTrue(path.exists())

@@ -13,12 +13,11 @@ class LllmInstrumentationTest(unittest.TestCase):
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_generate_instrumentation_calls_llm(self):
-        (self.tmpdir / "main.py").write_text(
-            "from fastapi import FastAPI\napp = FastAPI()\n"
-        )
+        (self.tmpdir / "main.py").write_text("from fastapi import FastAPI\napp = FastAPI()\n")
         (self.tmpdir / "requirements.txt").write_text("fastapi\n")
 
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
@@ -29,6 +28,7 @@ class LllmInstrumentationTest(unittest.TestCase):
                 from boundary_analyzer.llm.instrumentation import (
                     generate_instrumentation,
                 )
+
                 result = generate_instrumentation(self.tmpdir)
                 self.assertIsNotNone(result)
                 self.assertIn("instrumented", result)
@@ -45,6 +45,7 @@ class LllmInstrumentationTest(unittest.TestCase):
                 from boundary_analyzer.llm.instrumentation import (
                     generate_instrumentation,
                 )
+
                 result = generate_instrumentation(self.tmpdir)
                 self.assertIsNone(result)
 

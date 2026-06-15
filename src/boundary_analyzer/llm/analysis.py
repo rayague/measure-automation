@@ -73,28 +73,19 @@ def _generate_local_analysis(
     if "threshold_value" in rank_df.columns:
         threshold = float(rank_df["threshold_value"].iloc[0])
 
-    lines.append(
-        f"This system contains **{total_svc} services** — **{suspicious_count} suspicious** (SCOM below "
-        f"threshold) and **{healthy_count} healthy**."
-    )
+    lines.append(f"This system contains **{total_svc} services** — **{suspicious_count} suspicious** (SCOM below threshold) and **{healthy_count} healthy**.")
     lines.append(f"Average SCOM: **{avg_scom:.4f}** (range: {min_scom:.4f} – {max_scom:.4f}).")
     if threshold is not None:
         lines.append(f"Threshold: **{threshold}**. Services below this value may have boundary problems.")
     lines.append("")
 
     if total_svc > 0 and suspicious_count > 0:
-        gap = (
-            threshold - max(s for s in scores if s < threshold)
-            if threshold and any(s < threshold for s in scores)
-            else None
-        )
+        gap = threshold - max(s for s in scores if s < threshold) if threshold and any(s < threshold for s in scores) else None
         if gap is not None:
             lines.append(
-                f"The closest suspicious service is **{gap:.4f}** below threshold "
-                f"— indicating a clear separation between healthy and problematic services."
+                f"The closest suspicious service is **{gap:.4f}** below threshold — indicating a clear separation between healthy and problematic services."
                 if gap > 0.05
-                else f"The closest suspicious service is only **{gap:.4f}** below threshold "
-                f"— the boundary between healthy and suspicious is narrow."
+                else f"The closest suspicious service is only **{gap:.4f}** below threshold — the boundary between healthy and suspicious is narrow."
             )
             lines.append("")
 
@@ -188,16 +179,10 @@ def _generate_local_analysis(
                         )
                         for ep_a, ep_b, shared_t, union_t, jv in sorted(jaccard_pairs, key=lambda x: -x[4]):
                             if jv >= 0.7:
-                                lines.append(
-                                    f"- Keep `{ep_a}` + `{ep_b}` together "
-                                    f"(J={jv:.2f}, shared: {', '.join(sorted(shared_t)) if shared_t else 'none'})"
-                                )
+                                lines.append(f"- Keep `{ep_a}` + `{ep_b}` together (J={jv:.2f}, shared: {', '.join(sorted(shared_t)) if shared_t else 'none'})")
                         for ep_a, ep_b, shared_t, union_t, jv in sorted(jaccard_pairs, key=lambda x: x[4]):
                             if jv < 0.7:
-                                lines.append(
-                                    f"- Split `{ep_a}` from `{ep_b}` "
-                                    f"(J={jv:.2f}, disjoint: {', '.join(sorted(union_t - shared_t))})"
-                                )
+                                lines.append(f"- Split `{ep_a}` from `{ep_b}` (J={jv:.2f}, disjoint: {', '.join(sorted(union_t - shared_t))})")
                         lines.append("")
                     else:
                         lines.append(
@@ -257,10 +242,7 @@ def _generate_local_analysis(
 
         # Find natural gaps
         sorted_scores = sorted(scores)
-        gaps = [
-            (sorted_scores[i], sorted_scores[i + 1], sorted_scores[i + 1] - sorted_scores[i])
-            for i in range(len(sorted_scores) - 1)
-        ]
+        gaps = [(sorted_scores[i], sorted_scores[i + 1], sorted_scores[i + 1] - sorted_scores[i]) for i in range(len(sorted_scores) - 1)]
         max_gap = max(gaps, key=lambda x: x[2]) if gaps else None
         if max_gap and max_gap[2] >= 0.1:
             lines.append(

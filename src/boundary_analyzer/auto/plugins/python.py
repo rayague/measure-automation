@@ -175,11 +175,7 @@ def _find_app_variable(py_file: Path, framework: str) -> str | None:
         if isinstance(node, ast.Assign):
             for target in node.targets:
                 if isinstance(target, ast.Name):
-                    if (
-                        isinstance(node.value, ast.Call)
-                        and isinstance(node.value.func, ast.Name)
-                        and node.value.func.id == target_class
-                    ):
+                    if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id == target_class:
                         return target.id
     return None
 
@@ -208,9 +204,7 @@ class PythonPlugin(LanguagePlugin):
         if not build_files:
             py_files = _list_py_files(root)
             if not py_files:
-                return DetectionResult(
-                    score=0.0, language="python", framework="", detail="No Python build files or .py files found"
-                )
+                return DetectionResult(score=0.0, language="python", framework="", detail="No Python build files or .py files found")
             return DetectionResult(
                 score=0.3,
                 language="python",
@@ -296,9 +290,7 @@ class PythonPlugin(LanguagePlugin):
             pass
         return "python"
 
-    def instrument(
-        self, entry: EntryPoint, service_name: str, otlp_endpoint: str = "http://localhost:4318"
-    ) -> Instrumentation:
+    def instrument(self, entry: EntryPoint, service_name: str, otlp_endpoint: str = "http://localhost:4318") -> Instrumentation:
         return Instrumentation(
             env_vars={
                 "OTEL_SERVICE_NAME": service_name,

@@ -12,12 +12,12 @@ from boundary_analyzer.auto.models import EntryPoint, ProjectInfo, ServiceInfo
 
 
 class ComposeOverrideTest(unittest.TestCase):
-
     def setUp(self):
         self.tmpdir = Path(tempfile.mkdtemp(prefix="deploy_test_"))
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def _make_project(self, services: list[ServiceInfo]) -> ProjectInfo:
@@ -127,12 +127,12 @@ class ComposeOverrideTest(unittest.TestCase):
 
 
 class ComposeOverrideJavaTest(unittest.TestCase):
-
     def setUp(self):
         self.tmpdir = Path(tempfile.mkdtemp(prefix="deploy_java_test_"))
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_build_override_adds_node_otel(self):

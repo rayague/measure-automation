@@ -49,10 +49,7 @@ _FRAMEWORK_PORTS: dict[str, int] = {
 
 _AGENT_DIR = Path.home() / ".mba" / "agents"
 _AGENT_JAR = _AGENT_DIR / "opentelemetry-javaagent.jar"
-_AGENT_URL = (
-    "https://github.com/open-telemetry/opentelemetry-java-instrumentation/"
-    "releases/latest/download/opentelemetry-javaagent.jar"
-)
+_AGENT_URL = "https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar"
 
 
 def _find_build_files(root: Path) -> list[Path]:
@@ -284,9 +281,7 @@ class JavaPlugin(LanguagePlugin):
                 return fw
         return entry.framework or "java"
 
-    def instrument(
-        self, entry: EntryPoint, service_name: str, otlp_endpoint: str = "http://localhost:4318"
-    ) -> Instrumentation:
+    def instrument(self, entry: EntryPoint, service_name: str, otlp_endpoint: str = "http://localhost:4318") -> Instrumentation:
         return Instrumentation(
             env_vars={
                 "OTEL_SERVICE_NAME": service_name,

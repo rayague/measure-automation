@@ -177,6 +177,7 @@ def main(argv: list[str] | None = None) -> int:
         _console.print(f"\n  [red]Unexpected error:[/] {e}")
         if os.environ.get("MBA_DEBUG"):
             import traceback
+
             _console.print(f"  [dim]{traceback.format_exc()}[/]")
         logger.critical("Unexpected error: %s", e, exc_info=True)
         return 1
@@ -186,9 +187,7 @@ def _main(argv: list[str] | None = None) -> int:
     """Internal CLI dispatch: build argument parsers and route to the correct handler."""
     from boundary_analyzer import __version__
 
-    _console.print(
-        f"[bold cyan]MBA[/] [dim]v{__version__}[/] [dim]- Microservice Boundary Analyzer[/]\n", highlight=False
-    )
+    _console.print(f"[bold cyan]MBA[/] [dim]v{__version__}[/] [dim]- Microservice Boundary Analyzer[/]\n", highlight=False)
 
     parser = argparse.ArgumentParser(
         prog="mba",
@@ -291,10 +290,7 @@ def _main(argv: list[str] | None = None) -> int:
     dash_parser = subparsers.add_parser(
         "dashboard",
         help="Open the web dashboard to see SCOM results",
-        description=(
-            "Open the web dashboard to explore SCOM results.\n"
-            "The dashboard shows scores, rankings, and service details."
-        ),
+        description=("Open the web dashboard to explore SCOM results.\nThe dashboard shows scores, rankings, and service details."),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     _add_dash_args(dash_parser)
@@ -383,40 +379,24 @@ def _main(argv: list[str] | None = None) -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     teastore_run = teastore_parser.add_argument_group("Run options")
-    teastore_run.add_argument(
-        "--output", default="data/teastore_run", help="Save folder for traces and results (default: data/teastore_run)."
-    )
-    teastore_run.add_argument(
-        "--duration", type=_validate_duration, default=60, help="How many seconds to generate traffic (default: 60)."
-    )
+    teastore_run.add_argument("--output", default="data/teastore_run", help="Save folder for traces and results (default: data/teastore_run).")
+    teastore_run.add_argument("--duration", type=_validate_duration, default=60, help="How many seconds to generate traffic (default: 60).")
     teastore_run.add_argument(
         "--wait",
         type=_validate_positive_int,
         default=300,
         help="Max seconds to wait for TeaStore to start (default: 300).",
     )
-    teastore_run.add_argument(
-        "--download-only", action="store_true", help="Only download the OTel agent. Do not start anything."
-    )
+    teastore_run.add_argument("--download-only", action="store_true", help="Only download the OTel agent. Do not start anything.")
 
     teastore_scom = teastore_parser.add_argument_group("SCOM analysis")
-    teastore_scom.add_argument(
-        "--threshold", type=_validate_threshold, default=0.5, help="SCOM threshold for suspicious flag (default: 0.5)."
-    )
-    teastore_scom.add_argument(
-        "--no-skip-no-db", action="store_false", dest="skip_no_db", help="Also analyze services with no database."
-    )
-    teastore_scom.add_argument(
-        "--skip-pipeline", action="store_true", help="Only export traces from Jaeger. Do not run SCOM."
-    )
+    teastore_scom.add_argument("--threshold", type=_validate_threshold, default=0.5, help="SCOM threshold for suspicious flag (default: 0.5).")
+    teastore_scom.add_argument("--no-skip-no-db", action="store_false", dest="skip_no_db", help="Also analyze services with no database.")
+    teastore_scom.add_argument("--skip-pipeline", action="store_true", help="Only export traces from Jaeger. Do not run SCOM.")
 
     teastore_docker = teastore_parser.add_argument_group("Docker")
-    teastore_docker.add_argument(
-        "--no-cleanup", action="store_false", dest="cleanup", help="Keep Docker containers running after finish."
-    )
-    teastore_docker.add_argument(
-        "--jaeger-ui", action="store_true", help="Open Jaeger web UI. Keeps containers running."
-    )
+    teastore_docker.add_argument("--no-cleanup", action="store_false", dest="cleanup", help="Keep Docker containers running after finish.")
+    teastore_docker.add_argument("--jaeger-ui", action="store_true", help="Open Jaeger web UI. Keeps containers running.")
 
     # ── full subcommand ─────────────────────────────────────────────
     full_parser = subparsers.add_parser(

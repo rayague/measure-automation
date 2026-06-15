@@ -131,9 +131,7 @@ def _scan_api_routes(project_path: Path) -> list[dict[str, str]]:
         for i, line in enumerate(lines):
             stripped = line.strip()
             # Match FastAPI/Flask-style route decorators
-            if "@" in stripped and any(
-                method in stripped.upper() for method in [".GET(", ".POST(", ".PUT(", ".DELETE(", ".PATCH("]
-            ):
+            if "@" in stripped and any(method in stripped.upper() for method in [".GET(", ".POST(", ".PUT(", ".DELETE(", ".PATCH("]):
                 routes.append(
                     {
                         "file": str(py_file.relative_to(project_path)),

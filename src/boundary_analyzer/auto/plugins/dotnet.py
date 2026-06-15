@@ -209,9 +209,7 @@ class DotNetPlugin(LanguagePlugin):
     def detect_framework(self, root: Path, entry: EntryPoint) -> str:
         return entry.framework or "dotnet"
 
-    def instrument(
-        self, entry: EntryPoint, service_name: str, otlp_endpoint: str = "http://localhost:4318"
-    ) -> Instrumentation:
+    def instrument(self, entry: EntryPoint, service_name: str, otlp_endpoint: str = "http://localhost:4318") -> Instrumentation:
         return Instrumentation(
             env_vars={
                 "OTEL_SERVICE_NAME": service_name,

@@ -234,11 +234,7 @@ class PhpPlugin(LanguagePlugin):
             framework=framework or "php",
             entries=entries,
             build_tool="composer",
-            detail=(
-                f"PHP {framework or 'project'} with {len(entries)} entry point(s)"
-                if entries
-                else f"PHP {framework or 'project'}"
-            ),
+            detail=(f"PHP {framework or 'project'} with {len(entries)} entry point(s)" if entries else f"PHP {framework or 'project'}"),
         )
 
     def find_entry_points(self, root: Path) -> list[EntryPoint]:
@@ -255,9 +251,7 @@ class PhpPlugin(LanguagePlugin):
     def detect_framework(self, root: Path, entry: EntryPoint) -> str:
         return entry.framework or "php"
 
-    def instrument(
-        self, entry: EntryPoint, service_name: str, otlp_endpoint: str = "http://localhost:4318"
-    ) -> Instrumentation:
+    def instrument(self, entry: EntryPoint, service_name: str, otlp_endpoint: str = "http://localhost:4318") -> Instrumentation:
         return Instrumentation(
             env_vars={
                 "OTEL_SERVICE_NAME": service_name,

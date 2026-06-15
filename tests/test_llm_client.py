@@ -17,9 +17,7 @@ class LllmClientTest(unittest.TestCase):
     def test_successful_call_returns_content(self, mock_post):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "choices": [{"message": {"content": "Hello world"}}]
-        }
+        mock_resp.json.return_value = {"choices": [{"message": {"content": "Hello world"}}]}
         mock_post.return_value = mock_resp
 
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
@@ -30,15 +28,11 @@ class LllmClientTest(unittest.TestCase):
     def test_429_retries_then_fallback(self, mock_post):
         mock_429 = MagicMock()
         mock_429.status_code = 429
-        mock_429.json.return_value = {
-            "error": {"metadata": {"retry_after_seconds": 1}}
-        }
+        mock_429.json.return_value = {"error": {"metadata": {"retry_after_seconds": 1}}}
 
         mock_200 = MagicMock()
         mock_200.status_code = 200
-        mock_200.json.return_value = {
-            "choices": [{"message": {"content": "fallback ok"}}]
-        }
+        mock_200.json.return_value = {"choices": [{"message": {"content": "fallback ok"}}]}
 
         mock_post.side_effect = [mock_429, mock_429, mock_429, mock_200]
 
@@ -52,9 +46,7 @@ class LllmClientTest(unittest.TestCase):
 
         mock_200 = MagicMock()
         mock_200.status_code = 200
-        mock_200.json.return_value = {
-            "choices": [{"message": {"content": "fallback ok"}}]
-        }
+        mock_200.json.return_value = {"choices": [{"message": {"content": "fallback ok"}}]}
 
         mock_post.side_effect = [Timeout(), Timeout(), Timeout(), mock_200]
 
@@ -66,15 +58,11 @@ class LllmClientTest(unittest.TestCase):
     def test_empty_content_skips_to_fallback(self, mock_post):
         mock_empty = MagicMock()
         mock_empty.status_code = 200
-        mock_empty.json.return_value = {
-            "choices": [{"message": {"content": None}}]
-        }
+        mock_empty.json.return_value = {"choices": [{"message": {"content": None}}]}
 
         mock_ok = MagicMock()
         mock_ok.status_code = 200
-        mock_ok.json.return_value = {
-            "choices": [{"message": {"content": "fallback ok"}}]
-        }
+        mock_ok.json.return_value = {"choices": [{"message": {"content": "fallback ok"}}]}
 
         mock_post.side_effect = [mock_empty, mock_ok]
 
@@ -86,14 +74,13 @@ class LllmClientTest(unittest.TestCase):
     def test_all_models_fail_returns_none(self, mock_post):
         mock_429 = MagicMock()
         mock_429.status_code = 429
-        mock_429.json.return_value = {
-            "error": {"metadata": {"retry_after_seconds": 1}}
-        }
+        mock_429.json.return_value = {"error": {"metadata": {"retry_after_seconds": 1}}}
 
         mock_post.return_value = mock_429
 
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
             from boundary_analyzer.llm.client import call_llm
+
             result = call_llm("test prompt")
             self.assertIsNone(result)
 
@@ -101,9 +88,7 @@ class LllmClientTest(unittest.TestCase):
     def test_custom_model_override(self, mock_post):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "choices": [{"message": {"content": "custom model"}}]
-        }
+        mock_resp.json.return_value = {"choices": [{"message": {"content": "custom model"}}]}
         mock_post.return_value = mock_resp
 
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
@@ -116,9 +101,7 @@ class LllmClientTest(unittest.TestCase):
     def test_temperature_and_max_tokens_passed(self, mock_post):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "choices": [{"message": {"content": "ok"}}]
-        }
+        mock_resp.json.return_value = {"choices": [{"message": {"content": "ok"}}]}
         mock_post.return_value = mock_resp
 
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):

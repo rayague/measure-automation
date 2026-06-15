@@ -592,11 +592,7 @@ def create_cohesion_gauge(scom_score: float, service_name: str) -> dcc.Graph:
                 ),
             ),
             title=dict(
-                text=(
-                    f"<span style='font-family:{_FONT_MONO};font-size:11px;"
-                    f"letter-spacing:2px;color:{_TEXT_M}'>"
-                    f"{service_name.upper()}</span>"
-                ),
+                text=(f"<span style='font-family:{_FONT_MONO};font-size:11px;letter-spacing:2px;color:{_TEXT_M}'>{service_name.upper()}</span>"),
                 font=dict(size=12),
             ),
         )
@@ -806,11 +802,7 @@ def create_scom_timeline(df: pd.DataFrame) -> dcc.Graph:
                     name=svc,
                     line=dict(color=col, width=2, shape="spline", smoothing=0.8),
                     marker=dict(color=col, size=7, line=dict(color=_BG_PAPER, width=2)),
-                    hovertemplate=(
-                        f"<b>{svc}</b><br>"
-                        "Run: %{x}<br>"
-                        f"<span style='color:{_CYAN}'>SCOM: </span>%{{y:.4f}}<extra></extra>"
-                    ),
+                    hovertemplate=(f"<b>{svc}</b><br>Run: %{{x}}<br><span style='color:{_CYAN}'>SCOM: </span>%{{y:.4f}}<extra></extra>"),
                 )
             )
     else:

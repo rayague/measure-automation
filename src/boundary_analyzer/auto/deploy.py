@@ -338,10 +338,7 @@ def deploy_services(
 _AGENT_DIR = Path.home() / ".mba" / "agents"
 _AGENT_JAR_NAME = "opentelemetry-javaagent.jar"
 _AGENT_JAR = _AGENT_DIR / _AGENT_JAR_NAME
-_AGENT_URL = (
-    "https://github.com/open-telemetry/opentelemetry-java-instrumentation/"
-    "releases/latest/download/opentelemetry-javaagent.jar"
-)
+_AGENT_URL = "https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar"
 
 
 def _ensure_java_agent() -> str | None:

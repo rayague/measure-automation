@@ -32,10 +32,7 @@ logger = logging.getLogger(__name__)
 
 OTEL_AGENT_VERSION = "v2.14.0"
 OTEL_AGENT_JAR = f"opentelemetry-javaagent-{OTEL_AGENT_VERSION}.jar"
-OTEL_AGENT_URL = (
-    f"https://github.com/open-telemetry/opentelemetry-java-instrumentation/"
-    f"releases/download/{OTEL_AGENT_VERSION}/opentelemetry-javaagent.jar"
-)
+OTEL_AGENT_URL = f"https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/{OTEL_AGENT_VERSION}/opentelemetry-javaagent.jar"
 COMPOSE_FILE = Path(__file__).resolve().parent / "docker-compose-otel.yaml"
 COMPOSE_DIR = COMPOSE_FILE.parent
 AGENT_DIR = COMPOSE_DIR / "otel-agent"
@@ -44,7 +41,6 @@ AGENT_SYMLINK = AGENT_DIR / "opentelemetry-javaagent.jar"
 
 WEBUI_URL = "http://localhost:8080/tools.descartes.teastore.webui/"
 JAEGER_API = "http://localhost:16686/api/traces?service=teastore-{service}&limit=1000"
-
 
 
 def _run(cmd: list[str], cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess:
@@ -149,8 +145,12 @@ def generate_traffic(duration_sec: int = 60, interval_sec: float = 2.0) -> None:
 def export_traces(output_dir: Path, services: list[str] | None = None) -> dict[str, Path]:
     if services is None:
         services = [
-            "teastore-registry", "teastore-persistence", "teastore-auth",
-            "teastore-image", "teastore-recommender", "teastore-webui",
+            "teastore-registry",
+            "teastore-persistence",
+            "teastore-auth",
+            "teastore-image",
+            "teastore-recommender",
+            "teastore-webui",
         ]
 
     traces_dir = output_dir / "raw" / "traces"
@@ -278,6 +278,7 @@ def run_teastore(
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
     finally:
@@ -292,24 +293,15 @@ def run_teastore(
 
 def main() -> int:
     ap = ArgumentParser(description="Deploy TeaStore with OTel, generate traffic, export traces, run SCOM")
-    ap.add_argument("--output", default="data/teastore_run",
-                    help="Output directory for traces and SCOM results")
-    ap.add_argument("--duration", type=int, default=60,
-                    help="Traffic generation duration in seconds (default: 60)")
-    ap.add_argument("--wait", type=int, default=300,
-                    help="Max wait time for TeaStore startup in seconds (default: 300)")
-    ap.add_argument("--threshold", type=float, default=0.5,
-                    help="SCOM fixed threshold (default: 0.5)")
-    ap.add_argument("--no-skip-no-db", action="store_false", dest="skip_no_db",
-                    help="Include services with no DB tables in SCOM ranking")
-    ap.add_argument("--no-cleanup", action="store_false", dest="cleanup",
-                    help="Do NOT stop containers after finishing")
-    ap.add_argument("--skip-pipeline", action="store_true",
-                    help="Skip SCOM analysis pipeline (export traces only)")
-    ap.add_argument("--jaeger-ui", action="store_true",
-                    help="Open Jaeger UI in browser (implies --no-cleanup)")
-    ap.add_argument("--download-only", action="store_true",
-                    help="Only download the OTel agent, do not deploy")
+    ap.add_argument("--output", default="data/teastore_run", help="Output directory for traces and SCOM results")
+    ap.add_argument("--duration", type=int, default=60, help="Traffic generation duration in seconds (default: 60)")
+    ap.add_argument("--wait", type=int, default=300, help="Max wait time for TeaStore startup in seconds (default: 300)")
+    ap.add_argument("--threshold", type=float, default=0.5, help="SCOM fixed threshold (default: 0.5)")
+    ap.add_argument("--no-skip-no-db", action="store_false", dest="skip_no_db", help="Include services with no DB tables in SCOM ranking")
+    ap.add_argument("--no-cleanup", action="store_false", dest="cleanup", help="Do NOT stop containers after finishing")
+    ap.add_argument("--skip-pipeline", action="store_true", help="Skip SCOM analysis pipeline (export traces only)")
+    ap.add_argument("--jaeger-ui", action="store_true", help="Open Jaeger UI in browser (implies --no-cleanup)")
+    ap.add_argument("--download-only", action="store_true", help="Only download the OTel agent, do not deploy")
 
     args = ap.parse_args()
     return run_teastore(

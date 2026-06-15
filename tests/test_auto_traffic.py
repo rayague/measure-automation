@@ -51,9 +51,7 @@ class GraphQLTest(unittest.TestCase):
                             "fields": [
                                 {
                                     "name": "users",
-                                    "args": [
-                                        {"name": "limit", "type": {"name": "Int"}}
-                                    ],
+                                    "args": [{"name": "limit", "type": {"name": "Int"}}],
                                 },
                                 {"name": "health", "args": []},
                             ],
@@ -64,9 +62,7 @@ class GraphQLTest(unittest.TestCase):
                             "fields": [
                                 {
                                     "name": "createUser",
-                                    "args": [
-                                        {"name": "name", "type": {"name": "String"}}
-                                    ],
+                                    "args": [{"name": "name", "type": {"name": "String"}}],
                                 }
                             ],
                         },
@@ -186,6 +182,7 @@ class EndpointGraphQLFieldsTest(unittest.TestCase):
 class LLMEndpointDetectionTest(unittest.TestCase):
     def test_llm_paths_in_traffic_config(self):
         from boundary_analyzer.auto.traffic import _LLM_PATHS
+
         self.assertIn("/v1/chat/completions", _LLM_PATHS)
         self.assertIn("/chat", _LLM_PATHS)
         self.assertIn("/generate", _LLM_PATHS)
@@ -194,5 +191,6 @@ class LLMEndpointDetectionTest(unittest.TestCase):
 class GraphQLPathDetectionTest(unittest.TestCase):
     def test_graphql_paths_in_traffic_config(self):
         from boundary_analyzer.auto.traffic import _GRAPHQL_PATHS
+
         self.assertIn("/graphql", _GRAPHQL_PATHS)
         self.assertIn("/query", _GRAPHQL_PATHS)

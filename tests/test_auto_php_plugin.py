@@ -7,13 +7,13 @@ from boundary_analyzer.auto.plugins.php import PhpPlugin
 
 
 class PhpPluginTest(unittest.TestCase):
-
     def setUp(self):
         self.tmpdir = Path(tempfile.mkdtemp(prefix="php_test_"))
         self.plugin = PhpPlugin()
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def _write(self, path: str, content: str) -> Path:
@@ -44,7 +44,7 @@ class PhpPluginTest(unittest.TestCase):
         self.assertEqual(result.framework, "php")
 
     def test_detect_composer_no_framework(self):
-        content = '''{"require": {"php": ">=8.0", "monolog/monolog": "^2.0"}}'''
+        content = """{"require": {"php": ">=8.0", "monolog/monolog": "^2.0"}}"""
         self._write("composer.json", content)
         self._write("index.php", "<?php echo 'hello';")
         result = self.plugin.detect(self.tmpdir)
@@ -54,7 +54,7 @@ class PhpPluginTest(unittest.TestCase):
         self.assertEqual(result.build_tool, "composer")
 
     def test_detect_laravel(self):
-        content = '''{"require": {"laravel/framework": "^10.0"}}'''
+        content = """{"require": {"laravel/framework": "^10.0"}}"""
         self._write("composer.json", content)
         self._write("artisan", "#!/usr/bin/env php")
         result = self.plugin.detect(self.tmpdir)
@@ -63,7 +63,7 @@ class PhpPluginTest(unittest.TestCase):
         self.assertEqual(len(result.entries), 1)
 
     def test_detect_symfony(self):
-        content = '''{"require": {"symfony/framework-bundle": "^6.0"}}'''
+        content = """{"require": {"symfony/framework-bundle": "^6.0"}}"""
         self._write("composer.json", content)
         self._write("bin/console", "#!/usr/bin/env php")
         result = self.plugin.detect(self.tmpdir)
@@ -71,7 +71,7 @@ class PhpPluginTest(unittest.TestCase):
         self.assertEqual(result.build_tool, "composer")
 
     def test_detect_cakephp(self):
-        content = '''{"require": {"cakephp/cakephp": "^5.0"}}'''
+        content = """{"require": {"cakephp/cakephp": "^5.0"}}"""
         self._write("composer.json", content)
         self._write("index.php", "<?php echo 'hello';")
         result = self.plugin.detect(self.tmpdir)
@@ -79,7 +79,7 @@ class PhpPluginTest(unittest.TestCase):
         self.assertEqual(result.build_tool, "composer")
 
     def test_detect_slim(self):
-        content = '''{"require": {"slim/slim": "^4.0"}}'''
+        content = """{"require": {"slim/slim": "^4.0"}}"""
         self._write("composer.json", content)
         self._write("index.php", "<?php\n$app = new \\Slim\\App();")
         result = self.plugin.detect(self.tmpdir)
@@ -87,7 +87,7 @@ class PhpPluginTest(unittest.TestCase):
         self.assertEqual(result.build_tool, "composer")
 
     def test_detect_require_dev(self):
-        content = '''{"require-dev": {"laravel/framework": "^10.0"}}'''
+        content = """{"require-dev": {"laravel/framework": "^10.0"}}"""
         self._write("composer.json", content)
         self._write("artisan", "#!/usr/bin/env php")
         result = self.plugin.detect(self.tmpdir)

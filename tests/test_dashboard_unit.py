@@ -67,20 +67,29 @@ class TestDataLoaders(unittest.TestCase):
 
     def test_load_all_no_scom_score_column(self):
         pd.DataFrame({"service_name": ["a"], "scom_score": [0.5], "is_suspicious": [False]}).to_csv(self.processed / "service_rank.csv", index=False)
-        pd.DataFrame({"service_name": ["a"], "endpoint_key": ["GET /"], "table": ["t1"], "count": [1]}).to_csv(self.interim / "endpoint_table_map.csv", index=False)
+        pd.DataFrame({"service_name": ["a"], "endpoint_key": ["GET /"], "table": ["t1"], "count": [1]}).to_csv(
+            self.interim / "endpoint_table_map.csv", index=False
+        )
         rank_df, mapping_df, summary = _load_all(self.td_path)
         self.assertFalse(rank_df.empty)
         self.assertEqual(summary["total_services"], 1)
 
     def test_load_all_with_minimal_data(self):
-        pd.DataFrame({
-            "service_name": ["a", "b"],
-            "scom_score": [0.8, 0.6],
-            "is_suspicious": [False, True],
-        }).to_csv(self.processed / "service_rank.csv", index=False)
-        pd.DataFrame({
-            "service_name": ["a"], "endpoint_key": ["GET /"], "table": ["t1"], "count": [1],
-        }).to_csv(self.interim / "endpoint_table_map.csv", index=False)
+        pd.DataFrame(
+            {
+                "service_name": ["a", "b"],
+                "scom_score": [0.8, 0.6],
+                "is_suspicious": [False, True],
+            }
+        ).to_csv(self.processed / "service_rank.csv", index=False)
+        pd.DataFrame(
+            {
+                "service_name": ["a"],
+                "endpoint_key": ["GET /"],
+                "table": ["t1"],
+                "count": [1],
+            }
+        ).to_csv(self.interim / "endpoint_table_map.csv", index=False)
         rank_df, mapping_df, summary = _load_all(self.td_path)
         self.assertEqual(len(rank_df), 2)
         self.assertEqual(len(mapping_df), 1)
@@ -194,9 +203,7 @@ class TestDataLoaders(unittest.TestCase):
             tdp = Path(td)
             processed = tdp / "processed"
             processed.mkdir(parents=True)
-            pd.DataFrame({"service_name": ["a"], "scom_score": [0.5], "is_suspicious": [False]}).to_csv(
-                processed / "service_rank.csv", index=False
-            )
+            pd.DataFrame({"service_name": ["a"], "scom_score": [0.5], "is_suspicious": [False]}).to_csv(processed / "service_rank.csv", index=False)
             with patch.object(Path, "resolve", side_effect=OSError):
                 rank_df, mapping_df, summary = _load_all(tdp)
             self.assertFalse(rank_df.empty)
@@ -206,9 +213,7 @@ class TestDataLoaders(unittest.TestCase):
             tdp = Path(td)
             processed = tdp / "processed"
             processed.mkdir(parents=True)
-            pd.DataFrame({"service_name": ["a"], "scom_score": [0.5], "is_suspicious": [False]}).to_csv(
-                processed / "service_rank.csv", index=False
-            )
+            pd.DataFrame({"service_name": ["a"], "scom_score": [0.5], "is_suspicious": [False]}).to_csv(processed / "service_rank.csv", index=False)
             with (
                 patch("boundary_analyzer.dashboard.app.create_summary_cards") as mock_summary,
                 patch("boundary_analyzer.dashboard.app.float", side_effect=TypeError("mock")),
@@ -326,24 +331,28 @@ class TestChartBuilders(unittest.TestCase):
         self.assertGreaterEqual(len(fig.data), 0)
 
     def test_build_radar_chart_suspicious(self):
-        row = pd.Series({
-            "scom_score": 0.4,
-            "endpoints_count": 5,
-            "tables_count": 3,
-            "rank": 1,
-            "is_suspicious": True,
-        })
+        row = pd.Series(
+            {
+                "scom_score": 0.4,
+                "endpoints_count": 5,
+                "tables_count": 3,
+                "rank": 1,
+                "is_suspicious": True,
+            }
+        )
         fig = _build_radar_chart(row)
         self.assertIsNotNone(fig)
 
     def test_build_radar_chart_healthy(self):
-        row = pd.Series({
-            "scom_score": 0.9,
-            "endpoints_count": 3,
-            "tables_count": 2,
-            "rank": 4,
-            "is_suspicious": False,
-        })
+        row = pd.Series(
+            {
+                "scom_score": 0.9,
+                "endpoints_count": 3,
+                "tables_count": 2,
+                "rank": 4,
+                "is_suspicious": False,
+            }
+        )
         fig = _build_radar_chart(row)
         self.assertIsNotNone(fig)
 
@@ -389,6 +398,7 @@ class TestChartBuilders(unittest.TestCase):
 class TestLayoutComponents(unittest.TestCase):
     def test_metric_card(self):
         from boundary_analyzer.dashboard.layout_components import _metric_card
+
         card = _metric_card("Test", 42, "cyan")
         children = card.children
         self.assertIn("Test", str(children[0].children))
@@ -396,21 +406,25 @@ class TestLayoutComponents(unittest.TestCase):
 
     def test_status_badge_suspicious(self):
         from boundary_analyzer.dashboard.layout_components import _status_badge
+
         badge = _status_badge(True)
         self.assertIn("SUSPICIOUS", str(badge.children))
 
     def test_status_badge_healthy(self):
         from boundary_analyzer.dashboard.layout_components import _status_badge
+
         badge = _status_badge(False)
         self.assertIn("HEALTHY", str(badge.children))
 
     def test_build_table_empty(self):
         from boundary_analyzer.dashboard.layout_components import _build_table
+
         result = _build_table(pd.DataFrame())
         self.assertIsNotNone(result)
 
     def test_build_table_with_data(self):
         from boundary_analyzer.dashboard.layout_components import _build_table
+
         data = {
             "service_name": ["a", "b"],
             "rank": [1, 2],
@@ -425,21 +439,25 @@ class TestLayoutComponents(unittest.TestCase):
 
     def test_render_inline_plain(self):
         from boundary_analyzer.dashboard.layout_components import _render_inline
+
         result = _render_inline("hello world")
         self.assertEqual(result, ["hello world"])
 
     def test_render_inline_bold(self):
         from boundary_analyzer.dashboard.layout_components import _render_inline
+
         result = _render_inline("hello **world**")
         self.assertEqual(len(result), 2)
 
     def test_render_inline_code(self):
         from boundary_analyzer.dashboard.layout_components import _render_inline
+
         result = _render_inline("use `code` here")
         self.assertEqual(len(result), 3)
 
     def test_definitions_block(self):
         from boundary_analyzer.dashboard.layout_components import _definitions_block
+
         data = {"service_name": ["a"], "threshold_value": [0.5], "threshold_method": ["percentile"]}
         df = pd.DataFrame(data)
         result = _definitions_block(df)
@@ -447,6 +465,7 @@ class TestLayoutComponents(unittest.TestCase):
 
     def test_definitions_block_no_threshold(self):
         from boundary_analyzer.dashboard.layout_components import _definitions_block
+
         result = _definitions_block(pd.DataFrame())
         self.assertIsNotNone(result)
 
@@ -454,6 +473,7 @@ class TestLayoutComponents(unittest.TestCase):
         from pathlib import Path
 
         from boundary_analyzer.dashboard.layout_components import _build_data_warning
+
         result = _build_data_warning(pd.DataFrame(), pd.DataFrame({"a": [1]}), Path("."))
         self.assertIsNotNone(result)
 
@@ -461,6 +481,7 @@ class TestLayoutComponents(unittest.TestCase):
         from pathlib import Path
 
         from boundary_analyzer.dashboard.layout_components import _build_data_warning
+
         data = {"service_name": ["a"], "scom_score": [0.5]}
         result = _build_data_warning(pd.DataFrame(data), pd.DataFrame(), Path("."))
         self.assertIsNotNone(result)
@@ -469,12 +490,14 @@ class TestLayoutComponents(unittest.TestCase):
         from pathlib import Path
 
         from boundary_analyzer.dashboard.layout_components import _build_data_warning
+
         data = {"service_name": ["a"], "scom_score": [0.5]}
         result = _build_data_warning(pd.DataFrame(data), pd.DataFrame({"a": [1]}), Path("."))
         self.assertIsNone(result)
 
     def test_card(self):
         from boundary_analyzer.dashboard.layout_components import _card
+
         result = _card("Title", [html.P("child")])
         children = result.children
         self.assertEqual(children[0].children, "Title")
@@ -532,6 +555,7 @@ class TestCharts(unittest.TestCase):
 
     def test_kde_custom(self):
         import numpy as np
+
         values = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7])
         x, y = _kde(values, bw=0.05, n=100)
         self.assertEqual(len(x), 100)
@@ -551,6 +575,7 @@ class TestCharts(unittest.TestCase):
 
     def test_create_scom_distribution(self):
         from boundary_analyzer.dashboard.charts import create_scom_distribution
+
         data = {
             "service_name": ["a", "b"],
             "scom_score": [0.8, 0.5],
@@ -564,11 +589,13 @@ class TestCharts(unittest.TestCase):
 
     def test_create_scom_distribution_empty(self):
         from boundary_analyzer.dashboard.charts import create_scom_distribution
+
         result = create_scom_distribution(pd.DataFrame())
         self.assertIsNotNone(result)
 
     def test_create_scom_distribution_threshold_value(self):
         from boundary_analyzer.dashboard.charts import create_scom_distribution
+
         data = {
             "service_name": ["a", "b"],
             "scom_score": [0.8, 0.5],
@@ -583,6 +610,7 @@ class TestCharts(unittest.TestCase):
 
     def test_create_scom_distribution_threshold_alt(self):
         from boundary_analyzer.dashboard.charts import create_scom_distribution
+
         data = {
             "service_name": ["a", "b"],
             "scom_score": [0.8, 0.5],
@@ -597,6 +625,7 @@ class TestCharts(unittest.TestCase):
 
     def test_create_cohesion_gauge(self):
         from boundary_analyzer.dashboard.charts import create_cohesion_gauge
+
         result = create_cohesion_gauge(0.75, "test-service")
         self.assertIsNotNone(result)
 

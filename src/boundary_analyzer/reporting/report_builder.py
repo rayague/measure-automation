@@ -56,9 +56,7 @@ def _generate_markdown_report(
         report.append("| Rank | Service | SCOM | Endpoints | Tables |\n")
         report.append("|------|---------|------|-----------|--------|\n")
         for _, row in suspicious_df.iterrows():
-            report.append(
-                f"| {row['rank']} | {row['service_name']} | {row['scom_score']:.4f} | {row['endpoints_count']} | {row['tables_count']} |\n"
-            )
+            report.append(f"| {row['rank']} | {row['service_name']} | {row['scom_score']:.4f} | {row['endpoints_count']} | {row['tables_count']} |\n")
         report.append("\n")
 
         report.append("### Why they are suspicious (simple English)\n")

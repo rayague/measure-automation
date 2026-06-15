@@ -4,7 +4,6 @@ from boundary_analyzer.auto.errors import AnalysisError, ErrorCode, unexpected
 
 
 class AnalysisErrorTest(unittest.TestCase):
-
     def test_error_code_value(self):
         self.assertEqual(ErrorCode.LANG_NOT_FOUND.value, "discover.lang.NOT_FOUND")
 

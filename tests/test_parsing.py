@@ -110,9 +110,7 @@ class TraceReaderHelpersTest(unittest.TestCase):
                             "processID": "p1",
                         }
                     ],
-                    "processes": {
-                        "p1": {"serviceName": "my-service"}
-                    }
+                    "processes": {"p1": {"serviceName": "my-service"}},
                 }
             ]
         }
@@ -194,54 +192,60 @@ class ReadAllTracesTest(unittest.TestCase):
         self.assertTrue(result.empty)
         self.assertListEqual(
             list(result.columns),
-            ["trace_id", "span_id", "parent_span_id", "service_name",
-             "operation_name", "start_time", "duration", "tags"],
+            ["trace_id", "span_id", "parent_span_id", "service_name", "operation_name", "start_time", "duration", "tags"],
         )
 
     def test_read_all_traces_single_file(self):
-        self._write_trace_file("trace1.json", {
-            "data": [
-                {
-                    "traceID": "t1",
-                    "spans": [
-                        {
-                            "spanID": "s1",
-                            "operationName": "GET /orders",
-                            "startTime": 1000,
-                            "duration": 50,
-                            "tags": [{"key": "http.method", "value": "GET"}],
-                        }
-                    ],
-                    "processes": {"p1": {"serviceName": "svc1"}},
-                }
-            ]
-        })
+        self._write_trace_file(
+            "trace1.json",
+            {
+                "data": [
+                    {
+                        "traceID": "t1",
+                        "spans": [
+                            {
+                                "spanID": "s1",
+                                "operationName": "GET /orders",
+                                "startTime": 1000,
+                                "duration": 50,
+                                "tags": [{"key": "http.method", "value": "GET"}],
+                            }
+                        ],
+                        "processes": {"p1": {"serviceName": "svc1"}},
+                    }
+                ]
+            },
+        )
         result = read_all_traces(self.test_dir)
         self.assertEqual(len(result), 1)
         self.assertEqual(result.iloc[0]["trace_id"], "t1")
         self.assertEqual(result.iloc[0]["span_id"], "s1")
 
     def test_read_all_traces_multiple_files(self):
-        self._write_trace_file("trace1.json", {
-            "data": [
-                {
-                    "traceID": "t1",
-                    "spans": [{"spanID": "s1", "operationName": "GET /orders",
-                               "startTime": 1000, "duration": 50, "tags": []}],
-                    "processes": {},
-                }
-            ]
-        })
-        self._write_trace_file("trace2.json", {
-            "data": [
-                {
-                    "traceID": "t2",
-                    "spans": [{"spanID": "s2", "operationName": "POST /users",
-                               "startTime": 2000, "duration": 100, "tags": []}],
-                    "processes": {},
-                }
-            ]
-        })
+        self._write_trace_file(
+            "trace1.json",
+            {
+                "data": [
+                    {
+                        "traceID": "t1",
+                        "spans": [{"spanID": "s1", "operationName": "GET /orders", "startTime": 1000, "duration": 50, "tags": []}],
+                        "processes": {},
+                    }
+                ]
+            },
+        )
+        self._write_trace_file(
+            "trace2.json",
+            {
+                "data": [
+                    {
+                        "traceID": "t2",
+                        "spans": [{"spanID": "s2", "operationName": "POST /users", "startTime": 2000, "duration": 100, "tags": []}],
+                        "processes": {},
+                    }
+                ]
+            },
+        )
         result = read_all_traces(self.test_dir)
         self.assertEqual(len(result), 2)
         self.assertIn("t1", result["trace_id"].values)
@@ -249,16 +253,18 @@ class ReadAllTracesTest(unittest.TestCase):
 
     def test_read_all_traces_ignores_non_json_files(self):
         (self.test_dir / "notes.txt").write_text("hello", encoding="utf-8")
-        self._write_trace_file("trace.json", {
-            "data": [
-                {
-                    "traceID": "t1",
-                    "spans": [{"spanID": "s1", "operationName": "GET /orders",
-                               "startTime": 1000, "duration": 50, "tags": []}],
-                    "processes": {},
-                }
-            ]
-        })
+        self._write_trace_file(
+            "trace.json",
+            {
+                "data": [
+                    {
+                        "traceID": "t1",
+                        "spans": [{"spanID": "s1", "operationName": "GET /orders", "startTime": 1000, "duration": 50, "tags": []}],
+                        "processes": {},
+                    }
+                ]
+            },
+        )
         result = read_all_traces(self.test_dir)
         self.assertEqual(len(result), 1)
 
@@ -277,16 +283,18 @@ class SaveSpansCsvTest(unittest.TestCase):
         shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def test_save_spans_csv(self):
-        df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s1"],
-            "parent_span_id": [None],
-            "service_name": ["svc1"],
-            "operation_name": ["GET /orders"],
-            "start_time": [1000],
-            "duration": [50],
-            "tags": [""],
-        })
+        df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "parent_span_id": [None],
+                "service_name": ["svc1"],
+                "operation_name": ["GET /orders"],
+                "start_time": [1000],
+                "duration": [50],
+                "tags": [""],
+            }
+        )
         path = self.test_dir / "spans.csv"
         save_spans_csv(df, path)
         self.assertTrue(path.exists())
@@ -295,25 +303,24 @@ class SaveSpansCsvTest(unittest.TestCase):
         self.assertEqual(loaded.iloc[0]["trace_id"], "t1")
 
     def test_save_spans_csv_creates_dirs(self):
-        df = pd.DataFrame({
-            "trace_id": ["t1"],
-            "span_id": ["s1"],
-            "parent_span_id": [None],
-            "service_name": ["svc1"],
-            "operation_name": ["GET /orders"],
-            "start_time": [1000],
-            "duration": [50],
-            "tags": [""],
-        })
+        df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "parent_span_id": [None],
+                "service_name": ["svc1"],
+                "operation_name": ["GET /orders"],
+                "start_time": [1000],
+                "duration": [50],
+                "tags": [""],
+            }
+        )
         path = self.test_dir / "sub" / "nested" / "spans.csv"
         save_spans_csv(df, path)
         self.assertTrue(path.exists())
 
     def test_save_spans_csv_empty_df(self):
-        df = pd.DataFrame(columns=[
-            "trace_id", "span_id", "parent_span_id",
-            "service_name", "operation_name", "start_time", "duration", "tags"
-        ])
+        df = pd.DataFrame(columns=["trace_id", "span_id", "parent_span_id", "service_name", "operation_name", "start_time", "duration", "tags"])
         path = self.test_dir / "empty_spans.csv"
         save_spans_csv(df, path)
         self.assertTrue(path.exists())

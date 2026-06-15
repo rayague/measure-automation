@@ -31,41 +31,49 @@ class ScomHelpersTest(unittest.TestCase):
     # ---- _build_all_endpoints_by_service ----
 
     def test_build_all_endpoints_from_mapping(self):
-        mapping_df = pd.DataFrame({
-            "service_name": ["svc1", "svc1"],
-            "endpoint_key": ["GET /orders", "GET /users"],
-            "table": ["orders", "users"],
-            "count": [1, 1],
-        })
+        mapping_df = pd.DataFrame(
+            {
+                "service_name": ["svc1", "svc1"],
+                "endpoint_key": ["GET /orders", "GET /users"],
+                "table": ["orders", "users"],
+                "count": [1, 1],
+            }
+        )
         result = _build_all_endpoints_by_service(mapping_df, None)
         self.assertIn("svc1", result)
         self.assertEqual(result["svc1"], {"GET /orders", "GET /users"})
 
     def test_build_all_endpoints_from_endpoints_df(self):
         mapping_df = pd.DataFrame(columns=["service_name", "endpoint_key", "table", "count"])
-        endpoints_df = pd.DataFrame({
-            "service_name": ["svc1"],
-            "endpoint_key": ["GET /orders"],
-            "span_id": ["s1"],
-            "trace_id": ["t1"],
-        })
+        endpoints_df = pd.DataFrame(
+            {
+                "service_name": ["svc1"],
+                "endpoint_key": ["GET /orders"],
+                "span_id": ["s1"],
+                "trace_id": ["t1"],
+            }
+        )
         result = _build_all_endpoints_by_service(mapping_df, endpoints_df)
         self.assertIn("svc1", result)
         self.assertEqual(result["svc1"], {"GET /orders"})
 
     def test_build_all_endpoints_both_sources(self):
-        mapping_df = pd.DataFrame({
-            "service_name": ["svc1"],
-            "endpoint_key": ["GET /orders"],
-            "table": ["orders"],
-            "count": [1],
-        })
-        endpoints_df = pd.DataFrame({
-            "service_name": ["svc1"],
-            "endpoint_key": ["GET /users"],
-            "span_id": ["s1"],
-            "trace_id": ["t1"],
-        })
+        mapping_df = pd.DataFrame(
+            {
+                "service_name": ["svc1"],
+                "endpoint_key": ["GET /orders"],
+                "table": ["orders"],
+                "count": [1],
+            }
+        )
+        endpoints_df = pd.DataFrame(
+            {
+                "service_name": ["svc1"],
+                "endpoint_key": ["GET /users"],
+                "span_id": ["s1"],
+                "trace_id": ["t1"],
+            }
+        )
         result = _build_all_endpoints_by_service(mapping_df, endpoints_df)
         self.assertEqual(result["svc1"], {"GET /orders", "GET /users"})
 
@@ -76,30 +84,36 @@ class ScomHelpersTest(unittest.TestCase):
     # ---- _build_endpoint_table_sets ----
 
     def test_build_endpoint_table_sets(self):
-        mapping_df = pd.DataFrame({
-            "service_name": ["svc1", "svc1"],
-            "endpoint_key": ["GET /orders", "GET /orders"],
-            "table": ["orders", "inventory"],
-            "count": [1, 1],
-        })
+        mapping_df = pd.DataFrame(
+            {
+                "service_name": ["svc1", "svc1"],
+                "endpoint_key": ["GET /orders", "GET /orders"],
+                "table": ["orders", "inventory"],
+                "count": [1, 1],
+            }
+        )
         result = _build_endpoint_table_sets(mapping_df, None)
         self.assertIn("svc1", result)
         self.assertIn("GET /orders", result["svc1"])
         self.assertEqual(result["svc1"]["GET /orders"], {"orders", "inventory"})
 
     def test_build_endpoint_table_sets_includes_empty_endpoints(self):
-        mapping_df = pd.DataFrame({
-            "service_name": ["svc1"],
-            "endpoint_key": ["GET /orders"],
-            "table": ["orders"],
-            "count": [1],
-        })
-        endpoints_df = pd.DataFrame({
-            "service_name": ["svc1"],
-            "endpoint_key": ["GET /users"],
-            "span_id": ["s1"],
-            "trace_id": ["t1"],
-        })
+        mapping_df = pd.DataFrame(
+            {
+                "service_name": ["svc1"],
+                "endpoint_key": ["GET /orders"],
+                "table": ["orders"],
+                "count": [1],
+            }
+        )
+        endpoints_df = pd.DataFrame(
+            {
+                "service_name": ["svc1"],
+                "endpoint_key": ["GET /users"],
+                "span_id": ["s1"],
+                "trace_id": ["t1"],
+            }
+        )
         result = _build_endpoint_table_sets(mapping_df, endpoints_df)
         self.assertIn("GET /orders", result["svc1"])
         self.assertIn("GET /users", result["svc1"])
@@ -108,24 +122,28 @@ class ScomHelpersTest(unittest.TestCase):
     # ---- _get_endpoint_frequencies_by_service ----
 
     def test_endpoint_frequencies_from_endpoints_df(self):
-        endpoints_df = pd.DataFrame({
-            "service_name": ["svc1", "svc1", "svc1"],
-            "endpoint_key": ["GET /orders", "GET /orders", "GET /users"],
-            "span_id": ["s1", "s2", "s3"],
-            "trace_id": ["t1", "t2", "t3"],
-        })
+        endpoints_df = pd.DataFrame(
+            {
+                "service_name": ["svc1", "svc1", "svc1"],
+                "endpoint_key": ["GET /orders", "GET /orders", "GET /users"],
+                "span_id": ["s1", "s2", "s3"],
+                "trace_id": ["t1", "t2", "t3"],
+            }
+        )
         result = _get_endpoint_frequencies_by_service(endpoints_df, pd.DataFrame())
         self.assertIn("svc1", result)
         self.assertAlmostEqual(result["svc1"]["GET /orders"], 2.0 / 3.0)
         self.assertAlmostEqual(result["svc1"]["GET /users"], 1.0 / 3.0)
 
     def test_endpoint_frequencies_from_mapping_fallback(self):
-        mapping_df = pd.DataFrame({
-            "service_name": ["svc1", "svc1"],
-            "endpoint_key": ["GET /orders", "GET /users"],
-            "table": ["orders", "users"],
-            "count": [3, 1],
-        })
+        mapping_df = pd.DataFrame(
+            {
+                "service_name": ["svc1", "svc1"],
+                "endpoint_key": ["GET /orders", "GET /users"],
+                "table": ["orders", "users"],
+                "count": [3, 1],
+            }
+        )
         result = _get_endpoint_frequencies_by_service(None, mapping_df)
         self.assertIn("svc1", result)
         self.assertAlmostEqual(result["svc1"]["GET /orders"], 0.75)
@@ -197,12 +215,14 @@ class ComputeScomTest(unittest.TestCase):
         )
 
     def test_compute_scom_single_service_no_overlap(self):
-        mapping_df = pd.DataFrame({
-            "service_name": ["svc1", "svc1"],
-            "endpoint_key": ["GET /orders", "GET /users"],
-            "table": ["orders", "users"],
-            "count": [1, 1],
-        })
+        mapping_df = pd.DataFrame(
+            {
+                "service_name": ["svc1", "svc1"],
+                "endpoint_key": ["GET /orders", "GET /users"],
+                "table": ["orders", "users"],
+                "count": [1, 1],
+            }
+        )
         result = compute_scom(mapping_df, use_endpoint_weighting=False)
         self.assertEqual(len(result), 1)
         self.assertEqual(result.iloc[0]["service_name"], "svc1")
@@ -211,12 +231,14 @@ class ComputeScomTest(unittest.TestCase):
         self.assertEqual(result.iloc[0]["tables_count"], 2)
 
     def test_compute_scom_single_service_with_overlap(self):
-        mapping_df = pd.DataFrame({
-            "service_name": ["svc1", "svc1", "svc1"],
-            "endpoint_key": ["GET /orders", "GET /orders", "GET /users"],
-            "table": ["orders", "inventory", "orders"],
-            "count": [1, 1, 1],
-        })
+        mapping_df = pd.DataFrame(
+            {
+                "service_name": ["svc1", "svc1", "svc1"],
+                "endpoint_key": ["GET /orders", "GET /orders", "GET /users"],
+                "table": ["orders", "inventory", "orders"],
+                "count": [1, 1, 1],
+            }
+        )
         result = compute_scom(mapping_df, use_endpoint_weighting=False)
         self.assertEqual(len(result), 1)
         # GET /orders -> {orders, inventory}, GET /users -> {orders}
@@ -224,23 +246,27 @@ class ComputeScomTest(unittest.TestCase):
         self.assertAlmostEqual(result.iloc[0]["scom_score"], 1.0)
 
     def test_compute_scom_exclude_services(self):
-        mapping_df = pd.DataFrame({
-            "service_name": ["svc1", "svc2"],
-            "endpoint_key": ["GET /orders", "GET /items"],
-            "table": ["orders", "items"],
-            "count": [1, 1],
-        })
+        mapping_df = pd.DataFrame(
+            {
+                "service_name": ["svc1", "svc2"],
+                "endpoint_key": ["GET /orders", "GET /items"],
+                "table": ["orders", "items"],
+                "count": [1, 1],
+            }
+        )
         result = compute_scom(mapping_df, exclude_services=["svc1"], use_endpoint_weighting=False)
         self.assertEqual(len(result), 1)
         self.assertEqual(result.iloc[0]["service_name"], "svc2")
 
     def test_compute_scom_exclude_unknown_endpoint(self):
-        mapping_df = pd.DataFrame({
-            "service_name": ["svc1", "svc1"],
-            "endpoint_key": ["unknown_endpoint", "GET /orders"],
-            "table": ["orders", "orders"],
-            "count": [1, 1],
-        })
+        mapping_df = pd.DataFrame(
+            {
+                "service_name": ["svc1", "svc1"],
+                "endpoint_key": ["unknown_endpoint", "GET /orders"],
+                "table": ["orders", "orders"],
+                "count": [1, 1],
+            }
+        )
         result = compute_scom(mapping_df, exclude_unknown_endpoint=True, use_endpoint_weighting=False)
         self.assertEqual(len(result), 1)
         self.assertEqual(result.iloc[0]["service_name"], "svc1")
@@ -248,36 +274,44 @@ class ComputeScomTest(unittest.TestCase):
 
     def test_compute_scom_skip_no_db_services(self):
         # svc1 has a real table, svc3 has no endpoint->table entries in mapping
-        mapping_df = pd.DataFrame({
-            "service_name": ["svc1", "svc3"],
-            "endpoint_key": ["GET /orders", "GET /items"],
-            "table": ["orders", None],
-            "count": [1, 1],
-        })
-        endpoints_df = pd.DataFrame({
-            "service_name": ["svc1", "svc3"],
-            "endpoint_key": ["GET /orders", "GET /items"],
-            "span_id": ["s1", "s2"],
-            "trace_id": ["t1", "t2"],
-        })
+        mapping_df = pd.DataFrame(
+            {
+                "service_name": ["svc1", "svc3"],
+                "endpoint_key": ["GET /orders", "GET /items"],
+                "table": ["orders", None],
+                "count": [1, 1],
+            }
+        )
+        endpoints_df = pd.DataFrame(
+            {
+                "service_name": ["svc1", "svc3"],
+                "endpoint_key": ["GET /orders", "GET /items"],
+                "span_id": ["s1", "s2"],
+                "trace_id": ["t1", "t2"],
+            }
+        )
         result = compute_scom(mapping_df, endpoints_df, skip_no_db_services=True, use_endpoint_weighting=False)
         svcs = result["service_name"].tolist()
         self.assertIn("svc1", svcs)
         self.assertNotIn("svc3", svcs)
 
     def test_compute_scom_weighted_vs_unweighted(self):
-        mapping_df = pd.DataFrame({
-            "service_name": ["svc1", "svc1"],
-            "endpoint_key": ["GET /orders", "GET /users"],
-            "table": ["orders", "orders"],
-            "count": [1, 1],
-        })
-        endpoints_df = pd.DataFrame({
-            "service_name": ["svc1", "svc1", "svc1"],
-            "endpoint_key": ["GET /orders", "GET /orders", "GET /users"],
-            "span_id": ["s1", "s2", "s3"],
-            "trace_id": ["t1", "t2", "t3"],
-        })
+        mapping_df = pd.DataFrame(
+            {
+                "service_name": ["svc1", "svc1"],
+                "endpoint_key": ["GET /orders", "GET /users"],
+                "table": ["orders", "orders"],
+                "count": [1, 1],
+            }
+        )
+        endpoints_df = pd.DataFrame(
+            {
+                "service_name": ["svc1", "svc1", "svc1"],
+                "endpoint_key": ["GET /orders", "GET /orders", "GET /users"],
+                "span_id": ["s1", "s2", "s3"],
+                "trace_id": ["t1", "t2", "t3"],
+            }
+        )
         weighted = compute_scom(mapping_df, endpoints_df, use_endpoint_weighting=True)
         unweighted = compute_scom(mapping_df, endpoints_df, use_endpoint_weighting=False)
         self.assertEqual(weighted.iloc[0]["method"], "weighted")
@@ -286,13 +320,15 @@ class ComputeScomTest(unittest.TestCase):
     # ---- save_scom_csv ----
 
     def test_save_scom_csv(self):
-        df = pd.DataFrame({
-            "service_name": ["svc1"],
-            "scom_score": [0.5],
-            "endpoints_count": [2],
-            "tables_count": [3],
-            "method": ["unweighted"],
-        })
+        df = pd.DataFrame(
+            {
+                "service_name": ["svc1"],
+                "scom_score": [0.5],
+                "endpoints_count": [2],
+                "tables_count": [3],
+                "method": ["unweighted"],
+            }
+        )
         path = self.test_dir / "scom.csv"
         save_scom_csv(df, path)
         self.assertTrue(path.exists())
@@ -300,13 +336,15 @@ class ComputeScomTest(unittest.TestCase):
         self.assertEqual(len(loaded), 1)
 
     def test_save_scom_csv_creates_dirs(self):
-        df = pd.DataFrame({
-            "service_name": ["svc1"],
-            "scom_score": [0.5],
-            "endpoints_count": [2],
-            "tables_count": [3],
-            "method": ["unweighted"],
-        })
+        df = pd.DataFrame(
+            {
+                "service_name": ["svc1"],
+                "scom_score": [0.5],
+                "endpoints_count": [2],
+                "tables_count": [3],
+                "method": ["unweighted"],
+            }
+        )
         path = self.test_dir / "sub" / "nested" / "scom.csv"
         save_scom_csv(df, path)
         self.assertTrue(path.exists())

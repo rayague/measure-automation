@@ -11,7 +11,6 @@ FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "traces"
 
 
 class PipelineIntegrationTest(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         cls.tmpdir = Path(tempfile.mkdtemp(prefix="scom_test_"))
@@ -75,7 +74,8 @@ class PipelineIntegrationTest(unittest.TestCase):
         for svc in ["auth-service", "classroom-service", "enrollment-service", "student-service"]:
             count = svc_endpoints.get(svc, 0)
             self.assertLessEqual(
-                count, 12,
+                count,
+                12,
                 f"{svc}: {count} endpoints — expected ≤ 12 after filtering",
             )
 
@@ -95,7 +95,8 @@ class PipelineIntegrationTest(unittest.TestCase):
         for _, row in self.scom.iterrows():
             with self.subTest(service=row["service_name"]):
                 self.assertGreater(
-                    row["scom_score"], 0.0,
+                    row["scom_score"],
+                    0.0,
                     f"{row['service_name']} has SCOM=0.0",
                 )
 

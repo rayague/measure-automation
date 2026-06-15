@@ -222,9 +222,7 @@ def discover_endpoints_graphql(host: str, port: int, config: TrafficConfig) -> l
                         params=[],
                         request_body=None,
                         graphql_field=field_name,
-                        graphql_args=[
-                            {"name": a.get("name"), "type": a.get("type", {}).get("name", "String")} for a in args
-                        ],
+                        graphql_args=[{"name": a.get("name"), "type": a.get("type", {}).get("name", "String")} for a in args],
                         is_graphql=True,
                     )
                     endpoints.append(ep)
@@ -376,9 +374,7 @@ def _extract_flask_endpoints(tree: ast.AST) -> list[Endpoint]:
         methods = ["GET"]
         for kw in node.keywords:
             if kw.arg == "methods" and isinstance(kw.value, (ast.List, ast.Tuple)):
-                methods = [
-                    e.value.upper() for e in kw.value.elts if isinstance(e, ast.Constant) and isinstance(e.value, str)
-                ]
+                methods = [e.value.upper() for e in kw.value.elts if isinstance(e, ast.Constant) and isinstance(e.value, str)]
 
         for method in methods:
             if method in ("GET", "POST", "PUT", "DELETE", "PATCH"):
@@ -678,9 +674,7 @@ def _try_auth(base_url: str, config: TrafficConfig) -> str | None:
                 resp = requests.post(url, json=payload, timeout=5)
                 if resp.status_code in (200, 201):
                     data = resp.json()
-                    token = (
-                        data.get("access_token") or data.get("token") or data.get("id_token") or data.get("accessToken")
-                    )
+                    token = data.get("access_token") or data.get("token") or data.get("id_token") or data.get("accessToken")
                     if token:
                         return str(token)
         except requests.RequestException:
@@ -770,9 +764,7 @@ def generate_traffic(
         else:
             return True, "no endpoints to test"
 
-        success, status, url = _send_request(
-            ep.method, base_url, ep.path, ep.params, ep.request_body, config, endpoint=ep
-        )
+        success, status, url = _send_request(ep.method, base_url, ep.path, ep.params, ep.request_body, config, endpoint=ep)
         if status == 429:
             return False, "rate_limited"
         return success, url

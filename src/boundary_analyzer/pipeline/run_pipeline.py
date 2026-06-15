@@ -150,9 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--threshold-zscore", type=float, default=-1.5)
     ap.add_argument("--fixed-threshold", type=float, default=0.5)
 
-    ap.add_argument(
-        "--exclude-services", nargs="*", default=None, help="Service names to exclude from analysis (e.g. gateway)"
-    )
+    ap.add_argument("--exclude-services", nargs="*", default=None, help="Service names to exclude from analysis (e.g. gateway)")
     ap.add_argument(
         "--no-exclude-health",
         action="store_false",
