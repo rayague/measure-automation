@@ -9,3 +9,6 @@ data/
 reports/
 config/settings.yaml.bak
 *.bak
+.coverage
+RAPPORT_TECHNIQUE.md
+Rapport_stage.txt

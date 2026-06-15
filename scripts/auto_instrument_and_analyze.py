@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import logging
 import os
 import shutil
 import subprocess
@@ -31,6 +32,8 @@ from typing import Any
 
 import requests
 import yaml
+
+logger = logging.getLogger(__name__)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -185,25 +188,26 @@ def init_tracing(app=None):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _info(msg: str) -> None:
-    print(f"[INFO]  {msg}")
+    logger.info(msg)
 
 
 def _ok(msg: str) -> None:
-    print(f"[OK]    {msg}")
+    logger.info(msg)
 
 
 def _warn(msg: str) -> None:
-    print(f"[WARN]  {msg}")
+    logger.warning(msg)
 
 
 def _error(msg: str) -> None:
-    print(f"[ERROR] {msg}")
+    logger.error(msg)
 
 
 def _step(n: int, msg: str) -> None:
-    print(f"\n{'-' * 60}")
-    print(f"STEP {n}: {msg}")
-    print(f"{'-' * 60}\n")
+    logger.info("")
+    logger.info("-" * 60)
+    logger.info(f"STEP {n}: {msg}")
+    logger.info("-" * 60)
 
 
 def _find_project_root() -> Path:
@@ -219,6 +223,9 @@ def _ensure_boundary_analyzer_importable() -> None:
         src_path = str(_find_project_root() / "src")
         if src_path not in sys.path:
             sys.path.insert(0, src_path)
+
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
 def _confirm(prompt: str, default: bool = False) -> bool:
@@ -246,7 +253,7 @@ def discover_services(project_path: Path) -> list[dict[str, Any]]:
     """
     # Ensure we import from the installed package
     _ensure_boundary_analyzer_importable()
-    from boundary_analyzer.auto_setup.setup_instrumentation import detect_framework
+    from boundary_analyzer.auto_setup._detect import detect_framework
 
     services: list[dict[str, Any]] = []
 
@@ -290,7 +297,7 @@ def ensure_jaeger_override(project_path: Path) -> Path:
 
     if override_path.exists():
         try:
-            with open(override_path, "r", encoding="utf-8") as f:
+            with open(override_path, encoding="utf-8") as f:
                 existing = yaml.safe_load(f) or {}
             services = existing.get("services", {})
             if "jaeger" in services:
@@ -307,7 +314,7 @@ def ensure_jaeger_override(project_path: Path) -> Path:
     with open(override_path, "w", encoding="utf-8") as f:
         yaml.dump({"services": JAEGER_COMPOSE_SERVICE}, f, default_flow_style=False, sort_keys=False)
 
-    _ok(f"Jaeger added to docker-compose.override.yml")
+    _ok("Jaeger added to docker-compose.override.yml")
     return override_path
 
 
@@ -318,7 +325,7 @@ def remove_jaeger_override(project_path: Path) -> None:
         return
 
     try:
-        with open(override_path, "r", encoding="utf-8") as f:
+        with open(override_path, encoding="utf-8") as f:
             content = yaml.safe_load(f) or {}
         services = content.get("services", {})
         # Only remove if the only service is Jaeger
@@ -362,7 +369,7 @@ def add_otel_to_requirements(service: dict[str, Any]) -> None:
 
     # Install on host system too
     _ensure_boundary_analyzer_importable()
-    from boundary_analyzer.auto_setup.setup_instrumentation import install_packages
+    from boundary_analyzer.auto_setup._install import install_packages
 
     try:
         install_packages(service["framework"], service["path"])
@@ -400,7 +407,7 @@ def _add_init_tracing_to_main(main_path: Path) -> str | None:
     init_added = False
     skip_until = -1
 
-    IMPORT_ANCHORS = ["import structlog", "from app.core.config import get_settings"]
+    import_anchors = ["import structlog", "from app.core.config import get_settings"]
 
     for i, line in enumerate(lines):
         # Skip lines already consumed by the FastAPI block parser
@@ -409,7 +416,7 @@ def _add_init_tracing_to_main(main_path: Path) -> str | None:
 
         # Add import after the last import anchor
         if not import_added:
-            for anchor in IMPORT_ANCHORS:
+            for anchor in import_anchors:
                 if anchor in line:
                     result.append(line)
                     if i + 1 < len(lines) and lines[i + 1].strip() == "":
@@ -710,7 +717,7 @@ def generate_traffic() -> bool:
     """
     _info("Generating traffic across all services...")
 
-    _TO = 15
+    _to = 15
     ok: list[str] = []
     ko: list[str] = []
     token: str | None = None
@@ -730,7 +737,7 @@ def generate_traffic() -> bool:
         tag = label or f"{method} {url}"
         try:
             resp = requests.request(method, url, json=json_data,
-                                    headers=headers, timeout=_TO)
+                                    headers=headers, timeout=_to)
             if resp.ok:
                 ok.append(tag)
             else:
@@ -799,7 +806,7 @@ def generate_traffic() -> bool:
             "course_name": "Maths", "teacher_name": "M. Robert",
             "day_of_week": "monday", "start_time": "08:00",
             "end_time": "10:00", "semester": "S1", "academic_year": "2025",
-        }, auth=True, label=f"POST /classrooms/{{id}}/schedules")
+        }, auth=True, label="POST /classrooms/{id}/schedules")
         if resp:
             sched_id = resp.json().get("id")
             if sched_id:
@@ -827,7 +834,7 @@ def generate_traffic() -> bool:
     # ── Health (no auth) ─────────────────────────────────────────────────
     try:
         for hp in ["/health", "/health/all"]:
-            r = requests.get(f"{GATEWAY_BASE}{hp}", timeout=_TO)
+            r = requests.get(f"{GATEWAY_BASE}{hp}", timeout=_to)
             ok.append(f"GET {hp}") if r.ok else ko.append(f"GET {hp} -> {r.status_code}")
     except requests.exceptions.RequestException as e:
         ko.append(f"health probes -> {e}")
@@ -1119,7 +1126,7 @@ def main(argv: list[str] | None = None) -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{'=' * 60}")
-    print(f"  Auto Instrument & Analyze - Boundary Analyzer")
+    print("  Auto Instrument & Analyze - Boundary Analyzer")
     print(f"  Project: {project_path}")
     print(f"  Output:  {output_dir}")
     print(f"{'=' * 60}\n")
@@ -1187,7 +1194,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # ── STEP 7: Generate traffic ────────────────────────────────────────────
     _step(7, "Generating traffic")
-    traffic_ok = generate_traffic()
+    generate_traffic()
 
     # Wait for traces to propagate to Jaeger
     _info("Waiting 10 seconds for traces to propagate...")

@@ -6,15 +6,24 @@ from typing import Any
 
 import pandas as pd
 
+from boundary_analyzer._utils import save_csv
 from boundary_analyzer.detection.endpoint_normalizer import (
     build_endpoint_key,
-    extract_tags_from_span,
 )
 
-HEALTH_KEYWORDS: frozenset[str] = frozenset({
-    "health", "healthz", "readyz", "livez",
-    "ready", "metrics", "favicon.ico",
-})
+"""Extract HTTP endpoint spans from trace data and save them as CSV."""
+
+HEALTH_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "health",
+        "healthz",
+        "readyz",
+        "livez",
+        "ready",
+        "metrics",
+        "favicon.ico",
+    }
+)
 
 
 def _is_endpoint_span(
@@ -96,7 +105,7 @@ def extract_endpoints(
     exclude_health_routes: bool = True,
     exclude_http_client_spans: bool = True,
 ) -> pd.DataFrame:
-    """Extract endpoint spans from spans DataFrame with normalization.
+    """Extract endpoint spans from trace data with optional normalization.
 
     Input columns: trace_id, span_id, parent_span_id, service_name,
                    operation_name, start_time, duration, tags
@@ -145,6 +154,5 @@ def extract_endpoints(
 
 
 def save_endpoints_csv(df: pd.DataFrame, output_path: Path) -> None:
-    """Save endpoints DataFrame to CSV."""
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(output_path, index=False)
+    """Save extracted endpoints to CSV."""
+    save_csv(df, output_path)

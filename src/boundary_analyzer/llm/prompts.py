@@ -3,6 +3,11 @@
 Each prompt is a function that takes context data and returns a complete prompt string.
 """
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 INSTRUMENTATION_SYSTEM = """You are an expert in Python microservices and OpenTelemetry instrumentation.
 Your task is to add complete OpenTelemetry tracing to a FastAPI/Flask microservice.
 
@@ -79,7 +84,7 @@ Your task is to produce a **detailed, quantitative, data-driven** analysis. Be s
 {rank_csv}
 ```
 
-### Endpoint → Table Access Matrix (with call counts)
+### Endpoint to Table Access Matrix (with call counts)
 ```
 {mapping_csv}
 ```

@@ -4,11 +4,12 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
+from boundary_analyzer.llm.client import call_llm
+
 
 class LllmClientTest(unittest.TestCase):
     def test_no_api_key_returns_none(self):
-        with patch.dict(os.environ, clear=True):
-            from boundary_analyzer.llm.client import call_llm
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}):
             result = call_llm("test prompt")
             self.assertIsNone(result)
 
@@ -22,7 +23,6 @@ class LllmClientTest(unittest.TestCase):
         mock_post.return_value = mock_resp
 
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
-            from boundary_analyzer.llm.client import call_llm
             result = call_llm("test prompt")
             self.assertEqual(result, "Hello world")
 
@@ -43,7 +43,6 @@ class LllmClientTest(unittest.TestCase):
         mock_post.side_effect = [mock_429, mock_429, mock_429, mock_200]
 
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
-            from boundary_analyzer.llm.client import call_llm
             result = call_llm("test prompt")
             self.assertEqual(result, "fallback ok")
 
@@ -60,7 +59,6 @@ class LllmClientTest(unittest.TestCase):
         mock_post.side_effect = [Timeout(), Timeout(), Timeout(), mock_200]
 
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
-            from boundary_analyzer.llm.client import call_llm
             result = call_llm("test prompt")
             self.assertEqual(result, "fallback ok")
 
@@ -81,7 +79,6 @@ class LllmClientTest(unittest.TestCase):
         mock_post.side_effect = [mock_empty, mock_ok]
 
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
-            from boundary_analyzer.llm.client import call_llm
             result = call_llm("test prompt")
             self.assertEqual(result, "fallback ok")
 
@@ -110,7 +107,6 @@ class LllmClientTest(unittest.TestCase):
         mock_post.return_value = mock_resp
 
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
-            from boundary_analyzer.llm.client import call_llm
             result = call_llm("test prompt", model="my-custom-model")
             self.assertEqual(result, "custom model")
             call_kwargs = mock_post.call_args[1]
@@ -126,7 +122,6 @@ class LllmClientTest(unittest.TestCase):
         mock_post.return_value = mock_resp
 
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
-            from boundary_analyzer.llm.client import call_llm
             call_llm("test", temperature=0.5, max_tokens=999)
             call_kwargs = mock_post.call_args[1]
             self.assertEqual(call_kwargs["json"]["temperature"], 0.5)

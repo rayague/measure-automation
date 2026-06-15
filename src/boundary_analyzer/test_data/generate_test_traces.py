@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import random
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
+
+logger = logging.getLogger(__name__)
 
 
 def _generate_trace_id() -> str:
@@ -40,9 +43,7 @@ def _create_span(
             "tags": [],
         },
         "logs": [],
-        "references": [
-            {"refType": "CHILD_OF", "spanID": parent_span_id}
-        ] if parent_span_id else [],
+        "references": [{"refType": "CHILD_OF", "spanID": parent_span_id}] if parent_span_id else [],
     }
 
 
@@ -56,13 +57,13 @@ def _create_http_endpoint_span(
     """Create an HTTP endpoint span."""
     span_id = _generate_span_id()
     operation_name = f"{method} {path}"
-    
+
     tags = [
         {"key": "http.method", "value": method},
         {"key": "http.route", "value": path},
         {"key": "http.target", "value": path},
     ]
-    
+
     span = _create_span(
         span_id=span_id,
         parent_span_id=None,
@@ -73,7 +74,7 @@ def _create_http_endpoint_span(
         tags=tags,
     )
     span["traceID"] = trace_id
-    
+
     return span
 
 
@@ -88,21 +89,21 @@ def _create_db_span(
     """Create a database operation span."""
     span_id = _generate_span_id()
     operation_name = f"{operation} {table}"
-    
+
     sql_statements = {
         "SELECT": f"SELECT * FROM {table} WHERE id = ?",
         "INSERT": f"INSERT INTO {table} (col1, col2) VALUES (?, ?)",
         "UPDATE": f"UPDATE {table} SET col1 = ? WHERE id = ?",
         "DELETE": f"DELETE FROM {table} WHERE id = ?",
     }
-    
+
     tags = [
         {"key": "db.system", "value": "mysql"},
         {"key": "db.name", "value": "testdb"},
         {"key": "db.statement", "value": sql_statements.get(operation, f"{operation} {table}")},
         {"key": "db.operation", "value": operation},
     ]
-    
+
     span = _create_span(
         span_id=span_id,
         parent_span_id=parent_span_id,
@@ -113,7 +114,7 @@ def _create_db_span(
         tags=tags,
     )
     span["traceID"] = trace_id
-    
+
     return span
 
 
@@ -125,26 +126,26 @@ def _generate_service_trace(
     base_start_time: int,
 ) -> list[dict[str, Any]]:
     """Generate traces for a single service.
-    
+
     Args:
         service_name: Name of the service
         endpoints: List of (method, path) tuples
         tables: List of tables used by this service
         num_traces: Number of traces to generate
         base_start_time: Base start time in microseconds
-    
+
     Returns:
         List of trace objects in Jaeger format
     """
     traces = []
-    
+
     for i in range(num_traces):
         trace_id = _generate_trace_id()
         start_time = base_start_time + (i * 10000000)
-        
+
         # Random endpoint
         method, path = random.choice(endpoints)
-        
+
         # Create root span (HTTP endpoint)
         root_span = _create_http_endpoint_span(
             service_name=service_name,
@@ -153,15 +154,15 @@ def _generate_service_trace(
             trace_id=trace_id,
             start_time=start_time,
         )
-        
+
         spans = [root_span]
-        
+
         # Add DB spans (1-3 DB operations per trace)
         num_db_ops = random.randint(1, 3)
         for _ in range(num_db_ops):
             table = random.choice(tables)
             operation = random.choice(["SELECT", "INSERT", "UPDATE"])
-            
+
             db_span = _create_db_span(
                 service_name=service_name,
                 table=table,
@@ -171,25 +172,27 @@ def _generate_service_trace(
                 start_time=start_time,
             )
             spans.append(db_span)
-        
-        traces.append({
-            "traceID": trace_id,
-            "spans": spans,
-        })
-    
+
+        traces.append(
+            {
+                "traceID": trace_id,
+                "spans": spans,
+            }
+        )
+
     return traces
 
 
 def generate_test_scenarios() -> dict[str, list[dict[str, Any]]]:
     """Generate test scenarios with different cohesion patterns.
-    
+
     Scenarios:
     1. High cohesion service: endpoints use same tables
     2. Low cohesion service: endpoints use different tables
     3. Mixed service: some overlap, some differences
     """
     base_start_time = 1700000000000000  # Microseconds since epoch
-    
+
     # Scenario 1: High cohesion service (user-service)
     # Endpoints: GET /users, POST /users, GET /users/{id}
     # Tables: users, profiles (shared across all endpoints)
@@ -200,7 +203,7 @@ def generate_test_scenarios() -> dict[str, list[dict[str, Any]]]:
         num_traces=20,
         base_start_time=base_start_time,
     )
-    
+
     # Scenario 2: Low cohesion service (order-service)
     # Endpoints: GET /orders, POST /orders, GET /products, POST /payments
     # Tables: orders, products, payments (each endpoint uses different tables)
@@ -216,7 +219,7 @@ def generate_test_scenarios() -> dict[str, list[dict[str, Any]]]:
         num_traces=20,
         base_start_time=base_start_time + 200000000,
     )
-    
+
     # Scenario 3: Mixed cohesion service (inventory-service)
     # Endpoints: GET /inventory, POST /inventory, GET /stock
     # Tables: inventory, stock, warehouse (partial overlap)
@@ -231,7 +234,7 @@ def generate_test_scenarios() -> dict[str, list[dict[str, Any]]]:
         num_traces=15,
         base_start_time=base_start_time + 400000000,
     )
-    
+
     # Scenario 4: Another high cohesion service (notification-service)
     # Endpoints: POST /notify, POST /email, POST /sms
     # Tables: notifications, logs (shared)
@@ -246,7 +249,7 @@ def generate_test_scenarios() -> dict[str, list[dict[str, Any]]]:
         num_traces=15,
         base_start_time=base_start_time + 600000000,
     )
-    
+
     return {
         "user-service": user_service_traces,
         "order-service": order_service_traces,
@@ -258,7 +261,7 @@ def generate_test_scenarios() -> dict[str, list[dict[str, Any]]]:
 def save_test_traces(traces_by_service: dict[str, list[dict[str, Any]]], output_dir: Path) -> None:
     """Save test traces to JSON files in Jaeger export format."""
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     for service_name, traces in traces_by_service.items():
         # Jaeger export format
         jaeger_response = {
@@ -268,25 +271,25 @@ def save_test_traces(traces_by_service: dict[str, list[dict[str, Any]]], output_
             "offset": 0,
             "errors": None,
         }
-        
+
         output_file = output_dir / f"{service_name}_traces.json"
         with output_file.open("w", encoding="utf-8") as f:
             json.dump({"jaeger_response": jaeger_response}, f, indent=2)
-        
-        print(f"Saved {len(traces)} traces for {service_name} to {output_file}")
+
+        logger.info("Saved %d traces for %s to %s", len(traces), service_name, output_file)
 
 
 def main() -> int:
     """Generate synthetic test traces."""
     output_dir = Path("data/raw/traces")
-    
+
     print("Generating synthetic test traces...")
     print("=" * 60)
-    
+
     traces_by_service = generate_test_scenarios()
-    
+
     save_test_traces(traces_by_service, output_dir)
-    
+
     print("\n" + "=" * 60)
     print("Test traces generated successfully!")
     print(f"Output directory: {output_dir}")
@@ -298,7 +301,7 @@ def main() -> int:
     print("\nNext steps:")
     print("  1. Run: python .\\src\\boundary_analyzer\\pipeline\\step_02_read_traces.py")
     print("  2. Continue with steps 3-8")
-    
+
     return 0
 
 

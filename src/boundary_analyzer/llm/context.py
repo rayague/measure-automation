@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-import json
+import logging
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 def _safe_read(path: Path) -> str:
@@ -130,21 +132,24 @@ def _scan_api_routes(project_path: Path) -> list[dict[str, str]]:
             stripped = line.strip()
             # Match FastAPI/Flask-style route decorators
             if "@" in stripped and any(
-                method in stripped.upper()
-                for method in [".GET(", ".POST(", ".PUT(", ".DELETE(", ".PATCH("]
+                method in stripped.upper() for method in [".GET(", ".POST(", ".PUT(", ".DELETE(", ".PATCH("]
             ):
-                routes.append({
-                    "file": str(py_file.relative_to(project_path)),
-                    "line": str(i + 1),
-                    "route": stripped,
-                })
+                routes.append(
+                    {
+                        "file": str(py_file.relative_to(project_path)),
+                        "line": str(i + 1),
+                        "route": stripped,
+                    }
+                )
             # Match router.api_route or router.add_api_route
             if ".api_route(" in stripped or ".add_api_route(" in stripped:
-                routes.append({
-                    "file": str(py_file.relative_to(project_path)),
-                    "line": str(i + 1),
-                    "route": stripped,
-                })
+                routes.append(
+                    {
+                        "file": str(py_file.relative_to(project_path)),
+                        "line": str(i + 1),
+                        "route": stripped,
+                    }
+                )
     return routes
 
 

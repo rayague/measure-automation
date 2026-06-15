@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-import json
+import logging
 import os
 import time
 from typing import Any
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_MODEL = "qwen/qwen3-coder:free"
@@ -62,15 +64,12 @@ def call_llm(
                 if resp.status_code == 429:
                     try:
                         body = resp.json()
-                        retry_after = (
-                            body.get("error", {})
-                            .get("metadata", {})
-                            .get("retry_after_seconds", 10)
-                        )
+                        retry_after = body.get("error", {}).get("metadata", {}).get("retry_after_seconds", 10)
                         if isinstance(retry_after, str):
                             retry_after = int(retry_after)
                         wait = min(int(retry_after) + 2, 30)
-                    except Exception:
+                    except (KeyError, ValueError, TypeError) as e:
+                        logger.warning("Could not parse retry_after: %s", e)
                         wait = 10
                     if attempt < MAX_RETRIES - 1:
                         time.sleep(wait)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import logging
 import os
-from pathlib import Path
 
 import pandas as pd
 
@@ -11,40 +11,42 @@ from boundary_analyzer.metrics.scom import (
 )
 from boundary_analyzer.settings_loader import get_data_dir, load_settings
 
+logger = logging.getLogger(__name__)
+
 
 def main() -> int:
     base_dir = get_data_dir()
     mapping_path = base_dir / "interim" / "endpoint_table_map.csv"
     endpoints_path = base_dir / "interim" / "endpoints.csv"
     output_path = base_dir / "processed" / "service_scom.csv"
-    
-    print(f"Reading mapping from: {mapping_path}")
-    
+
+    logger.info("Reading mapping from: %s", mapping_path)
+
     if not mapping_path.exists():
-        print("Error: endpoint_table_map.csv not found. Run step 05 first.")
+        logger.error("Error: endpoint_table_map.csv not found. Run step 05 first.")
         return 1
-    
+
     # Load settings for SCOM weighting
     settings = load_settings()
-    endpoint_weighting = settings.get("endpoint_weighting", True)
-    
+    endpoint_weighting = settings.endpoint_weighting
+
     # Check CLI flag for skip-no-db-services
     skip_no_db = os.environ.get("BOUNDARY_ANALYZER_SKIP_NO_DB_SERVICES", "").strip() == "1"
-    
+
     mapping_df = pd.read_csv(mapping_path)
-    print(f"Loaded {len(mapping_df)} endpoint-table mappings")
+    logger.info("Loaded %d endpoint-table mappings", len(mapping_df))
 
     endpoints_df = None
     if endpoints_path.exists():
         endpoints_df = pd.read_csv(endpoints_path)
-        print(f"Loaded {len(endpoints_df)} endpoint spans (for endpoint coverage)")
+        logger.info("Loaded %d endpoint spans (for endpoint coverage)", len(endpoints_df))
     else:
-        print("Warning: endpoints.csv not found; endpoints without DB ops may be missed.")
-    
-    print(f"\nSCOM endpoint weighting: {endpoint_weighting}")
+        logger.warning("Warning: endpoints.csv not found; endpoints without DB ops may be missed.")
+
+    logger.info("\nSCOM endpoint weighting: %s", endpoint_weighting)
     if skip_no_db:
-        print("skip_no_db_services: enabled")
-    
+        logger.info("skip_no_db_services: enabled")
+
     # Compute SCOM faithfully according to the paper
     scom_df = compute_scom(
         mapping_df=mapping_df,
@@ -52,21 +54,21 @@ def main() -> int:
         use_endpoint_weighting=endpoint_weighting,
         skip_no_db_services=skip_no_db,
     )
-    
-    print("\nSCOM Scores:")
+
+    logger.info("\nSCOM Scores:")
     if scom_df.empty:
-        print("  (No services to score - no DB operations found)")
-        print("  Tip: Check if database traces are being captured in Jaeger.")
+        logger.info("  (No services to score - no DB operations found)")
+        logger.info("  Tip: Check if database traces are being captured in Jaeger.")
     else:
-        print(scom_df.to_string(index=False))
-    
+        logger.info("%s", scom_df.to_string(index=False))
+
     save_scom_csv(scom_df, output_path)
-    print(f"\nSaved to: {output_path}")
-    
+    logger.info("\nSaved to: %s", output_path)
+
     # Warn if empty but allow pipeline to continue (step_07 will handle it)
     if scom_df.empty:
-        print("\nWarning: SCOM DataFrame is empty. Pipeline will attempt to continue.")
-    
+        logger.warning("\nWarning: SCOM DataFrame is empty. Pipeline will attempt to continue.")
+
     return 0
 
 

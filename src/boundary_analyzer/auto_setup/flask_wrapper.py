@@ -13,12 +13,12 @@ Just call init_tracing() at the top of your main app file.
 """
 
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import Resource
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 
 def init_tracing():
@@ -31,9 +31,7 @@ def init_tracing():
     resource = Resource.create({"service.name": "{{SERVICE_NAME}}"})
 
     # 'exporter' sends the traces to Jaeger over gRPC
-    exporter = OTLPSpanExporter(
-        endpoint="http://{{JAEGER_HOST}}:{{JAEGER_GRPC_PORT}}"
-    )
+    exporter = OTLPSpanExporter(endpoint="http://{{JAEGER_HOST}}:{{JAEGER_GRPC_PORT}}")
 
     # 'provider' is the main tracing engine
     provider = TracerProvider(resource=resource)
@@ -50,4 +48,4 @@ def init_tracing():
     # Automatically trace every SQLAlchemy database query
     SQLAlchemyInstrumentor().instrument()
 
-    print(f"[OTel] Tracing enabled → Jaeger at {{JAEGER_HOST}}:{{JAEGER_GRPC_PORT}}")
+    print("[OTel] Tracing enabled → Jaeger at {JAEGER_HOST}:{JAEGER_GRPC_PORT}")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from boundary_analyzer.llm.client import call_llm
@@ -8,6 +9,8 @@ from boundary_analyzer.llm.context import (
     format_context_for_prompt,
 )
 from boundary_analyzer.llm.prompts import build_instrumentation_prompt
+
+logger = logging.getLogger(__name__)
 
 
 def generate_instrumentation(
@@ -46,7 +49,7 @@ def generate_instrumentation(
     # Validate that the LLM output is valid Python syntax before returning
     try:
         compile(result, "generated_instrumentation.py", "exec")
-    except SyntaxError as e:
+    except SyntaxError:
         return None
 
     return result

@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+from boundary_analyzer._utils import save_csv
+
+"""Read Jaeger JSON trace exports into a unified pandas DataFrame."""
+
+logger = logging.getLogger(__name__)
 
 
 def _find_parent_span_id(span: dict[str, Any]) -> str | None:
@@ -24,7 +31,7 @@ def _find_parent_span_id(span: dict[str, Any]) -> str | None:
 
 def _get_service_name(span: dict[str, Any], processes: dict[str, Any] | None = None) -> str:
     """Get service name from span process.
-    
+
     Handles both formats:
     - Old: span has process directly: span["process"]["serviceName"]
     - New: trace has processes dict, span has processID referencing it
@@ -33,7 +40,7 @@ def _get_service_name(span: dict[str, Any], processes: dict[str, Any] | None = N
     process_id = span.get("processID")
     if process_id and processes and process_id in processes:
         return processes[process_id].get("serviceName", "")
-    
+
     # Fallback to old format (process embedded in span)
     process = span.get("process", {})
     return process.get("serviceName", "")
@@ -41,7 +48,7 @@ def _get_service_name(span: dict[str, Any], processes: dict[str, Any] | None = N
 
 def _extract_tags_as_json(span: dict[str, Any]) -> str:
     """Extract span tags as JSON string for storage.
-    
+
     This preserves tag information for later use in endpoint normalization.
     """
     tags = span.get("tags", [])
@@ -50,7 +57,7 @@ def _extract_tags_as_json(span: dict[str, Any]) -> str:
         attributes = span.get("attributes", {})
         if attributes:
             tags = [{"key": k, "value": v} for k, v in attributes.items()]
-    
+
     if tags:
         return json.dumps(tags)
     return ""
@@ -88,7 +95,7 @@ def _read_one_trace_file(file_path: Path) -> list[dict[str, Any]]:
 
 
 def read_all_traces(traces_dir: Path) -> pd.DataFrame:
-    """Read all JSON trace files and return DataFrame."""
+    """Read all Jaeger JSON trace files from a directory into a single DataFrame."""
     all_rows: list[dict[str, Any]] = []
 
     json_files = list(traces_dir.glob("*.json"))
@@ -100,15 +107,22 @@ def read_all_traces(traces_dir: Path) -> pd.DataFrame:
     df = pd.DataFrame(all_rows)
 
     if df.empty:
-        df = pd.DataFrame(columns=[
-            "trace_id", "span_id", "parent_span_id",
-            "service_name", "operation_name", "start_time", "duration", "tags"
-        ])
+        df = pd.DataFrame(
+            columns=[
+                "trace_id",
+                "span_id",
+                "parent_span_id",
+                "service_name",
+                "operation_name",
+                "start_time",
+                "duration",
+                "tags",
+            ]
+        )
 
     return df
 
 
 def save_spans_csv(df: pd.DataFrame, output_path: Path) -> None:
-    """Save spans DataFrame to CSV."""
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(output_path, index=False)
+    """Save parsed spans DataFrame to CSV."""
+    save_csv(df, output_path)

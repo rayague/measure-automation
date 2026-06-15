@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Any
 
 import yaml
+from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_SETTINGS_PATH = Path("config/settings.yaml")
@@ -12,6 +16,25 @@ ENV_SETTINGS_PATH = "BOUNDARY_ANALYZER_SETTINGS"
 ENV_OUTPUT_DIR = "BOUNDARY_ANALYZER_OUTPUT_DIR"
 ENV_DATA_DIR = "BOUNDARY_ANALYZER_DATA_DIR"
 ENV_REPORTS_DIR = "BOUNDARY_ANALYZER_REPORTS_DIR"
+
+
+class LlmSettings(BaseModel):
+    enabled: bool = False
+    model: str = "qwen/qwen3-coder:free"
+
+
+class Settings(BaseModel):
+    jaeger_base_url: str = "http://localhost:16686"
+    service_name: str = ""
+    lookback_minutes: int = 10
+    limit_traces: int = 20
+    endpoint_weighting: bool = True
+    scom_threshold: float = 0.5
+    threshold_method: str = "percentile"
+    threshold_percentile: float = 25.0
+    threshold_zscore: float = -1.5
+    output_dir: str = "data/raw/traces"
+    llm: LlmSettings = LlmSettings()
 
 
 def get_data_dir() -> Path:
@@ -25,13 +48,6 @@ def get_reports_dir() -> Path:
 
 
 def get_settings_path(explicit_path: str | Path | None = None) -> Path:
-    """Resolve settings path.
-
-    Priority:
-    1) explicit_path argument
-    2) environment variable BOUNDARY_ANALYZER_SETTINGS
-    3) default config/settings.yaml
-    """
     if explicit_path is not None:
         return Path(explicit_path)
 
@@ -42,53 +58,33 @@ def get_settings_path(explicit_path: str | Path | None = None) -> Path:
     return DEFAULT_SETTINGS_PATH
 
 
-def load_settings(explicit_path: str | Path | None = None) -> dict[str, Any]:
-    """Load YAML settings.
-
-    Returns an empty dict if the file does not exist.
-    """
+def load_settings(explicit_path: str | Path | None = None) -> Settings:
     settings_path = get_settings_path(explicit_path)
-    if not settings_path.exists():
-        return {}
-
-    with settings_path.open("r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-
-    settings: dict[str, Any] = data if isinstance(data, dict) else {}
+    raw: dict[str, Any] = {}
+    if settings_path.exists():
+        with settings_path.open("r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        raw = data if isinstance(data, dict) else {}
 
     output_dir_override = os.environ.get(ENV_OUTPUT_DIR, "").strip()
     if output_dir_override:
-        settings["output_dir"] = output_dir_override
+        raw["output_dir"] = output_dir_override
 
-    return settings
+    return Settings(**raw)
 
 
-def get_traces_dir(settings: dict[str, Any] | None = None) -> Path:
-    """Resolve the traces directory consistently.
-
-    Priority:
-    1) BOUNDARY_ANALYZER_OUTPUT_DIR environment variable
-    2) BOUNDARY_ANALYZER_DATA_DIR / "raw" / "traces"
-    3) settings.yaml → output_dir
-    4) default: data/raw/traces
-    """
-    # 1) Explicit output dir override (set by --output-dir or --new-dir)
+def get_traces_dir(settings: Settings | None = None) -> Path:
     env_output = os.environ.get(ENV_OUTPUT_DIR, "").strip()
     if env_output:
         return Path(env_output)
 
-    # 2) Data dir override (set by --new-dir or --data-dir)
     env_data = os.environ.get(ENV_DATA_DIR, "").strip()
     if env_data:
         return Path(env_data) / "raw" / "traces"
 
-    # 3) settings.yaml output_dir
-    if settings is not None:
-        output_dir = settings.get("output_dir", "")
-        if output_dir:
-            return Path(str(output_dir))
+    if settings is not None and settings.output_dir:
+        return Path(settings.output_dir)
 
-    # 4) Default
     return Path("data/raw/traces")
 
 
@@ -98,11 +94,6 @@ def clean_data_dirs(
     clean_interim: bool = True,
     clean_processed: bool = True,
 ) -> dict[str, int]:
-    """Safely remove old data files before a new analysis run.
-
-    Returns a dict with counts of deleted files per directory.
-    Only deletes known file types (.json, .csv) to avoid accidents.
-    """
     base = data_dir or get_data_dir()
     deleted: dict[str, int] = {"traces": 0, "interim": 0, "processed": 0}
 
@@ -139,27 +130,15 @@ def clean_data_dirs(
     return deleted
 
 
-def get_llm_enabled(settings: dict[str, Any] | None = None) -> bool:
-    """Check if LLM features are enabled in settings.
-
-    LLM is enabled only when:
-    1. settings.yaml has llm.enabled = true (or BOUNDARY_ANALYZER_LLM_ENABLED is set)
-    2. The OPENROUTER_API_KEY environment variable is set
-    """
+def get_llm_enabled(settings: Settings | None = None) -> bool:
     if settings is None:
         settings = load_settings()
 
-    # Allow CLI --llm flag to override settings.yaml
     env_override = os.environ.get("BOUNDARY_ANALYZER_LLM_ENABLED", "").strip()
     if env_override == "1":
-        llm_enabled = True
-    else:
-        llm_config = settings.get("llm", {})
-        if not isinstance(llm_config, dict):
-            return False
-        llm_enabled = llm_config.get("enabled", False)
+        return True
 
-    if not llm_enabled:
+    if not settings.llm.enabled:
         return False
 
     api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()

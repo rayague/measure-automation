@@ -31,10 +31,11 @@ CHART CATALOGUE
 from __future__ import annotations
 
 import math
+from typing import Any
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 from dash import dcc
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -43,29 +44,29 @@ from dash import dcc
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Palette
-_CYAN       = "#00e5ff"
-_CYAN_15    = "rgba(0,229,255,0.15)"
-_CYAN_08    = "rgba(0,229,255,0.08)"
-_CYAN_04    = "rgba(0,229,255,0.04)"
-_AMBER      = "#ff9800"
-_AMBER_20   = "rgba(255,152,0,0.20)"
-_AMBER_10   = "rgba(255,152,0,0.10)"
-_RED        = "#ff1744"
-_RED_20     = "rgba(255,23,68,0.20)"
-_RED_10     = "rgba(255,23,68,0.10)"
-_GREEN      = "#00e676"
-_GREEN_15   = "rgba(0,230,118,0.15)"
-_PURPLE     = "#b388ff"
-_TEXT_P     = "#e8f0fe"           # primary text
-_TEXT_S     = "rgba(200,220,255,0.55)"  # secondary text
-_TEXT_M     = "rgba(200,220,255,0.30)"  # muted text
-_GRID       = "rgba(0,229,255,0.06)"    # chart grid lines
-_AXIS_LINE  = "rgba(0,229,255,0.12)"
+_CYAN = "#00e5ff"
+_CYAN_15 = "rgba(0,229,255,0.15)"
+_CYAN_08 = "rgba(0,229,255,0.08)"
+_CYAN_04 = "rgba(0,229,255,0.04)"
+_AMBER = "#ff9800"
+_AMBER_20 = "rgba(255,152,0,0.20)"
+_AMBER_10 = "rgba(255,152,0,0.10)"
+_RED = "#ff1744"
+_RED_20 = "rgba(255,23,68,0.20)"
+_RED_10 = "rgba(255,23,68,0.10)"
+_GREEN = "#00e676"
+_GREEN_15 = "rgba(0,230,118,0.15)"
+_PURPLE = "#b388ff"
+_TEXT_P = "#e8f0fe"  # primary text
+_TEXT_S = "rgba(200,220,255,0.55)"  # secondary text
+_TEXT_M = "rgba(200,220,255,0.30)"  # muted text
+_GRID = "rgba(0,229,255,0.06)"  # chart grid lines
+_AXIS_LINE = "rgba(0,229,255,0.12)"
 _TICK_COLOR = "rgba(0,229,255,0.25)"
-_BG_PAPER   = "rgba(0,0,0,0)"
-_BG_PLOT    = "rgba(0,0,0,0)"
-_FONT_MONO  = "JetBrains Mono, Fira Code, monospace"
-_FONT_DISP  = "Syne, DM Sans, sans-serif"
+_BG_PAPER = "rgba(0,0,0,0)"
+_BG_PLOT = "rgba(0,0,0,0)"
+_FONT_MONO = "JetBrains Mono, Fira Code, monospace"
+_FONT_DISP = "Syne, DM Sans, sans-serif"
 
 # Shared hover label style
 _HOVERLABEL = dict(
@@ -81,7 +82,7 @@ _HOVERLABEL = dict(
 # Every chart starts from this dict and overrides only what it needs.
 # ─────────────────────────────────────────────────────────────────────────────
 
-_LAYOUT = dict(
+_LAYOUT: dict[str, Any] = dict(
     paper_bgcolor=_BG_PAPER,
     plot_bgcolor=_BG_PLOT,
     font=dict(family=_FONT_MONO, color=_TEXT_P, size=11),
@@ -129,6 +130,7 @@ _LAYOUT = dict(
 def _base_layout(**overrides) -> dict:
     """Return a deep-merged copy of _LAYOUT with caller overrides applied."""
     import copy
+
     base = copy.deepcopy(_LAYOUT)
     # Merge top-level keys; nested dicts are replaced not merged (caller owns them)
     base.update(overrides)
@@ -139,8 +141,10 @@ def _annotate_watermark(fig: go.Figure, text: str = "BOUNDARY ANALYZER") -> None
     """Add a faint diagonal watermark to a figure."""
     fig.add_annotation(
         text=text,
-        xref="paper", yref="paper",
-        x=0.5, y=0.5,
+        xref="paper",
+        yref="paper",
+        x=0.5,
+        y=0.5,
         showarrow=False,
         font=dict(family=_FONT_MONO, size=36, color="rgba(0,229,255,0.025)"),
         textangle=-30,
@@ -152,6 +156,7 @@ def _annotate_watermark(fig: go.Figure, text: str = "BOUNDARY ANALYZER") -> None
 # Cinematic horizontal bar race: sorted by SCOM, with animated reveal,
 # rank badge annotations, threshold band, and rich hover cards.
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def create_animated_bar_chart(df: pd.DataFrame) -> dcc.Graph:
     """
@@ -203,28 +208,30 @@ def create_animated_bar_chart(df: pd.DataFrame) -> dcc.Graph:
     fig = go.Figure()
 
     # ── Main bars ────────────────────────────────────────────────────────────
-    fig.add_trace(go.Bar(
-        y=df_sorted["service_name"],
-        x=df_sorted["scom_score"],
-        orientation="h",
-        marker=dict(
-            color=bar_colors,
-            opacity=bar_opacity,
-            line=dict(
-                # Bright edge glow: same colour as bar
-                color=[_RED if s else _CYAN for s in df_sorted["is_suspicious"]],
-                width=1.5,
+    fig.add_trace(
+        go.Bar(
+            y=df_sorted["service_name"],
+            x=df_sorted["scom_score"],
+            orientation="h",
+            marker=dict(
+                color=bar_colors,
+                opacity=bar_opacity,
+                line=dict(
+                    # Bright edge glow: same colour as bar
+                    color=[_RED if s else _CYAN for s in df_sorted["is_suspicious"]],
+                    width=1.5,
+                ),
             ),
-        ),
-        # SCOM score labels at the end of each bar
-        text=df_sorted["scom_score"].map(lambda v: f"{v:.4f}"),
-        textposition="outside",
-        textfont=dict(family=_FONT_MONO, size=10, color=_TEXT_S),
-        # Rank badge inside the bar (near left edge)
-        customdata=df_sorted[["rank", "is_suspicious", "endpoints_count", "tables_count"]],
-        hovertemplate="%{customdata[0]}<extra></extra>",   # replaced by hover_texts below
-        name="",
-    ))
+            # SCOM score labels at the end of each bar
+            text=df_sorted["scom_score"].map(lambda v: f"{v:.4f}"),
+            textposition="outside",
+            textfont=dict(family=_FONT_MONO, size=10, color=_TEXT_S),
+            # Rank badge inside the bar (near left edge)
+            customdata=df_sorted[["rank", "is_suspicious", "endpoints_count", "tables_count"]],
+            hovertemplate="%{customdata[0]}<extra></extra>",  # replaced by hover_texts below
+            name="",
+        )
+    )
 
     # Override hovertemplate with rich HTML text
     fig.data[0].hovertemplate = "%{text_hover}<extra></extra>"
@@ -234,7 +241,7 @@ def create_animated_bar_chart(df: pd.DataFrame) -> dcc.Graph:
     # ── Rank badge annotations (shown inside each bar) ────────────────────────
     for _, row in df_sorted.iterrows():
         fig.add_annotation(
-            x=0.01,                        # very left of chart area
+            x=0.01,  # very left of chart area
             y=row["service_name"],
             text=f"#{int(row['rank'])}",
             showarrow=False,
@@ -314,6 +321,7 @@ def create_animated_bar_chart(df: pd.DataFrame) -> dcc.Graph:
 # Percentile annotations (P25, P50, P75) and a threshold marker.
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _kde(values: np.ndarray, bw: float = 0.05, n: int = 300) -> tuple[np.ndarray, np.ndarray]:
     """
     Gaussian KDE from scratch (no scipy needed).
@@ -323,7 +331,7 @@ def _kde(values: np.ndarray, bw: float = 0.05, n: int = 300) -> tuple[np.ndarray
     density = np.zeros(n)
     for v in values:
         density += np.exp(-0.5 * ((x - v) / bw) ** 2) / (bw * math.sqrt(2 * math.pi))
-    density /= len(values)   # normalise to PDF
+    density /= len(values)  # normalise to PDF
     return x, density
 
 
@@ -348,9 +356,9 @@ def create_scom_distribution(df: pd.DataFrame) -> dcc.Graph:
     else:
         threshold = 0.75
 
-    scores      = df["scom_score"].values.astype(float)
-    healthy_sc  = df.loc[~df["is_suspicious"], "scom_score"].values
-    suspect_sc  = df.loc[df["is_suspicious"],  "scom_score"].values
+    scores = df["scom_score"].values.astype(float)
+    healthy_sc = df.loc[~df["is_suspicious"], "scom_score"].values
+    suspect_sc = df.loc[df["is_suspicious"], "scom_score"].values
 
     fig = go.Figure()
 
@@ -368,31 +376,35 @@ def create_scom_distribution(df: pd.DataFrame) -> dcc.Graph:
 
     # ── Layer 1a – Healthy histogram (cyan) ───────────────────────────────────
     if len(healthy_sc):
-        fig.add_trace(go.Histogram(
-            x=healthy_sc,
-            nbinsx=12,
-            name="Healthy",
-            marker=dict(
-                color=_CYAN_15,
-                line=dict(color=_CYAN, width=1),
-            ),
-            opacity=0.70,
-            hovertemplate="SCOM bin: %{x:.2f}<br>Count: %{y}<extra>Healthy</extra>",
-        ))
+        fig.add_trace(
+            go.Histogram(
+                x=healthy_sc,
+                nbinsx=12,
+                name="Healthy",
+                marker=dict(
+                    color=_CYAN_15,
+                    line=dict(color=_CYAN, width=1),
+                ),
+                opacity=0.70,
+                hovertemplate="SCOM bin: %{x:.2f}<br>Count: %{y}<extra>Healthy</extra>",
+            )
+        )
 
     # ── Layer 1b – Suspicious histogram (red) ────────────────────────────────
     if len(suspect_sc):
-        fig.add_trace(go.Histogram(
-            x=suspect_sc,
-            nbinsx=12,
-            name="Suspicious",
-            marker=dict(
-                color=_RED_10,
-                line=dict(color=_RED, width=1),
-            ),
-            opacity=0.80,
-            hovertemplate="SCOM bin: %{x:.2f}<br>Count: %{y}<extra>Suspicious</extra>",
-        ))
+        fig.add_trace(
+            go.Histogram(
+                x=suspect_sc,
+                nbinsx=12,
+                name="Suspicious",
+                marker=dict(
+                    color=_RED_10,
+                    line=dict(color=_RED, width=1),
+                ),
+                opacity=0.80,
+                hovertemplate="SCOM bin: %{x:.2f}<br>Count: %{y}<extra>Suspicious</extra>",
+            )
+        )
 
     # Overlay histograms (not stack)
     fig.update_layout(barmode="overlay")
@@ -405,25 +417,29 @@ def create_scom_distribution(df: pd.DataFrame) -> dcc.Graph:
         kde_y_scaled = kde_y * len(scores) * bin_width
 
         # Filled area under curve
-        fig.add_trace(go.Scatter(
-            x=kde_x,
-            y=kde_y_scaled,
-            fill="tozeroy",
-            fillcolor="rgba(0,229,255,0.04)",
-            line=dict(color="rgba(0,229,255,0.0)", width=0),
-            name="",
-            showlegend=False,
-            hoverinfo="skip",
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=kde_x,
+                y=kde_y_scaled,
+                fill="tozeroy",
+                fillcolor="rgba(0,229,255,0.04)",
+                line=dict(color="rgba(0,229,255,0.0)", width=0),
+                name="",
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
         # KDE line
-        fig.add_trace(go.Scatter(
-            x=kde_x,
-            y=kde_y_scaled,
-            mode="lines",
-            line=dict(color=_CYAN, width=2, shape="spline", smoothing=1.2),
-            name="Density",
-            hovertemplate="SCOM: %{x:.3f}<br>Density: %{y:.2f}<extra>KDE</extra>",
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=kde_x,
+                y=kde_y_scaled,
+                mode="lines",
+                line=dict(color=_CYAN, width=2, shape="spline", smoothing=1.2),
+                name="Density",
+                hovertemplate="SCOM: %{x:.3f}<br>Density: %{y:.2f}<extra>KDE</extra>",
+            )
+        )
 
     # ── Layer 3 – Rug plot ────────────────────────────────────────────────────
     # Individual service marks just below the x-axis
@@ -431,9 +447,12 @@ def create_scom_distribution(df: pd.DataFrame) -> dcc.Graph:
         col = _RED if row["is_suspicious"] else _CYAN
         fig.add_shape(
             type="line",
-            x0=row["scom_score"], x1=row["scom_score"],
-            y0=-0.15, y1=0,          # will be in paper coords after update
-            xref="x", yref="paper",
+            x0=row["scom_score"],
+            x1=row["scom_score"],
+            y0=-0.15,
+            y1=0,  # will be in paper coords after update
+            xref="x",
+            yref="paper",
             line=dict(color=col, width=1.5),
         )
 
@@ -471,7 +490,8 @@ def create_scom_distribution(df: pd.DataFrame) -> dcc.Graph:
         arrowsize=0.8,
         arrowwidth=1,
         arrowcolor=_GREEN,
-        ax=30, ay=-30,
+        ax=30,
+        ay=-30,
         font=dict(family=_FONT_MONO, size=9, color=_GREEN),
     )
 
@@ -511,73 +531,76 @@ def create_scom_distribution(df: pd.DataFrame) -> dcc.Graph:
 #   0.75 – 1.00  → healthy   (cyan)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def create_cohesion_gauge(scom_score: float, service_name: str) -> dcc.Graph:
     """
     Bullet-style gauge for a single service.
     Used in the service detail page to give an immediate visual verdict.
     """
     score = float(scom_score)
-    is_suspicious = score < 0.75   # default; override if threshold is passed
+    is_suspicious = score < 0.75  # default; override if threshold is passed
 
     # Pick needle colour
     needle_col = _RED if is_suspicious else _CYAN
 
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number+delta",
-        value=round(score, 4),
-        delta=dict(
-            reference=0.75,
-            valueformat=".4f",
-            increasing=dict(color=_GREEN),
-            decreasing=dict(color=_RED),
-            font=dict(family=_FONT_MONO, size=11),
-        ),
-        number=dict(
-            valueformat=".4f",
-            font=dict(family=_FONT_MONO, size=28, color=needle_col),
-            suffix=" SCOM",
-        ),
-        gauge=dict(
-            axis=dict(
-                range=[0, 1],
-                tickvals=[0, 0.2, 0.4, 0.6, 0.75, 0.8, 1.0],
-                ticktext=["0.0", "0.2", "0.4", "0.6", "0.75", "0.8", "1.0"],
-                tickfont=dict(family=_FONT_MONO, size=9, color=_TEXT_S),
-                tickcolor=_TICK_COLOR,
-                tickwidth=1,
-                nticks=6,
+    fig = go.Figure(
+        go.Indicator(
+            mode="gauge+number+delta",
+            value=round(score, 4),
+            delta=dict(
+                reference=0.75,
+                valueformat=".4f",
+                increasing=dict(color=_GREEN),
+                decreasing=dict(color=_RED),
+                font=dict(family=_FONT_MONO, size=11),
             ),
-            bar=dict(
-                color=needle_col,
-                thickness=0.20,
-                line=dict(color=needle_col, width=2),
+            number=dict(
+                valueformat=".4f",
+                font=dict(family=_FONT_MONO, size=28, color=needle_col),
+                suffix=" SCOM",
             ),
-            bgcolor="rgba(0,0,0,0)",
-            borderwidth=1,
-            bordercolor=_AXIS_LINE,
-            steps=[
-                # Critical zone
-                dict(range=[0, 0.60],  color="rgba(255,23,68,0.12)"),
-                # Warning zone
-                dict(range=[0.60, 0.75], color="rgba(255,152,0,0.12)"),
-                # Healthy zone
-                dict(range=[0.75, 1.0], color="rgba(0,229,255,0.08)"),
-            ],
-            threshold=dict(
-                line=dict(color=_AMBER, width=3),
-                thickness=0.75,
-                value=0.75,
+            gauge=dict(
+                axis=dict(
+                    range=[0, 1],
+                    tickvals=[0, 0.2, 0.4, 0.6, 0.75, 0.8, 1.0],
+                    ticktext=["0.0", "0.2", "0.4", "0.6", "0.75", "0.8", "1.0"],
+                    tickfont=dict(family=_FONT_MONO, size=9, color=_TEXT_S),
+                    tickcolor=_TICK_COLOR,
+                    tickwidth=1,
+                    nticks=6,
+                ),
+                bar=dict(
+                    color=needle_col,
+                    thickness=0.20,
+                    line=dict(color=needle_col, width=2),
+                ),
+                bgcolor="rgba(0,0,0,0)",
+                borderwidth=1,
+                bordercolor=_AXIS_LINE,
+                steps=[
+                    # Critical zone
+                    dict(range=[0, 0.60], color="rgba(255,23,68,0.12)"),
+                    # Warning zone
+                    dict(range=[0.60, 0.75], color="rgba(255,152,0,0.12)"),
+                    # Healthy zone
+                    dict(range=[0.75, 1.0], color="rgba(0,229,255,0.08)"),
+                ],
+                threshold=dict(
+                    line=dict(color=_AMBER, width=3),
+                    thickness=0.75,
+                    value=0.75,
+                ),
             ),
-        ),
-        title=dict(
-            text=(
-                f"<span style='font-family:{_FONT_MONO};font-size:11px;"
-                f"letter-spacing:2px;color:{_TEXT_M}'>"
-                f"{service_name.upper()}</span>"
+            title=dict(
+                text=(
+                    f"<span style='font-family:{_FONT_MONO};font-size:11px;"
+                    f"letter-spacing:2px;color:{_TEXT_M}'>"
+                    f"{service_name.upper()}</span>"
+                ),
+                font=dict(size=12),
             ),
-            font=dict(size=12),
-        ),
-    ))
+        )
+    )
 
     fig.update_layout(
         **_base_layout(
@@ -589,12 +612,14 @@ def create_cohesion_gauge(scom_score: float, service_name: str) -> dcc.Graph:
     # Zone labels
     for x, label, col in [
         (0.30, "CRITICAL", _RED),
-        (0.67, "WARNING",  _AMBER),
-        (0.87, "HEALTHY",  _CYAN),
+        (0.67, "WARNING", _AMBER),
+        (0.87, "HEALTHY", _CYAN),
     ]:
         fig.add_annotation(
-            x=x, y=-0.22,
-            xref="paper", yref="paper",
+            x=x,
+            y=-0.22,
+            xref="paper",
+            yref="paper",
             text=label,
             showarrow=False,
             font=dict(family=_FONT_MONO, size=8, color=col),
@@ -610,6 +635,7 @@ def create_cohesion_gauge(scom_score: float, service_name: str) -> dcc.Graph:
 # Colour: healthy (cyan) vs suspicious (red).
 # Quadrant lines divide the space into 4 interpretable zones.
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def create_endpoint_scatter(df: pd.DataFrame) -> dcc.Graph:
     """
@@ -629,10 +655,10 @@ def create_endpoint_scatter(df: pd.DataFrame) -> dcc.Graph:
     if df.empty:
         return dcc.Graph()
 
-    ep_median  = df["endpoints_count"].median()
+    ep_median = df["endpoints_count"].median()
     tbl_median = df["tables_count"].median()
 
-    colors  = [_RED if s else _CYAN for s in df["is_suspicious"]]
+    colors = [_RED if s else _CYAN for s in df["is_suspicious"]]
     opacity = [0.90 if s else 0.75 for s in df["is_suspicious"]]
 
     # Bubble size mapped to SCOM score (bigger = more cohesive = good)
@@ -641,7 +667,7 @@ def create_endpoint_scatter(df: pd.DataFrame) -> dcc.Graph:
 
     hover_texts = []
     for _, row in df.iterrows():
-        status     = "⚠  SUSPICIOUS" if row["is_suspicious"] else "✓  HEALTHY"
+        status = "⚠  SUSPICIOUS" if row["is_suspicious"] else "✓  HEALTHY"
         status_col = _RED if row["is_suspicious"] else _GREEN
         hover_texts.append(
             f"<b>{row['service_name']}</b><br>"
@@ -654,63 +680,74 @@ def create_endpoint_scatter(df: pd.DataFrame) -> dcc.Graph:
     fig = go.Figure()
 
     # ── Quadrant background fills ─────────────────────────────────────────────
-    fig.add_hrect(y0=0,          y1=tbl_median, fillcolor="rgba(0,229,255,0.02)", layer="below", line_width=0)
-    fig.add_hrect(y0=tbl_median, y1=100,        fillcolor="rgba(255,152,0,0.02)", layer="below", line_width=0)
+    fig.add_hrect(y0=0, y1=tbl_median, fillcolor="rgba(0,229,255,0.02)", layer="below", line_width=0)
+    fig.add_hrect(y0=tbl_median, y1=100, fillcolor="rgba(255,152,0,0.02)", layer="below", line_width=0)
 
     # ── Quadrant divider lines ────────────────────────────────────────────────
-    fig.add_vline(x=ep_median,  line=dict(color=_TEXT_M, width=1, dash="longdash"))
+    fig.add_vline(x=ep_median, line=dict(color=_TEXT_M, width=1, dash="longdash"))
     fig.add_hline(y=tbl_median, line=dict(color=_TEXT_M, width=1, dash="longdash"))
 
     # ── Quadrant labels ───────────────────────────────────────────────────────
     quadrant_labels = [
-        (0.12, 0.12, "Focused\n& Lean",     _GREEN),
+        (0.12, 0.12, "Focused\n& Lean", _GREEN),
         (0.88, 0.12, "Wide scope\nfew tables", _CYAN),
         (0.12, 0.88, "Narrow scope\nmany tables", _CYAN),
-        (0.88, 0.88, "High\ncomplexity",    _AMBER),
+        (0.88, 0.88, "High\ncomplexity", _AMBER),
     ]
     for xp, yp, text, col in quadrant_labels:
         fig.add_annotation(
-            x=xp, y=yp,
-            xref="paper", yref="paper",
+            x=xp,
+            y=yp,
+            xref="paper",
+            yref="paper",
             text=text,
             showarrow=False,
-            font=dict(family=_FONT_MONO, size=8, color=col.replace(")", ", 0.45)").replace("rgba","rgba") if "rgba" in col else col + "73"),
+            font=dict(
+                family=_FONT_MONO,
+                size=8,
+                color=col.replace(")", ", 0.45)").replace("rgba", "rgba") if "rgba" in col else col + "73",
+            ),
             align="center",
         )
 
     # ── Scatter bubbles ───────────────────────────────────────────────────────
-    fig.add_trace(go.Scatter(
-        x=df["endpoints_count"],
-        y=df["tables_count"],
-        mode="markers+text",
-        marker=dict(
-            color=colors,
-            opacity=opacity,
-            size=sizes,
-            line=dict(
-                color=[_RED if s else _CYAN for s in df["is_suspicious"]],
-                width=1.5,
+    fig.add_trace(
+        go.Scatter(
+            x=df["endpoints_count"],
+            y=df["tables_count"],
+            mode="markers+text",
+            marker=dict(
+                color=colors,
+                opacity=opacity,
+                size=sizes,
+                line=dict(
+                    color=[_RED if s else _CYAN for s in df["is_suspicious"]],
+                    width=1.5,
+                ),
+                sizemode="diameter",
             ),
-            sizemode="diameter",
-        ),
-        text=df["service_name"],
-        textposition="top center",
-        textfont=dict(family=_FONT_MONO, size=9, color=_TEXT_S),
-        hovertext=hover_texts,
-        hovertemplate="%{hovertext}<extra></extra>",
-        name="",
-        showlegend=False,
-    ))
+            text=df["service_name"],
+            textposition="top center",
+            textfont=dict(family=_FONT_MONO, size=9, color=_TEXT_S),
+            hovertext=hover_texts,
+            hovertemplate="%{hovertext}<extra></extra>",
+            name="",
+            showlegend=False,
+        )
+    )
 
     # ── Legend proxy traces ────────────────────────────────────────────────────
     for name, col in [("Healthy", _CYAN), ("Suspicious", _RED)]:
-        fig.add_trace(go.Scatter(
-            x=[None], y=[None],
-            mode="markers",
-            marker=dict(color=col, size=10),
-            name=name,
-            showlegend=True,
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode="markers",
+                marker=dict(color=col, size=10),
+                name=name,
+                showlegend=True,
+            )
+        )
 
     fig.update_layout(
         **_base_layout(
@@ -740,6 +777,7 @@ def create_endpoint_scatter(df: pd.DataFrame) -> dcc.Graph:
 # is no history column, making it always usable.
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def create_scom_timeline(df: pd.DataFrame) -> dcc.Graph:
     """
     SCOM score timeline per service.
@@ -760,47 +798,49 @@ def create_scom_timeline(df: pd.DataFrame) -> dcc.Graph:
             is_suspect = svc_df["is_suspicious"].any()
             col = _RED if is_suspect else _CYAN
 
-            fig.add_trace(go.Scatter(
-                x=svc_df["run_id"],
-                y=svc_df["scom_score"],
-                mode="lines+markers",
-                name=svc,
-                line=dict(color=col, width=2, shape="spline", smoothing=0.8),
-                marker=dict(color=col, size=7, line=dict(color=_BG_PAPER, width=2)),
-                hovertemplate=(
-                    f"<b>{svc}</b><br>"
-                    "Run: %{x}<br>"
-                    f"<span style='color:{_CYAN}'>SCOM: </span>%{{y:.4f}}<extra></extra>"
-                ),
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=svc_df["run_id"],
+                    y=svc_df["scom_score"],
+                    mode="lines+markers",
+                    name=svc,
+                    line=dict(color=col, width=2, shape="spline", smoothing=0.8),
+                    marker=dict(color=col, size=7, line=dict(color=_BG_PAPER, width=2)),
+                    hovertemplate=(
+                        f"<b>{svc}</b><br>"
+                        "Run: %{x}<br>"
+                        f"<span style='color:{_CYAN}'>SCOM: </span>%{{y:.4f}}<extra></extra>"
+                    ),
+                )
+            )
     else:
         # ── Dot plot fallback ─────────────────────────────────────────────────
         df_s = df.sort_values("scom_score", ascending=False)
         for _, row in df_s.iterrows():
             col = _RED if row["is_suspicious"] else _CYAN
-            fig.add_trace(go.Scatter(
-                x=[row["scom_score"]],
-                y=[row["service_name"]],
-                mode="markers+text",
-                text=[f"  {row['scom_score']:.4f}"],
-                textposition="middle right",
-                textfont=dict(family=_FONT_MONO, size=10, color=col),
-                marker=dict(color=col, size=10, symbol="circle",
-                            line=dict(color=col, width=2)),
-                name=row["service_name"],
-                showlegend=False,
-                hovertemplate=(
-                    f"<b>{row['service_name']}</b><br>"
-                    f"SCOM: {row['scom_score']:.4f}<extra></extra>"
-                ),
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=[row["scom_score"]],
+                    y=[row["service_name"]],
+                    mode="markers+text",
+                    text=[f"  {row['scom_score']:.4f}"],
+                    textposition="middle right",
+                    textfont=dict(family=_FONT_MONO, size=10, color=col),
+                    marker=dict(color=col, size=10, symbol="circle", line=dict(color=col, width=2)),
+                    name=row["service_name"],
+                    showlegend=False,
+                    hovertemplate=(f"<b>{row['service_name']}</b><br>SCOM: {row['scom_score']:.4f}<extra></extra>"),
+                )
+            )
 
         # Connecting lines to zero axis (lollipop style)
         for _, row in df_s.iterrows():
             fig.add_shape(
                 type="line",
-                x0=0, x1=row["scom_score"],
-                y0=row["service_name"], y1=row["service_name"],
+                x0=0,
+                x1=row["scom_score"],
+                y0=row["service_name"],
+                y1=row["service_name"],
                 line=dict(
                     color=_RED if row["is_suspicious"] else _CYAN_15,
                     width=1,
@@ -852,6 +892,7 @@ def create_scom_timeline(df: pd.DataFrame) -> dcc.Graph:
 # Extended with extra fields useful for the header and detail page.
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def create_summary_cards(df: pd.DataFrame) -> dict:
     """
     Return a dict of summary statistics for all KPI cards.
@@ -872,39 +913,39 @@ def create_summary_cards(df: pd.DataFrame) -> dict:
     """
     if df.empty:
         return {
-            "total_services":  0,
+            "total_services": 0,
             "suspicious_count": 0,
-            "safe_count":       0,
-            "avg_scom":         0.0,
-            "min_scom":         0.0,
-            "max_scom":         0.0,
-            "std_scom":         0.0,
-            "p25_scom":         0.0,
-            "p75_scom":         0.0,
-            "health_rate":      0.0,
-            "worst_service":    "—",
-            "best_service":     "—",
+            "safe_count": 0,
+            "avg_scom": 0.0,
+            "min_scom": 0.0,
+            "max_scom": 0.0,
+            "std_scom": 0.0,
+            "p25_scom": 0.0,
+            "p75_scom": 0.0,
+            "health_rate": 0.0,
+            "worst_service": "—",
+            "best_service": "—",
         }
 
-    suspicious_mask  = df["is_suspicious"] == True
+    suspicious_mask = df["is_suspicious"]
     suspicious_count = int(suspicious_mask.sum())
-    safe_count       = int((~suspicious_mask).sum())
-    scores           = df["scom_score"].astype(float)
+    safe_count = int((~suspicious_mask).sum())
+    scores = df["scom_score"].astype(float)
 
     worst_idx = scores.idxmin()
-    best_idx  = scores.idxmax()
+    best_idx = scores.idxmax()
 
     return {
-        "total_services":   len(df),
+        "total_services": len(df),
         "suspicious_count": suspicious_count,
-        "safe_count":       safe_count,
-        "avg_scom":         round(float(scores.mean()), 4),
-        "min_scom":         round(float(scores.min()),  4),
-        "max_scom":         round(float(scores.max()),  4),
-        "std_scom":         round(float(scores.std()),  4),
-        "p25_scom":         round(float(np.percentile(scores, 25)), 4),
-        "p75_scom":         round(float(np.percentile(scores, 75)), 4),
-        "health_rate":      round(safe_count / max(len(df), 1), 3),
-        "worst_service":    str(df.loc[worst_idx, "service_name"]),
-        "best_service":     str(df.loc[best_idx,  "service_name"]),
+        "safe_count": safe_count,
+        "avg_scom": round(float(scores.mean()), 4),
+        "min_scom": round(float(scores.min()), 4),
+        "max_scom": round(float(scores.max()), 4),
+        "std_scom": round(float(scores.std()), 4),
+        "p25_scom": round(float(np.percentile(scores, 25)), 4),
+        "p75_scom": round(float(np.percentile(scores, 75)), 4),
+        "health_rate": round(safe_count / max(len(df), 1), 3),
+        "worst_service": str(df.loc[worst_idx, "service_name"]),
+        "best_service": str(df.loc[best_idx, "service_name"]),
     }

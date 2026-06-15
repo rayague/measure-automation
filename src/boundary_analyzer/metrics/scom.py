@@ -5,6 +5,10 @@ from typing import Any
 
 import pandas as pd
 
+from boundary_analyzer._utils import save_csv
+
+"""Compute the Service COhesion Metric (SCOM) based on endpoint-to-table mappings."""
+
 
 def _build_all_endpoints_by_service(
     mapping_df: pd.DataFrame,
@@ -43,48 +47,58 @@ def _build_endpoint_table_sets(
             result[svc] = endpoint_sets
 
     for service_name, eps in all_endpoints_by_service.items():
-        svc = result.setdefault(service_name, {})
+        ep_set: dict[str, set[str]] = result.setdefault(service_name, {})
         for ep in eps:
-            svc.setdefault(ep, set())
+            ep_set.setdefault(ep, set())
 
     return result
 
 
-def _get_endpoint_frequencies(endpoints_df: pd.DataFrame | None, mapping_df: pd.DataFrame) -> dict[str, float]:
-    """Compute normalized endpoint frequencies. 
-    
-    If endpoints_df is available, we count the exact number of spans per endpoint.
-    Otherwise, we attempt a fallback using mapping_df (which is less accurate since it misses DB-less endpoints).
+def _get_endpoint_frequencies_by_service(
+    endpoints_df: pd.DataFrame | None,
+    mapping_df: pd.DataFrame,
+) -> dict[str, dict[str, float]]:
+    """Compute normalized endpoint frequencies per service.
+
+    Returns {service_name: {endpoint_key: frequency}}.
+    This ensures frequencies are not diluted by endpoints from other services.
     """
+    frequencies: dict[str, dict[str, float]] = {}
+
     if endpoints_df is not None and not endpoints_df.empty and "endpoint_key" in endpoints_df.columns:
-        counts = endpoints_df["endpoint_key"].value_counts()
+        for service_name, group in endpoints_df.groupby("service_name"):
+            counts = group["endpoint_key"].value_counts()
+            total = float(counts.sum())
+            if total > 0:
+                svc_key = str(service_name) if service_name and str(service_name).strip() else "unknown_service"
+                frequencies[svc_key] = (counts / total).to_dict()
     elif not mapping_df.empty and "endpoint_key" in mapping_df.columns and "count" in mapping_df.columns:
-        counts = mapping_df.groupby("endpoint_key")["count"].sum()
-    else:
-        return {}
+        for service_name, group in mapping_df.groupby("service_name"):
+            counts = group.groupby("endpoint_key")["count"].sum()
+            total = float(counts.sum())
+            if total > 0:
+                svc_key = str(service_name) if service_name and str(service_name).strip() else "unknown_service"
+                frequencies[svc_key] = (counts / total).to_dict()
 
-    total = float(counts.sum())
-    if total <= 0:
-        return {}
-
-    return (counts / total).to_dict()
+    return frequencies
 
 
 def _compute_service_scom(
     endpoint_sets: dict[str, set[str]],
     endpoint_frequencies: dict[str, float],
-    use_endpoint_weighting: bool
+    use_endpoint_weighting: bool,
+    service_name: str = "",
 ) -> float:
     """Compute SCOM mathematically matching the paper's definition.
-    
+
     Paper formula:
     CI(e_i, e_j) = |A(e_i) ∩ A(e_j)|
     CI_max = max_{i!=j} (min(|A(e_i)|, |A(e_j)|))
-    
+
     If unweighted (use_endpoint_weighting = False):
     N = |E|(|E|-1)/2
     SCOM = (sum_{i<j} CI(e_i, e_j)) / (N * CI_max)
-    
+
     If weighted (use_endpoint_weighting = True):
     w_ij = freq(e_i) * freq(e_j)
     SCOM = (sum_{i<j} w_ij * CI(e_i, e_j)) / (sum_{i<j} w_ij * CI_max)
@@ -121,6 +135,8 @@ def _compute_service_scom(
 
             if use_endpoint_weighting:
                 w = endpoint_frequencies.get(ep_a, 1.0) * endpoint_frequencies.get(ep_b, 1.0)
+                if w == 0:
+                    w = 1e-10
             else:
                 w = 1.0
 
@@ -141,20 +157,18 @@ def compute_scom(
     exclude_unknown_endpoint: bool = True,
     skip_no_db_services: bool = False,
 ) -> pd.DataFrame:
-    """Compute SCOM scores for all services faithfully based on the academic paper.
-    
+    """Compute per-service SCOM scores from the endpoint-to-table mapping.
+
     Args:
-        mapping_df: Endpoint to DB table mapping
-        endpoints_df: Traces of endpoints (used to correctly identify endpoints with no DB operations and calculate frequencies)
-        use_endpoint_weighting: If True, uses endpoint invocation frequency as weights. If False, all endpoints have equal weight.
-        exclude_services: Optional list of service names to exclude from analysis (e.g. ["gateway"])
-        exclude_unknown_endpoint: If True, filters out rows where endpoint_key == "unknown_endpoint"
-        skip_no_db_services: If True, excludes services with no DB tables detected from the results
+        mapping_df: Endpoint-to-DB-table mapping
+        endpoints_df: Endpoint spans (used for frequency weighting and zero-DB endpoints)
+        use_endpoint_weighting: Weight by endpoint invocation frequency
+        exclude_services: Optional service names to exclude
+        exclude_unknown_endpoint: Filter out unknown_endpoint rows
+        skip_no_db_services: Exclude services with zero DB tables
     """
     if mapping_df.empty and (endpoints_df is None or endpoints_df.empty):
-        return pd.DataFrame(columns=[
-            "service_name", "scom_score", "endpoints_count", "tables_count", "method"
-        ])
+        return pd.DataFrame(columns=["service_name", "scom_score", "endpoints_count", "tables_count", "method"])
 
     # Exclude services before any computation
     if exclude_services:
@@ -170,30 +184,38 @@ def compute_scom(
         if endpoints_df is not None and not endpoints_df.empty and "endpoint_key" in endpoints_df.columns:
             endpoints_df = endpoints_df[endpoints_df["endpoint_key"] != "unknown_endpoint"]
 
-    endpoint_frequencies = _get_endpoint_frequencies(endpoints_df, mapping_df) if use_endpoint_weighting else {}
+    endpoint_frequencies_by_service = (
+        _get_endpoint_frequencies_by_service(endpoints_df, mapping_df) if use_endpoint_weighting else {}
+    )
     endpoint_table_sets = _build_endpoint_table_sets(mapping_df, endpoints_df)
-    
+
     results: list[dict[str, Any]] = []
 
     for service_name, endpoint_sets in endpoint_table_sets.items():
+        svc_frequencies = endpoint_frequencies_by_service.get(service_name, {})
         scom = _compute_service_scom(
             endpoint_sets=endpoint_sets,
-            endpoint_frequencies=endpoint_frequencies,
-            use_endpoint_weighting=use_endpoint_weighting
+            endpoint_frequencies=svc_frequencies,
+            use_endpoint_weighting=use_endpoint_weighting,
+            service_name=service_name,
         )
 
         endpoints_count = len(endpoint_sets)
         lookup_service = service_name if service_name != "unknown_service" else ""
-        service_df = mapping_df[mapping_df["service_name"] == lookup_service] if not mapping_df.empty else pd.DataFrame()
+        service_df = (
+            mapping_df[mapping_df["service_name"] == lookup_service] if not mapping_df.empty else pd.DataFrame()
+        )
         tables_count = int(service_df["table"].nunique()) if not service_df.empty else 0
 
-        results.append({
-            "service_name": service_name,
-            "scom_score": round(float(scom), 4),
-            "endpoints_count": endpoints_count,
-            "tables_count": tables_count,
-            "method": "weighted" if use_endpoint_weighting else "unweighted"
-        })
+        results.append(
+            {
+                "service_name": service_name,
+                "scom_score": round(float(scom), 4),
+                "endpoints_count": endpoints_count,
+                "tables_count": tables_count,
+                "method": "weighted" if use_endpoint_weighting else "unweighted",
+            }
+        )
 
     df = pd.DataFrame(results)
     if skip_no_db_services and not df.empty:
@@ -202,6 +224,5 @@ def compute_scom(
 
 
 def save_scom_csv(df: pd.DataFrame, output_path: Path) -> None:
-    """Save SCOM scores to CSV."""
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(output_path, index=False)
+    """Save computed SCOM scores to CSV."""
+    save_csv(df, output_path)

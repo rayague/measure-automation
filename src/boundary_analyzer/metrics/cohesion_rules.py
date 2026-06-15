@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+"""Threshold rules and suspicious-service detection for SCOM scores."""
+
 
 def get_threshold(settings: dict | None = None) -> float:
     """Get the SCOM threshold for flagging suspicious services.
-    
-    Default threshold: 0.5
-    You can override this in settings.yaml.
+
+    Defaults to 0.5; can be overridden via ``settings['scom_threshold']``.
     """
     if settings:
         return float(settings.get("scom_threshold", 0.5))
@@ -13,8 +14,5 @@ def get_threshold(settings: dict | None = None) -> float:
 
 
 def is_suspicious(scom_score: float, threshold: float) -> bool:
-    """Check if a service is suspicious based on SCOM score.
-    
-    A service is suspicious if SCOM < threshold.
-    """
+    """Return True if the SCOM score is below the threshold (i.e. suspicious)."""
     return scom_score < threshold

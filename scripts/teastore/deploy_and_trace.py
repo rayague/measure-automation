@@ -16,15 +16,19 @@ Workflow:
 from __future__ import annotations
 
 import json
-import os
+import logging
 import shutil
 import subprocess
 import sys
 import time
-import urllib.request
 import webbrowser
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser
 from pathlib import Path
+
+import requests
+
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
 
 OTEL_AGENT_VERSION = "v2.14.0"
 OTEL_AGENT_JAR = f"opentelemetry-javaagent-{OTEL_AGENT_VERSION}.jar"
@@ -42,21 +46,6 @@ WEBUI_URL = "http://localhost:8080/tools.descartes.teastore.webui/"
 JAEGER_API = "http://localhost:16686/api/traces?service=teastore-{service}&limit=1000"
 
 
-def _info(msg: str) -> None:
-    print(f"[INFO] {msg}")
-
-
-def _ok(msg: str) -> None:
-    print(f"[OK]   {msg}")
-
-
-def _warn(msg: str) -> None:
-    print(f"[WARN] {msg}")
-
-
-def _error(msg: str) -> None:
-    print(f"[ERROR] {msg}", file=sys.stderr)
-
 
 def _run(cmd: list[str], cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, cwd=cwd, check=check, capture_output=True, text=True)
@@ -66,66 +55,65 @@ def download_otel_agent() -> Path:
     AGENT_DIR.mkdir(parents=True, exist_ok=True)
 
     if AGENT_SYMLINK.exists():
-        _info(f"OTel agent already exists: {AGENT_SYMLINK}")
+        logger.info(f"OTel agent already exists: {AGENT_SYMLINK}")
         return AGENT_SYMLINK
 
-    _info(f"Downloading OpenTelemetry Java agent {OTEL_AGENT_VERSION}...")
-    _info(f"  URL: {OTEL_AGENT_URL}")
-    _info(f"  -> {AGENT_PATH}")
+    logger.info(f"Downloading OpenTelemetry Java agent {OTEL_AGENT_VERSION}...")
+    logger.info(f"  URL: {OTEL_AGENT_URL}")
+    logger.info(f"  -> {AGENT_PATH}")
 
     try:
-        urllib.request.urlretrieve(OTEL_AGENT_URL, AGENT_PATH)
+        resp = requests.get(OTEL_AGENT_URL, stream=True, timeout=120)
+        resp.raise_for_status()
+        with open(AGENT_PATH, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=8192):
+                f.write(chunk)
     except Exception as e:
-        _error(f"Failed to download agent: {e}")
-        _error("Please download manually from:")
-        _error(f"  {OTEL_AGENT_URL}")
-        _error(f"  Save to: {AGENT_PATH}")
+        logger.error(f"Failed to download agent: {e}")
+        logger.error("Please download manually from:")
+        logger.error(f"  {OTEL_AGENT_URL}")
+        logger.error(f"  Save to: {AGENT_PATH}")
         sys.exit(1)
 
-    _ok(f"Downloaded {AGENT_PATH.stat().st_size / 1024 / 1024:.1f} MB")
+    logger.info(f"Downloaded {AGENT_PATH.stat().st_size / 1024 / 1024:.1f} MB")
 
     shutil.copy2(AGENT_PATH, AGENT_SYMLINK)
-    _ok(f"Copied to: {AGENT_SYMLINK}")
+    logger.info(f"Copied to: {AGENT_SYMLINK}")
 
     return AGENT_SYMLINK
 
 
 def docker_compose_up() -> None:
-    _info("Starting TeaStore + Jaeger via docker compose...")
+    logger.info("Starting TeaStore + Jaeger via docker compose...")
     result = _run(
         ["docker", "compose", "-f", str(COMPOSE_FILE), "up", "-d"],
         cwd=COMPOSE_DIR,
     )
-    print(result.stdout, end="")
+    if result.stdout:
+        logger.info(result.stdout.strip())
     if result.stderr:
-        print(result.stderr, end="", file=sys.stderr)
-    _ok("Containers started")
+        logger.warning(result.stderr.strip())
+    logger.info("Containers started")
 
 
 def wait_for_services(timeout: int = 300, interval: int = 5) -> float:
-    import urllib.request as req
-    import urllib.error
-
-    _info(f"Waiting for TeaStore WebUI at {WEBUI_URL} (timeout={timeout}s)...")
+    logger.info(f"Waiting for TeaStore WebUI at {WEBUI_URL} (timeout={timeout}s)...")
     start = time.time()
     while time.time() - start < timeout:
         try:
-            resp = req.urlopen(req.Request(WEBUI_URL), timeout=5)
-            if resp.status == 200:
+            resp = requests.get(WEBUI_URL, timeout=5)
+            if resp.status_code == 200:
                 elapsed = time.time() - start
-                _ok(f"WebUI ready after {elapsed:.0f}s")
+                logger.info(f"WebUI ready after {elapsed:.0f}s")
                 return elapsed
-        except (urllib.error.URLError, OSError):
+        except (requests.RequestException, OSError):
             pass
         time.sleep(interval)
     raise TimeoutError(f"TeaStore WebUI not ready after {timeout}s")
 
 
 def generate_traffic(duration_sec: int = 60, interval_sec: float = 2.0) -> None:
-    import urllib.request as req
-    import urllib.error
-
-    _info(f"Generating traffic for {duration_sec}s (request every {interval_sec}s)...")
+    logger.info(f"Generating traffic for {duration_sec}s (request every {interval_sec}s)...")
 
     paths = [
         "/tools.descartes.teastore.webui/",
@@ -147,21 +135,18 @@ def generate_traffic(duration_sec: int = 60, interval_sec: float = 2.0) -> None:
         path = paths[sent % len(paths)]
         url = f"http://localhost:8080{path}"
         try:
-            resp = req.urlopen(req.Request(url), timeout=5)
+            requests.get(url, timeout=5)
             sent += 1
             if sent % 10 == 0:
-                print(f"  ... {sent} requests sent ({failed} failed)")
-        except (urllib.error.URLError, OSError):
+                logger.info(f"  ... {sent} requests sent ({failed} failed)")
+        except (requests.RequestException, OSError):
             failed += 1
         time.sleep(interval_sec)
 
-    _ok(f"Traffic done: {sent} sent, {failed} failed")
+    logger.info(f"Traffic done: {sent} sent, {failed} failed")
 
 
 def export_traces(output_dir: Path, services: list[str] | None = None) -> dict[str, Path]:
-    import urllib.request as req
-    import urllib.error
-
     if services is None:
         services = [
             "teastore-registry", "teastore-persistence", "teastore-auth",
@@ -171,40 +156,41 @@ def export_traces(output_dir: Path, services: list[str] | None = None) -> dict[s
     traces_dir = output_dir / "raw" / "traces"
     traces_dir.mkdir(parents=True, exist_ok=True)
 
-    _info("Exporting traces from Jaeger...")
+    logger.info("Exporting traces from Jaeger...")
     exported: dict[str, Path] = {}
 
     for svc in services:
         url = JAEGER_API.format(service=svc)
         try:
-            resp = req.urlopen(req.Request(url), timeout=10)
-            data = json.loads(resp.read().decode())
+            resp = requests.get(url, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
             traces = data.get("data", [])
             if not traces:
-                _warn(f"  {svc}: no traces found")
+                logger.warning(f"  {svc}: no traces found")
                 continue
             file_path = traces_dir / f"{svc}.json"
             with open(file_path, "w") as f:
                 json.dump({"data": traces}, f, indent=2)
             span_count = sum(len(t.get("spans", [])) for t in traces)
-            _ok(f"  {svc}: {len(traces)} traces, {span_count} spans -> {file_path.name}")
+            logger.info(f"  {svc}: {len(traces)} traces, {span_count} spans -> {file_path.name}")
             exported[svc] = file_path
-        except (urllib.error.URLError, OSError, json.JSONDecodeError) as e:
-            _warn(f"  {svc}: export failed: {e}")
+        except (requests.RequestException, OSError, json.JSONDecodeError) as e:
+            logger.warning(f"  {svc}: export failed: {e}")
 
     total = sum(len(json.loads(p.read_bytes()).get("data", [])) for p in traces_dir.glob("*.json"))
-    _info(f"Total: {len(exported)} services, {total} traces in {traces_dir}")
+    logger.info(f"Total: {len(exported)} services, {total} traces in {traces_dir}")
     return exported
 
 
 def run_scom_analysis(output_dir: Path, threshold: float = 0.5, skip_no_db: bool = True) -> bool:
-    _info("Running SCOM analysis pipeline...")
+    logger.info("Running SCOM analysis pipeline...")
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
     try:
         from boundary_analyzer.pipeline.run_pipeline import run_pipeline
     except ImportError:
-        _error("Cannot import boundary_analyzer. Run from project root or install package.")
+        logger.error("Cannot import boundary_analyzer. Run from project root or install package.")
         return False
 
     rc = run_pipeline(
@@ -221,20 +207,21 @@ def run_scom_analysis(output_dir: Path, threshold: float = 0.5, skip_no_db: bool
     )
 
     if rc == 0:
-        _ok("SCOM analysis complete")
+        logger.info("SCOM analysis complete")
         return True
-    _error(f"Pipeline returned exit code {rc}")
+    logger.error(f"Pipeline returned exit code {rc}")
     return False
 
 
 def docker_compose_down() -> None:
-    _info("Stopping containers...")
+    logger.info("Stopping containers...")
     result = _run(
         ["docker", "compose", "-f", str(COMPOSE_FILE), "down", "-v"],
         cwd=COMPOSE_DIR,
     )
-    print(result.stdout, end="")
-    _ok("Containers stopped and cleaned up")
+    if result.stdout:
+        logger.info(result.stdout.strip())
+    logger.info("Containers stopped and cleaned up")
 
 
 def open_jaeger_ui() -> None:
@@ -260,7 +247,7 @@ def run_teastore(
     download_otel_agent()
 
     if download_only:
-        _ok("Agent downloaded. Exiting (--download-only).")
+        logger.info("Agent downloaded. Exiting (--download-only).")
         return 0
 
     docker_compose_up()
@@ -273,7 +260,7 @@ def run_teastore(
 
         generate_traffic(duration_sec=duration)
 
-        _info("Waiting 5s for span flush...")
+        logger.info("Waiting 5s for span flush...")
         time.sleep(5)
 
         export_traces(output_dir)
@@ -281,15 +268,15 @@ def run_teastore(
         if not skip_pipeline:
             run_scom_analysis(output_dir, threshold=threshold, skip_no_db=skip_no_db)
         else:
-            _info("Skipping SCOM analysis (--skip-pipeline)")
+            logger.info("Skipping SCOM analysis (--skip-pipeline)")
 
     except KeyboardInterrupt:
-        _warn("Interrupted by user")
+        logger.warning("Interrupted by user")
     except TimeoutError as e:
-        _error(str(e))
+        logger.error(str(e))
         return 1
     except Exception as e:
-        _error(f"Unexpected error: {e}")
+        logger.error(f"Unexpected error: {e}")
         import traceback
         traceback.print_exc()
         return 1
@@ -297,9 +284,9 @@ def run_teastore(
         if cleanup:
             docker_compose_down()
         else:
-            _info("Containers left running (--no-cleanup or --jaeger-ui)")
+            logger.info("Containers left running (--no-cleanup or --jaeger-ui)")
 
-    _ok("Done")
+    logger.info("Done")
     return 0
 
 

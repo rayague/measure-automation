@@ -95,7 +95,7 @@ class LllmContextTest(unittest.TestCase):
         self.assertEqual(result, "requests")
 
     def test_get_service_name(self):
-        project = Path("/some/path/my-service-name")
+        project = Path(tempfile.gettempdir()) / "my-service-name"
         from boundary_analyzer.llm.context import _get_service_name
         result = _get_service_name(project)
         self.assertEqual(result, "my-service-name")

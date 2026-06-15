@@ -7,6 +7,7 @@ from typing import Any
 
 import pandas as pd
 
+from boundary_analyzer._utils import save_csv
 from boundary_analyzer.detection.db_table_extractor import extract_db_operations
 from boundary_analyzer.detection.endpoint_extractor import extract_endpoints
 from boundary_analyzer.detection.mapping_builder import build_endpoint_table_mapping
@@ -69,18 +70,15 @@ def run_pipeline(
         exclude_http_client_spans=exclude_http_client_spans,
     )
     endpoints_csv = interim_dir / "endpoints.csv"
-    endpoints_csv.parent.mkdir(parents=True, exist_ok=True)
-    endpoints_df.to_csv(endpoints_csv, index=False)
+    save_csv(endpoints_df, endpoints_csv)
 
     db_ops_df = extract_db_operations(spans_df)
     db_ops_csv = interim_dir / "db_operations.csv"
-    db_ops_csv.parent.mkdir(parents=True, exist_ok=True)
-    db_ops_df.to_csv(db_ops_csv, index=False)
+    save_csv(db_ops_df, db_ops_csv)
 
     mapping_df = build_endpoint_table_mapping(spans_df, endpoints_df, db_ops_df)
     mapping_csv = interim_dir / "endpoint_table_map.csv"
-    mapping_csv.parent.mkdir(parents=True, exist_ok=True)
-    mapping_df.to_csv(mapping_csv, index=False)
+    save_csv(mapping_df, mapping_csv)
 
     scom_kwargs: dict[str, Any] = {
         "exclude_services": exclude_services,
@@ -95,8 +93,7 @@ def run_pipeline(
         scom_kwargs["use_endpoint_weighting"] = False
     scom_df = compute_scom(mapping_df, endpoints_df=endpoints_df, **scom_kwargs)
     service_scom_csv = processed_dir / "service_scom.csv"
-    service_scom_csv.parent.mkdir(parents=True, exist_ok=True)
-    scom_df.to_csv(service_scom_csv, index=False)
+    save_csv(scom_df, service_scom_csv)
 
     if not scom_df.empty:
         rank_df = scom_df.sort_values("scom_score").reset_index(drop=True)
@@ -109,24 +106,26 @@ def run_pipeline(
             fixed_threshold=fixed_threshold,
         )
     else:
-        rank_df = pd.DataFrame(columns=[
-            "service_name",
-            "scom_score",
-            "endpoints_count",
-            "tables_count",
-            "method",
-            "rank",
-            "threshold_value",
-            "threshold_method",
-            "is_suspicious",
-        ])
+        rank_df = pd.DataFrame(
+            columns=[
+                "service_name",
+                "scom_score",
+                "endpoints_count",
+                "tables_count",
+                "method",
+                "rank",
+                "threshold_value",
+                "threshold_method",
+                "is_suspicious",
+            ]
+        )
 
     service_rank_csv = processed_dir / "service_rank.csv"
-    rank_df.to_csv(service_rank_csv, index=False)
+    save_csv(rank_df, service_rank_csv)
 
-    suspicious_df = rank_df[rank_df.get("is_suspicious", False) == True].copy()
+    suspicious_df = rank_df[rank_df.get("is_suspicious", False)].copy()
     suspicious_csv = processed_dir / "suspicious_services.csv"
-    suspicious_df.to_csv(suspicious_csv, index=False)
+    save_csv(suspicious_df, suspicious_csv)
 
     report_path = output_dir / "report.md"
     generate_report(service_rank_csv, suspicious_csv, report_path, fixed_threshold)
@@ -151,16 +150,33 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--threshold-zscore", type=float, default=-1.5)
     ap.add_argument("--fixed-threshold", type=float, default=0.5)
 
-    ap.add_argument("--exclude-services", nargs="*", default=None,
-                    help="Service names to exclude from analysis (e.g. gateway)")
-    ap.add_argument("--no-exclude-health", action="store_false", dest="exclude_health_routes",
-                    help="Do NOT filter out health/infrastructure endpoints")
-    ap.add_argument("--no-exclude-http-client", action="store_false", dest="exclude_http_client_spans",
-                    help="Do NOT filter out HTTP client spans (http send/receive)")
-    ap.add_argument("--no-exclude-unknown-endpoint", action="store_false", dest="exclude_unknown_endpoint",
-                    help="Do NOT filter out unknown_endpoint entries from SCOM computation")
-    ap.add_argument("--skip-no-db-services", action="store_true", default=False,
-                    help="Exclude services with no DB tables detected from SCOM ranking")
+    ap.add_argument(
+        "--exclude-services", nargs="*", default=None, help="Service names to exclude from analysis (e.g. gateway)"
+    )
+    ap.add_argument(
+        "--no-exclude-health",
+        action="store_false",
+        dest="exclude_health_routes",
+        help="Do NOT filter out health/infrastructure endpoints",
+    )
+    ap.add_argument(
+        "--no-exclude-http-client",
+        action="store_false",
+        dest="exclude_http_client_spans",
+        help="Do NOT filter out HTTP client spans (http send/receive)",
+    )
+    ap.add_argument(
+        "--no-exclude-unknown-endpoint",
+        action="store_false",
+        dest="exclude_unknown_endpoint",
+        help="Do NOT filter out unknown_endpoint entries from SCOM computation",
+    )
+    ap.add_argument(
+        "--skip-no-db-services",
+        action="store_true",
+        default=False,
+        help="Exclude services with no DB tables detected from SCOM ranking",
+    )
 
     args = ap.parse_args(argv)
 

@@ -1,4 +1,3 @@
-import os
 import shutil
 import tempfile
 import unittest
@@ -6,8 +5,6 @@ from pathlib import Path
 
 import pandas as pd
 
-from boundary_analyzer.metrics.scom import compute_scom
-from boundary_analyzer.detection.endpoint_extractor import extract_endpoints
 from boundary_analyzer.pipeline.run_pipeline import run_pipeline
 
 FIXTURES_DIR = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "teastore" / "traces"

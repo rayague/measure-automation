@@ -10,11 +10,11 @@ Add at the top of your main file (before IOLoop starts):
 """
 
 from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.tornado import TornadoInstrumentor
+from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.instrumentation.tornado import TornadoInstrumentor
 
 
 def init_tracing():
@@ -24,9 +24,7 @@ def init_tracing():
     """
     resource = Resource.create({"service.name": "{{SERVICE_NAME}}"})
 
-    exporter = OTLPSpanExporter(
-        endpoint="http://{{JAEGER_HOST}}:{{JAEGER_GRPC_PORT}}"
-    )
+    exporter = OTLPSpanExporter(endpoint="http://{{JAEGER_HOST}}:{{JAEGER_GRPC_PORT}}")
 
     provider = TracerProvider(resource=resource)
     provider.add_span_processor(BatchSpanProcessor(exporter))
@@ -35,4 +33,4 @@ def init_tracing():
     # Instrument all Tornado RequestHandlers automatically
     TornadoInstrumentor().instrument()
 
-    print(f"[OTel] Tracing enabled → Jaeger at {{JAEGER_HOST}}:{{JAEGER_GRPC_PORT}}")
+    print("[OTel] Tracing enabled → Jaeger at {JAEGER_HOST}:{JAEGER_GRPC_PORT}")

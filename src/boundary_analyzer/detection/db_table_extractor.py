@@ -7,32 +7,55 @@ from typing import Any
 
 import pandas as pd
 
+from boundary_analyzer._utils import save_csv
+
+"""Extract database operations from trace spans (SQL and NoSQL)."""
 
 # Simple regex patterns for SQL table extraction.
 # Supports:
 # - optional quoting: `table`, "table", [table]
 # - optional schema: schema.table
 _SQL_IDENT = r'(?:`[^`]+`|"[^"]+"|\[[^\]]+\]|[a-zA-Z_][a-zA-Z0-9_\$]*)'
-_SQL_QUALIFIED = rf'(?:{_SQL_IDENT}\.)?({_SQL_IDENT})'
+_SQL_QUALIFIED = rf"(?:{_SQL_IDENT}\.)?({_SQL_IDENT})"
 
 SQL_TABLE_PATTERNS = [
-    re.compile(rf'\bFROM\s+{_SQL_QUALIFIED}', re.IGNORECASE),
-    re.compile(rf'\bJOIN\s+{_SQL_QUALIFIED}', re.IGNORECASE),
-    re.compile(rf'\bUPDATE\s+{_SQL_QUALIFIED}', re.IGNORECASE),
-    re.compile(rf'\bINTO\s+{_SQL_QUALIFIED}', re.IGNORECASE),
+    re.compile(rf"\bFROM\s+{_SQL_QUALIFIED}", re.IGNORECASE),
+    re.compile(rf"\bJOIN\s+{_SQL_QUALIFIED}", re.IGNORECASE),
+    re.compile(rf"\bUPDATE\s+{_SQL_QUALIFIED}", re.IGNORECASE),
+    re.compile(rf"\bINTO\s+{_SQL_QUALIFIED}", re.IGNORECASE),
 ]
 
 
 # Keywords to ignore (not table names)
 IGNORE_KEYWORDS = {
-    'select', 'insert', 'update', 'delete', 'where', 'and', 'or', 'set',
-    'values', 'returning', 'order', 'group', 'by', 'having', 'limit',
-    'offset', 'distinct', 'all', 'union', 'intersect', 'except'
+    "select",
+    "insert",
+    "update",
+    "delete",
+    "where",
+    "and",
+    "or",
+    "set",
+    "values",
+    "returning",
+    "order",
+    "group",
+    "by",
+    "having",
+    "limit",
+    "offset",
+    "distinct",
+    "all",
+    "union",
+    "intersect",
+    "except",
 }
 
 # System table prefixes to exclude (internal DB system tables, not business tables)
 SYSTEM_TABLE_PREFIXES = (
-    'pg_', 'sqlite_', 'v$',
+    "pg_",
+    "sqlite_",
+    "v$",
 )
 
 
@@ -81,9 +104,11 @@ def _unquote_sql_identifier(identifier: str) -> str:
     identifier = identifier.strip()
     if len(identifier) < 2:
         return identifier
-    if (identifier.startswith("`") and identifier.endswith("`")) or (
-        identifier.startswith('"') and identifier.endswith('"')
-    ) or (identifier.startswith("[") and identifier.endswith("]")):
+    if (
+        (identifier.startswith("`") and identifier.endswith("`"))
+        or (identifier.startswith('"') and identifier.endswith('"'))
+        or (identifier.startswith("[") and identifier.endswith("]"))
+    ):
         return identifier[1:-1]
     return identifier
 
@@ -92,12 +117,12 @@ def _extract_tables_from_sql(sql: str) -> list[str]:
     """Extract table names from SQL statement using simple regex."""
     if not sql or not isinstance(sql, str):
         return []
-    
+
     # Clean the SQL
     sql_clean = sql.replace("\n", " ").replace("\t", " ")
-    
+
     tables = set()
-    
+
     # Apply each pattern
     for pattern in SQL_TABLE_PATTERNS:
         matches = pattern.findall(sql_clean)
@@ -108,7 +133,7 @@ def _extract_tables_from_sql(sql: str) -> list[str]:
                 # Exclude internal DB system tables
                 if not table_name.startswith(SYSTEM_TABLE_PREFIXES):
                     tables.add(table_name)
-    
+
     return sorted(tables)
 
 
@@ -146,40 +171,38 @@ def _extract_nosql_entities(tags: list[dict[str, Any]], db_system: str) -> list[
 def _detect_db_system(operation_name: str) -> str:
     """Detect database system from operation name."""
     op_upper = operation_name.upper()
-    
-    if 'MONGODB' in op_upper or 'MONGO' in op_upper:
-        return 'mongodb'
-    if 'POSTGRES' in op_upper or 'POSTGRESQL' in op_upper:
-        return 'postgresql'
-    if 'MYSQL' in op_upper:
-        return 'mysql'
-    if 'SQLITE' in op_upper:
-        return 'sqlite'
-    
+
+    if "MONGODB" in op_upper or "MONGO" in op_upper:
+        return "mongodb"
+    if "POSTGRES" in op_upper or "POSTGRESQL" in op_upper:
+        return "postgresql"
+    if "MYSQL" in op_upper:
+        return "mysql"
+    if "SQLITE" in op_upper:
+        return "sqlite"
+
     # Default: assume SQL
-    return 'sql'
+    return "sql"
 
 
 def extract_db_operations(spans_df: pd.DataFrame) -> pd.DataFrame:
     """Extract database operations from spans DataFrame.
-    
-    Input columns: trace_id, span_id, parent_span_id, service_name, operation_name, start_time, duration
-    Output columns: trace_id, span_id, service_name, db_system, db_statement, tables
+
+    Input columns: trace_id, span_id, parent_span_id, service_name,
+                   operation_name, start_time, duration
+    Output columns: trace_id, span_id, service_name, db_system,
+                    db_statement, tables
     """
     if spans_df.empty:
-        return pd.DataFrame(columns=[
-            "trace_id", "span_id", "service_name", "db_system", "db_statement", "tables"
-        ])
-    
+        return pd.DataFrame(columns=["trace_id", "span_id", "service_name", "db_system", "db_statement", "tables"])
+
     # Find DB spans
     is_db = spans_df.apply(_is_db_span, axis=1)
     db_spans = spans_df[is_db].copy()
-    
+
     if db_spans.empty:
-        return pd.DataFrame(columns=[
-            "trace_id", "span_id", "service_name", "db_system", "db_statement", "tables"
-        ])
-    
+        return pd.DataFrame(columns=["trace_id", "span_id", "service_name", "db_system", "db_statement", "tables"])
+
     # Parse tags once (stringified JSON list)
     db_spans["_tags_parsed"] = db_spans["tags"].apply(_parse_tags)
 
@@ -218,24 +241,25 @@ def extract_db_operations(spans_df: pd.DataFrame) -> pd.DataFrame:
         return _extract_tables_from_sql(str(row.get("db_statement", "")))
 
     db_spans["tables"] = db_spans.apply(extract_entities, axis=1)
-    
+
     # Convert tables list to comma-separated string
     db_spans["tables"] = db_spans["tables"].apply(lambda x: ",".join(x) if x else "")
-    
+
     # Select columns
-    result = db_spans[[
-        "trace_id",
-        "span_id",
-        "service_name",
-        "db_system",
-        "db_statement",
-        "tables",
-    ]].copy()
-    
+    result = db_spans[
+        [
+            "trace_id",
+            "span_id",
+            "service_name",
+            "db_system",
+            "db_statement",
+            "tables",
+        ]
+    ].copy()
+
     return result
 
 
 def save_db_operations_csv(df: pd.DataFrame, output_path: Path) -> None:
-    """Save DB operations DataFrame to CSV."""
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(output_path, index=False)
+    """Save extracted DB operations to CSV."""
+    save_csv(df, output_path)
