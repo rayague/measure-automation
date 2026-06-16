@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.3.7 (2026-06-16)
+
+### Bug fixes
+- Pipeline crash when no services are flagged suspicious (`EmptyDataError` on empty CSV). Added size check and try/except in `report_builder.py`.
+
+## v0.3.6 (2026-06-16)
+
+### Features
+- ENTRYPOINT injected directly into `.mba-Dockerfile` instead of compose `entrypoint` override (Docker Compose v5 on Windows clears CMD when entrypoint is set in YAML)
+- `opentelemetry-distro` added as runtime dependency (provides `OpenTelemetryConfigurator` entry point, needed for SDK config from env vars)
+- Windows console encoding fix: `sys.stdout.reconfigure(encoding='utf-8')` in CLI module
+
+## v0.3.5 (2026-06-16)
+
+### Features
+- Build-time OTel install: generates `.mba-Dockerfile` with `RUN pip install opentelemetry-distro opentelemetry-instrumentation-flask` etc. at build time
+- Compose override points `build.dockerfile` to `.mba-Dockerfile`
+- Cleanup of `.mba-Dockerfile` files after analysis
+
 ## v1.0.0 (2026-06-11)
 
 ### Features

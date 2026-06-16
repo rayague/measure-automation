@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
+from pandas.errors import EmptyDataError
 
 logger = logging.getLogger(__name__)
 
@@ -117,8 +118,11 @@ def generate_report(
     rank_df = pd.read_csv(rank_path)
 
     suspicious_df = pd.DataFrame()
-    if suspicious_path.exists():
-        suspicious_df = pd.read_csv(suspicious_path)
+    if suspicious_path.exists() and suspicious_path.stat().st_size > 0:
+        try:
+            suspicious_df = pd.read_csv(suspicious_path)
+        except EmptyDataError:
+            suspicious_df = pd.DataFrame()
 
     report_content = _generate_markdown_report(rank_df, suspicious_df, threshold)
 

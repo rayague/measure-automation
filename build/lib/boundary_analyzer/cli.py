@@ -8,6 +8,13 @@ from pathlib import Path
 
 from rich.console import Console
 
+# Windows cp1252 workaround: ensure stdout/stderr can encode Unicode chars
+# used by rich (bullet ●, checkmark ✔, cross ✘).
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 _console = Console()
 
 """Command-line interface for the Microservice Boundary Analyzer (MBA).
