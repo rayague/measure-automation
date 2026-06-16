@@ -7,6 +7,8 @@ import yaml
 from boundary_analyzer.auto.deploy import (
     _build_compose_override,
     _find_compose_file,
+    _get_python_original_cmd,
+    _parse_dockerfile_cmd,
 )
 from boundary_analyzer.auto.models import EntryPoint, ProjectInfo, ServiceInfo
 
@@ -214,3 +216,163 @@ class ComposeOverrideJavaTest(unittest.TestCase):
         volumes = data["services"]["java-app"].get("volumes", [])
         self.assertEqual(len(volumes), 1)
         self.assertIn("/mba-agent:ro", volumes[0])
+
+
+class PythonInstrumentOverrideTest(unittest.TestCase):
+    """Tests for Python auto-instrumentation in Docker Compose override."""
+
+    def setUp(self):
+        self.tmpdir = Path(tempfile.mkdtemp(prefix="deploy_pyinst_"))
+
+    def tearDown(self):
+        import shutil
+
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    # -- _parse_dockerfile_cmd ------------------------------------------------
+
+    def test_parse_exec_form(self):
+        self.assertEqual(
+            _parse_dockerfile_cmd('["flask", "run"]'), ["flask", "run"]
+        )
+
+    def test_parse_exec_form_uvicorn(self):
+        self.assertEqual(
+            _parse_dockerfile_cmd('["uvicorn", "main:app", "--host", "0.0.0.0"]'),
+            ["uvicorn", "main:app", "--host", "0.0.0.0"],
+        )
+
+    def test_parse_shell_form(self):
+        self.assertEqual(
+            _parse_dockerfile_cmd("flask run --host=0.0.0.0"),
+            ["flask", "run", "--host=0.0.0.0"],
+        )
+
+    def test_parse_invalid_json(self):
+        self.assertIsNone(_parse_dockerfile_cmd("[invalid"))
+
+    def test_parse_empty(self):
+        self.assertIsNone(_parse_dockerfile_cmd(""))
+        self.assertIsNone(_parse_dockerfile_cmd("   "))
+
+    def test_parse_non_list_json(self):
+        # A quoted string is valid shell form — Docker runs: sh -c "just a string"
+        self.assertEqual(
+            _parse_dockerfile_cmd('"just a string"'), ["just a string"]
+        )
+
+    def test_parse_entrypoint_shell(self):
+        self.assertEqual(
+            _parse_dockerfile_cmd('["python", "app.py"]'), ["python", "app.py"]
+        )
+
+    # -- _get_python_original_cmd ---------------------------------------------
+
+    def _create_compose(self, content: str):
+        (self.tmpdir / "docker-compose.yml").write_text(content, encoding="utf-8")
+
+    def _create_dockerfile(self, *path_parts: str, cmd: str | None = None):
+        df_path = self.tmpdir.joinpath(*path_parts)
+        df_path.parent.mkdir(parents=True, exist_ok=True)
+        if cmd:
+            df_path.write_text(f"FROM python:3.9-alpine\nCMD {cmd}\n", encoding="utf-8")
+
+    def _make_service(self, name: str, compose_name: str, port: int = 5000) -> ServiceInfo:
+        return ServiceInfo(
+            name=name,
+            language="python",
+            framework="flask",
+            entry_points=[EntryPoint(path=Path("app.py"), framework="flask")],
+            deployment="docker-compose",
+            compose_service_name=compose_name,
+            ports=[port],
+        )
+
+    def test_get_cmd_from_dockerfile(self):
+        self._create_compose("services:\n  web:\n    build: ./app\n    ports:\n      - 5000:5000\n")
+        self._create_dockerfile("app", "Dockerfile", cmd='["flask", "run"]')
+        svc = self._make_service("web", "web")
+        result = _get_python_original_cmd(self.tmpdir, svc)
+        self.assertEqual(result, ["flask", "run"])
+
+    def test_get_cmd_no_compose_file(self):
+        svc = self._make_service("web", "web")
+        result = _get_python_original_cmd(self.tmpdir, svc)
+        self.assertIsNone(result)
+
+    def test_get_cmd_no_dockerfile(self):
+        self._create_compose("services:\n  web:\n    build: ./app\n")
+        svc = self._make_service("web", "web")
+        result = _get_python_original_cmd(self.tmpdir, svc)
+        self.assertIsNone(result)
+
+    def test_get_cmd_entrypoint_and_cmd(self):
+        self._create_compose("services:\n  web:\n    build: .\n")
+        df = self.tmpdir / "Dockerfile"
+        df.write_text(
+            'FROM python:3.9-alpine\nENTRYPOINT ["python"]\nCMD ["app.py"]\n',
+            encoding="utf-8",
+        )
+        svc = self._make_service("web", "web")
+        result = _get_python_original_cmd(self.tmpdir, svc)
+        self.assertEqual(result, ["python", "app.py"])
+
+    def test_get_cmd_only_entrypoint(self):
+        self._create_compose("services:\n  web:\n    build: .\n")
+        df = self.tmpdir / "Dockerfile"
+        df.write_text(
+            'FROM python:3.9-alpine\nENTRYPOINT ["python", "app.py"]\n',
+            encoding="utf-8",
+        )
+        svc = self._make_service("web", "web")
+        result = _get_python_original_cmd(self.tmpdir, svc)
+        self.assertEqual(result, ["python", "app.py"])
+
+    # -- _build_compose_override with Dockerfile ------------------------------
+
+    def test_override_python_service_gets_instrument_command(self):
+        self._create_compose("services:\n  web:\n    build: ./app\n    ports:\n      - 5000:5000\n")
+        self._create_dockerfile("app", "Dockerfile", cmd='["flask", "run"]')
+        svc = self._make_service("web", "web")
+        project = ProjectInfo(
+            services=[svc],
+            root_dir=self.tmpdir,
+            has_docker=True,
+            language="python",
+            framework="flask",
+        )
+        yaml_str = _build_compose_override(project)
+        data = yaml.safe_load(yaml_str)
+
+        self.assertIn("web", data["services"])
+        svc_cfg = data["services"]["web"]
+        env = svc_cfg["environment"]
+        self.assertIn("OTEL_SERVICE_NAME=web", env)
+        self.assertIn("OTEL_EXPORTER_OTLP_ENDPOINT=http://mba-jaeger:4317", env)
+        self.assertIn("OTEL_PYTHON_CONFIGURATOR=opentelemetry-sdk-configurator", env)
+
+        self.assertIn("entrypoint", svc_cfg)
+        self.assertEqual(svc_cfg["entrypoint"], ["/bin/sh", "-c"])
+        self.assertIn("command", svc_cfg)
+        command = svc_cfg["command"]
+        self.assertIn("pip install --quiet opentelemetry-distro", command)
+        self.assertIn("opentelemetry-instrument flask run", command)
+        self.assertIn("exec", command)
+
+    def test_override_python_no_compose_no_command(self):
+        svc = self._make_service("web", "web")
+        project = ProjectInfo(
+            services=[svc],
+            root_dir=self.tmpdir,
+            has_docker=True,
+            language="python",
+            framework="flask",
+        )
+        yaml_str = _build_compose_override(project)
+        data = yaml.safe_load(yaml_str)
+
+        self.assertIn("web", data["services"])
+        svc_cfg = data["services"]["web"]
+        self.assertIn("environment", svc_cfg)
+        self.assertNotIn("entrypoint", svc_cfg)
+        self.assertNotIn("command", svc_cfg)

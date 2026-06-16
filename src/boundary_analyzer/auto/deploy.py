@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
+import shlex
 import signal
 import socket
 import subprocess
@@ -367,6 +369,104 @@ def _find_compose_file(project_dir: Path) -> Path | None:
     return None
 
 
+def _parse_dockerfile_cmd(value: str) -> list[str] | None:
+    """Parse a Dockerfile instruction value (exec JSON array or shell string)."""
+    value = value.strip()
+    if not value:
+        return None
+
+    # JSON exec form: CMD ["executable", "arg1"]
+    if value.startswith("["):
+        try:
+            parts = json.loads(value)
+            if isinstance(parts, list) and all(isinstance(p, str) for p in parts):
+                return parts
+        except (json.JSONDecodeError, TypeError):
+            pass
+        return None
+
+    # Shell form: CMD executable arg1
+    try:
+        return shlex.split(value, posix=True)
+    except ValueError:
+        return None
+
+
+def _get_python_original_cmd(root_dir: Path, svc: ServiceInfo) -> list[str] | None:
+    """Read the original CMD/ENTRYPOINT from the service's Dockerfile.
+
+    Returns the command as a list suitable for wrapping with
+    ``opentelemetry-instrument``, or *None* if the Dockerfile cannot be
+    read or contains no runnable instruction.
+    """
+    compose_file = _find_compose_file(root_dir)
+    if not compose_file:
+        return None
+
+    try:
+        with open(compose_file, encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except (OSError, PermissionError, yaml.YAMLError):
+        return None
+
+    if not data or "services" not in data:
+        return None
+
+    svc_config = data.get("services", {}).get(svc.compose_service_name, {})
+    if not svc_config:
+        return None
+
+    build_val = svc_config.get("build")
+    if isinstance(build_val, str):
+        build_context = (root_dir / build_val).resolve()
+    elif isinstance(build_val, dict):
+        ctx = build_val.get("context", "")
+        if ctx:
+            build_context = (root_dir / ctx).resolve()
+        else:
+            return None
+    else:
+        return None
+
+    df_name = "Dockerfile"
+    if isinstance(build_val, dict):
+        df_name = build_val.get("dockerfile", "Dockerfile")
+
+    df_path = build_context / df_name
+    if not df_path.exists():
+        df_path = build_context / "dockerfile"
+    if not df_path.exists():
+        return None
+
+    try:
+        content = df_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+    last_entrypoint: str | None = None
+    last_cmd: str | None = None
+
+    for line in content.splitlines():
+        stripped = line.strip()
+        up = stripped.upper()
+        if up.startswith("CMD "):
+            last_cmd = stripped[4:].strip()
+        elif up.startswith("ENTRYPOINT "):
+            last_entrypoint = stripped[11:].strip()
+
+    cmd_parts = _parse_dockerfile_cmd(last_cmd) if last_cmd else None
+    ep_parts = _parse_dockerfile_cmd(last_entrypoint) if last_entrypoint else None
+
+    if ep_parts and cmd_parts:
+        return ep_parts + cmd_parts
+    if ep_parts:
+        return ep_parts
+    if cmd_parts:
+        return cmd_parts
+
+    return None
+
+
 def _build_compose_override(
     project: ProjectInfo,
     jaeger_port: int = 16686,
@@ -409,6 +509,14 @@ def _build_compose_override(
                     "OTEL_LOGS_EXPORTER=none",
                 ]
             )
+
+            original_cmd = _get_python_original_cmd(project.root_dir, svc)
+            if original_cmd:
+                wrapped_cmd = ["opentelemetry-instrument"] + original_cmd
+                install_pkgs = "opentelemetry-distro opentelemetry-exporter-otlp"
+                sh_cmd = f"pip install --quiet {install_pkgs} && exec {' '.join(wrapped_cmd)}"
+                svc_config["entrypoint"] = ["/bin/sh", "-c"]
+                svc_config["command"] = sh_cmd
 
         elif svc.language == "java":
             agent_host = _ensure_java_agent()
