@@ -7,6 +7,7 @@ import yaml
 from boundary_analyzer.auto.deploy import (
     _build_compose_override,
     _find_compose_file,
+    _generate_otel_dockerfile,
     _get_python_original_cmd,
     _parse_dockerfile_cmd,
 )
@@ -78,7 +79,8 @@ class ComposeOverrideTest(unittest.TestCase):
         env = data["services"]["myapp"]["environment"]
         self.assertIn("OTEL_SERVICE_NAME=myapp", env)
         self.assertIn("OTEL_EXPORTER_OTLP_ENDPOINT=http://mba-jaeger:4317", env)
-        self.assertIn("OTEL_PYTHON_CONFIGURATOR=opentelemetry-sdk-configurator", env)
+        self.assertIn("OTEL_METRICS_EXPORTER=none", env)
+        self.assertIn("OTEL_LOGS_EXPORTER=none", env)
         self.assertIn("depends_on", data["services"]["myapp"])
         self.assertIn("mba-jaeger", data["services"]["myapp"]["depends_on"])
 
@@ -351,17 +353,25 @@ class PythonInstrumentOverrideTest(unittest.TestCase):
         self.assertIn("OTEL_EXPORTER_OTLP_ENDPOINT=http://mba-jaeger:4318", env)
         self.assertIn("OTEL_TRACES_EXPORTER=otlp_proto_http", env)
 
+        self.assertIn("build", svc_cfg)
+        self.assertEqual(svc_cfg["build"]["context"], "./app")
+        self.assertEqual(svc_cfg["build"]["dockerfile"], ".mba-Dockerfile")
+
         self.assertIn("entrypoint", svc_cfg)
-        self.assertEqual(svc_cfg["entrypoint"], ["/bin/sh", "-c"])
-        self.assertIn("command", svc_cfg)
-        command = svc_cfg["command"]
-        self.assertIn("pip install --quiet opentelemetry-api", command)
-        self.assertIn("opentelemetry-sdk", command)
-        self.assertIn("opentelemetry-instrumentation", command)
-        self.assertIn("opentelemetry-exporter-otlp-proto-http", command)
-        self.assertIn("opentelemetry-instrumentation-flask", command)
-        self.assertIn("opentelemetry-instrument flask run", command)
-        self.assertIn("exec", command)
+        self.assertEqual(svc_cfg["entrypoint"], ["opentelemetry-instrument"])
+        self.assertNotIn("command", svc_cfg)
+
+        # Verify .mba-Dockerfile was generated with OTel pip install
+        otel_df = self.tmpdir / "app" / ".mba-Dockerfile"
+        self.assertTrue(otel_df.exists())
+        otel_content = otel_df.read_text(encoding="utf-8")
+        self.assertIn("opentelemetry-api", otel_content)
+        self.assertIn("opentelemetry-sdk", otel_content)
+        self.assertIn("opentelemetry-instrumentation-flask", otel_content)
+        self.assertIn("opentelemetry-exporter-otlp-proto-http", otel_content)
+        # Original CMD must be preserved
+        self.assertIn('CMD ["flask", "run"]', otel_content)
+        self.assertIn("RUN pip install --no-cache-dir", otel_content)
 
     def test_override_python_no_compose_no_command(self):
         svc = self._make_service("web", "web")

@@ -426,28 +426,11 @@ def _get_python_original_cmd(root_dir: Path, svc: ServiceInfo) -> list[str] | No
     if not svc_config:
         return None
 
-    build_val = svc_config.get("build")
-    if isinstance(build_val, str):
-        build_context = (root_dir / build_val).resolve()
-    elif isinstance(build_val, dict):
-        ctx = build_val.get("context", "")
-        if ctx:
-            build_context = (root_dir / ctx).resolve()
-        else:
-            return None
-    else:
+    build_info = _get_build_info(root_dir, compose_file, svc.compose_service_name, svc_config)
+    if build_info is None:
         return None
 
-    df_name = "Dockerfile"
-    if isinstance(build_val, dict):
-        df_name = build_val.get("dockerfile", "Dockerfile")
-
-    df_path = build_context / df_name
-    if not df_path.exists():
-        df_path = build_context / "dockerfile"
-    if not df_path.exists():
-        return None
-
+    df_path = build_info["df_path"]
     try:
         content = df_path.read_text(encoding="utf-8")
     except OSError:
@@ -475,6 +458,169 @@ def _get_python_original_cmd(root_dir: Path, svc: ServiceInfo) -> list[str] | No
         return cmd_parts
 
     return None
+
+
+def _get_build_info(
+    root_dir: Path,
+    compose_file: Path,
+    compose_service_name: str,
+    svc_config: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Extract build context and Dockerfile path from a compose service config."""
+    build_val = svc_config.get("build")
+    if isinstance(build_val, str):
+        build_context = (root_dir / build_val).resolve()
+        orig_build: dict[str, Any] = {"context": build_val}
+    elif isinstance(build_val, dict):
+        ctx = build_val.get("context", "")
+        if ctx:
+            build_context = (root_dir / ctx).resolve()
+        else:
+            return None
+        orig_build = dict(build_val)
+    else:
+        return None
+
+    df_name = orig_build.get("dockerfile", "Dockerfile")
+    df_path = build_context / df_name
+    if not df_path.exists():
+        df_path = build_context / "dockerfile"
+    if not df_path.exists():
+        return None
+
+    return {
+        "build_context": build_context,
+        "df_path": df_path,
+        "orig_build": orig_build,
+        "build_val": build_val,
+    }
+
+
+def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[str, Any] | None, list[str] | None]:
+    """Generate a modified Dockerfile with OTel packages pre-installed.
+
+    Returns (build_config, entrypoint) where:
+    - build_config is the ``build`` section for the compose override (or *None*)
+    - entrypoint is the entrypoint override (or *None*)
+    """
+    compose_file = _find_compose_file(root_dir)
+    if not compose_file:
+        return None, None
+
+    try:
+        with open(compose_file, encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except (OSError, PermissionError, yaml.YAMLError):
+        return None, None
+
+    if not data or "services" not in data:
+        return None, None
+
+    svc_config = data.get("services", {}).get(svc.compose_service_name, {})
+    if not svc_config:
+        return None, None
+
+    build_info = _get_build_info(root_dir, compose_file, svc.compose_service_name, svc_config)
+    if build_info is None:
+        return None, None
+
+    df_path = build_info["df_path"]
+    try:
+        content = df_path.read_text(encoding="utf-8")
+    except OSError:
+        return None, None
+
+    # Check there is at least one CMD or ENTRYPOINT to wrap
+    has_runnable = any(
+        line.strip().upper().startswith(("CMD ", "ENTRYPOINT "))
+        for line in content.splitlines()
+    )
+    if not has_runnable:
+        return None, None
+
+    lines = content.splitlines()
+    last_run_idx = -1
+    last_cmd_idx = -1
+    last_ep_idx = -1
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        up = stripped.upper()
+        if up.startswith("CMD "):
+            last_cmd_idx = i
+        elif up.startswith("ENTRYPOINT "):
+            last_ep_idx = i
+        elif stripped.startswith("RUN "):
+            last_run_idx = i
+
+    insert_pos = max(last_run_idx + 1, 0)
+    if last_cmd_idx >= 0 and insert_pos > last_cmd_idx:
+        insert_pos = last_cmd_idx
+    if last_ep_idx >= 0 and insert_pos > last_ep_idx:
+        insert_pos = last_ep_idx
+
+    fw_pkg = _OTEL_FRAMEWORK_PACKAGES.get(svc.framework, "")
+    otel_pkgs = "opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation opentelemetry-exporter-otlp-proto-http"
+    if fw_pkg:
+        otel_pkgs += f" {fw_pkg}"
+    otel_run = f"RUN pip install --no-cache-dir {otel_pkgs}"
+    lines.insert(insert_pos, otel_run)
+    modified_content = "\n".join(lines)
+
+    otel_df = build_info["build_context"] / ".mba-Dockerfile"
+    try:
+        otel_df.write_text(modified_content, encoding="utf-8")
+    except OSError:
+        return None, None
+
+    if isinstance(build_info["build_val"], str):
+        build_config: dict[str, Any] = {
+            "context": build_info["orig_build"]["context"],
+            "dockerfile": ".mba-Dockerfile",
+        }
+    else:
+        build_config = dict(build_info["orig_build"])
+        build_config["dockerfile"] = ".mba-Dockerfile"
+
+    return build_config, ["opentelemetry-instrument"]
+
+
+def _find_otel_dockerfiles(project_root: Path) -> list[Path]:
+    """Return paths of all .mba-Dockerfile files generated during this run."""
+    results: list[Path] = []
+    compose_file = _find_compose_file(project_root)
+    if not compose_file:
+        return results
+
+    try:
+        with open(compose_file, encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except (OSError, PermissionError, yaml.YAMLError):
+        return results
+
+    if not data or "services" not in data:
+        return results
+
+    for _svc_name, svc_config in data.get("services", {}).items():
+        if "build" not in svc_config:
+            continue
+        build_val = svc_config.get("build")
+        if isinstance(build_val, str):
+            build_context = (project_root / build_val).resolve()
+        elif isinstance(build_val, dict):
+            ctx = build_val.get("context", "")
+            if ctx:
+                build_context = (project_root / ctx).resolve()
+            else:
+                continue
+        else:
+            continue
+
+        otel_df = build_context / ".mba-Dockerfile"
+        if otel_df.exists():
+            results.append(otel_df)
+
+    return results
 
 
 def _build_compose_override(
@@ -514,27 +660,17 @@ def _build_compose_override(
         if svc.language == "python":
             env.extend(
                 [
-                    "OTEL_PYTHON_CONFIGURATOR=opentelemetry-sdk-configurator",
                     "OTEL_METRICS_EXPORTER=none",
                     "OTEL_LOGS_EXPORTER=none",
                 ]
             )
 
-            original_cmd = _get_python_original_cmd(project.root_dir, svc)
-            if original_cmd:
-                # Use HTTP exporter (port 4318) — avoids compiling grpcio on Alpine
+            build_config, otel_entrypoint = _generate_otel_dockerfile(project.root_dir, svc)
+            if build_config and otel_entrypoint:
                 env[1] = f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4318"
-                env.remove("OTEL_PYTHON_CONFIGURATOR=opentelemetry-sdk-configurator")
                 env.append("OTEL_TRACES_EXPORTER=otlp_proto_http")
-
-                fw_pkg = _OTEL_FRAMEWORK_PACKAGES.get(svc.framework, "")
-                wrapped_cmd = ["opentelemetry-instrument"] + original_cmd
-                install_pkgs = "opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation opentelemetry-exporter-otlp-proto-http"
-                if fw_pkg:
-                    install_pkgs += f" {fw_pkg}"
-                sh_cmd = f"pip install --quiet {install_pkgs} && exec {' '.join(wrapped_cmd)}"
-                svc_config["entrypoint"] = ["/bin/sh", "-c"]
-                svc_config["command"] = sh_cmd
+                svc_config["build"] = build_config
+                svc_config["entrypoint"] = otel_entrypoint
 
         elif svc.language == "java":
             agent_host = _ensure_java_agent()
@@ -708,6 +844,12 @@ def cleanup_docker_compose(
             override_file.unlink()
     except OSError:
         pass
+
+    for otel_df in _find_otel_dockerfiles(project.root_dir):
+        try:
+            otel_df.unlink()
+        except OSError:
+            pass
 
     return errors
 
