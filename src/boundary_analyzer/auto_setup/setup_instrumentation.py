@@ -107,7 +107,7 @@ def start_jaeger() -> bool:
         "jaegertracing/all-in-one:latest",
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if result.returncode != 0:
         error(f"Failed to start Jaeger:\n{result.stderr}")
         return False
@@ -271,7 +271,7 @@ def run_scom_analysis(traces_path: Path, service_name: str, output_dir: Path) ->
         str(output_dir),
     ]
 
-    result = subprocess.run(cmd, text=True)
+    result = subprocess.run(cmd, text=True, encoding="utf-8", errors="replace")
     if result.returncode == 0:
         ok("SCOM analysis complete! Check the output directory for the report.")
     else:

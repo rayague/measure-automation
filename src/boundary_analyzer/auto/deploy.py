@@ -89,7 +89,7 @@ def _wait_for_health(url: str, timeout: int = 30, interval: float = 1.0) -> bool
 
 def _docker_available() -> bool:
     try:
-        result = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=10)
+        result = subprocess.run(["docker", "info"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
         return result.returncode == 0
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return False
@@ -497,7 +497,9 @@ def deploy_docker_compose(
             cmd,
             capture_output=True,
             text=True,
-            timeout=120,
+            encoding="utf-8",
+            errors="replace",
+            timeout=300,
             check=True,
         )
     except subprocess.CalledProcessError as e:
@@ -565,7 +567,7 @@ def cleanup_docker_compose(
             cmd.extend(["-f", str(override_file)])
         cmd.extend(["down", "--remove-orphans"])
 
-        subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=True)
+        subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60, check=True)
     except subprocess.CalledProcessError as e:
         err = AnalysisError(
             code=ErrorCode.DOCKER_STOP_FAILED,

@@ -70,7 +70,7 @@ def _pip_install(packages: list) -> None:
     """Install Python packages via pip."""
     logger.info("Installing Python packages: %s", ", ".join(packages))
     cmd = [sys.executable, "-m", "pip", "install", "--quiet"] + packages
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if result.returncode != 0:
         logger.error("pip install failed:\n%s", result.stderr)
         sys.exit(1)
@@ -82,7 +82,7 @@ def _npm_install(packages: list, project_path: Path) -> None:
     logger.info("Installing Node.js packages: %s", ", ".join(packages))
     npm = "npm.cmd" if IS_WINDOWS else "npm"
     cmd = [npm, "install", "--save"] + packages
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=project_path)
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=project_path)
     if result.returncode != 0:
         logger.error("npm install failed:\n%s", result.stderr)
         sys.exit(1)
@@ -94,7 +94,7 @@ def _composer_install(packages: list, project_path: Path) -> None:
     logger.info("Installing PHP packages via Composer: %s", ", ".join(packages))
     composer = "composer.bat" if IS_WINDOWS else "composer"
     cmd = [composer, "require"] + packages
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=project_path)
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=project_path)
     if result.returncode != 0:
         logger.error("composer require failed:\n%s", result.stderr)
         sys.exit(1)
