@@ -353,22 +353,26 @@ class PythonInstrumentOverrideTest(unittest.TestCase):
         self.assertIn("OTEL_EXPORTER_OTLP_ENDPOINT=http://mba-jaeger:4318", env)
         self.assertIn("OTEL_TRACES_EXPORTER=otlp_proto_http", env)
 
+        # build override points to .mba-Dockerfile
         self.assertIn("build", svc_cfg)
         self.assertEqual(svc_cfg["build"]["context"], "./app")
         self.assertEqual(svc_cfg["build"]["dockerfile"], ".mba-Dockerfile")
 
-        self.assertIn("entrypoint", svc_cfg)
-        self.assertEqual(svc_cfg["entrypoint"], ["opentelemetry-instrument"])
+        # entrypoint is baked into the Dockerfile, not in the compose override
+        self.assertNotIn("entrypoint", svc_cfg)
         self.assertNotIn("command", svc_cfg)
 
-        # Verify .mba-Dockerfile was generated with OTel pip install
+        # Verify .mba-Dockerfile was generated correctly
         otel_df = self.tmpdir / "app" / ".mba-Dockerfile"
         self.assertTrue(otel_df.exists())
         otel_content = otel_df.read_text(encoding="utf-8")
+        self.assertIn("opentelemetry-distro", otel_content)
         self.assertIn("opentelemetry-api", otel_content)
         self.assertIn("opentelemetry-sdk", otel_content)
         self.assertIn("opentelemetry-instrumentation-flask", otel_content)
         self.assertIn("opentelemetry-exporter-otlp-proto-http", otel_content)
+        # ENTRYPOINT must be in the Dockerfile
+        self.assertIn('ENTRYPOINT ["opentelemetry-instrument"]', otel_content)
         # Original CMD must be preserved
         self.assertIn('CMD ["flask", "run"]', otel_content)
         self.assertIn("RUN pip install --no-cache-dir", otel_content)

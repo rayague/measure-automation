@@ -501,8 +501,7 @@ def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[st
 
     Returns (build_config, entrypoint) where:
     - build_config is the ``build`` section for the compose override (or *None*)
-    - entrypoint is the entrypoint override (or *None*; the image's built-in
-      ``ENTRYPOINT`` + ``CMD`` are used instead)
+    - entrypoint is the entrypoint override (or *None*)
     """
     compose_file = _find_compose_file(root_dir)
     if not compose_file:
@@ -561,25 +560,11 @@ def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[st
         insert_pos = last_ep_idx
 
     fw_pkg = _OTEL_FRAMEWORK_PACKAGES.get(svc.framework, "")
-    otel_pkgs = "opentelemetry-distro opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation opentelemetry-exporter-otlp-proto-http"
+    otel_pkgs = "opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation opentelemetry-exporter-otlp-proto-http"
     if fw_pkg:
         otel_pkgs += f" {fw_pkg}"
     otel_run = f"RUN pip install --no-cache-dir {otel_pkgs}"
     lines.insert(insert_pos, otel_run)
-
-    # Inject ENTRYPOINT directly into the Dockerfile so Docker uses it
-    # at runtime, avoiding Docker Compose v5 clearing CMD when entrypoint
-    # is overridden in the compose YAML.
-    otel_entrypoint = 'ENTRYPOINT ["opentelemetry-instrument"]'
-    if last_ep_idx >= 0:
-        if insert_pos <= last_ep_idx:
-            last_ep_idx += 1  # shifted by otel_run insert
-        lines[last_ep_idx] = otel_entrypoint
-    else:
-        if insert_pos <= last_cmd_idx:
-            last_cmd_idx += 1  # shifted by otel_run insert
-        lines.insert(last_cmd_idx, otel_entrypoint)
-
     modified_content = "\n".join(lines)
 
     otel_df = build_info["build_context"] / ".mba-Dockerfile"
@@ -597,7 +582,7 @@ def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[st
         build_config = dict(build_info["orig_build"])
         build_config["dockerfile"] = ".mba-Dockerfile"
 
-    return build_config, None
+    return build_config, ["opentelemetry-instrument"]
 
 
 def _find_otel_dockerfiles(project_root: Path) -> list[Path]:
@@ -680,11 +665,12 @@ def _build_compose_override(
                 ]
             )
 
-            build_config, _otel_entrypoint = _generate_otel_dockerfile(project.root_dir, svc)
-            if build_config:
+            build_config, otel_entrypoint = _generate_otel_dockerfile(project.root_dir, svc)
+            if build_config and otel_entrypoint:
                 env[1] = f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4318"
                 env.append("OTEL_TRACES_EXPORTER=otlp_proto_http")
                 svc_config["build"] = build_config
+                svc_config["entrypoint"] = otel_entrypoint
 
         elif svc.language == "java":
             agent_host = _ensure_java_agent()
