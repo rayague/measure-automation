@@ -21,6 +21,16 @@ from boundary_analyzer.auto.models import ProjectInfo, ServiceInfo
 
 logger = logging.getLogger(__name__)
 
+_OTEL_FRAMEWORK_PACKAGES: dict[str, str] = {
+    "flask": "opentelemetry-instrumentation-flask",
+    "fastapi": "opentelemetry-instrumentation-fastapi",
+    "django": "opentelemetry-instrumentation-django",
+    "djangorest": "opentelemetry-instrumentation-django",
+    "starlette": "opentelemetry-instrumentation-starlette",
+    "tornado": "opentelemetry-instrumentation-tornado",
+    "aiohttp": "opentelemetry-instrumentation-aiohttp-client",
+}
+
 
 @dataclass
 class DeployedService:
@@ -512,8 +522,16 @@ def _build_compose_override(
 
             original_cmd = _get_python_original_cmd(project.root_dir, svc)
             if original_cmd:
+                # Use HTTP exporter (port 4318) — avoids compiling grpcio on Alpine
+                env[1] = f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4318"
+                env.remove("OTEL_PYTHON_CONFIGURATOR=opentelemetry-sdk-configurator")
+                env.append("OTEL_TRACES_EXPORTER=otlp_proto_http")
+
+                fw_pkg = _OTEL_FRAMEWORK_PACKAGES.get(svc.framework, "")
                 wrapped_cmd = ["opentelemetry-instrument"] + original_cmd
-                install_pkgs = "opentelemetry-distro opentelemetry-exporter-otlp"
+                install_pkgs = "opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation opentelemetry-exporter-otlp-proto-http"
+                if fw_pkg:
+                    install_pkgs += f" {fw_pkg}"
                 sh_cmd = f"pip install --quiet {install_pkgs} && exec {' '.join(wrapped_cmd)}"
                 svc_config["entrypoint"] = ["/bin/sh", "-c"]
                 svc_config["command"] = sh_cmd

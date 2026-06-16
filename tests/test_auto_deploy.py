@@ -348,14 +348,18 @@ class PythonInstrumentOverrideTest(unittest.TestCase):
         svc_cfg = data["services"]["web"]
         env = svc_cfg["environment"]
         self.assertIn("OTEL_SERVICE_NAME=web", env)
-        self.assertIn("OTEL_EXPORTER_OTLP_ENDPOINT=http://mba-jaeger:4317", env)
-        self.assertIn("OTEL_PYTHON_CONFIGURATOR=opentelemetry-sdk-configurator", env)
+        self.assertIn("OTEL_EXPORTER_OTLP_ENDPOINT=http://mba-jaeger:4318", env)
+        self.assertIn("OTEL_TRACES_EXPORTER=otlp_proto_http", env)
 
         self.assertIn("entrypoint", svc_cfg)
         self.assertEqual(svc_cfg["entrypoint"], ["/bin/sh", "-c"])
         self.assertIn("command", svc_cfg)
         command = svc_cfg["command"]
-        self.assertIn("pip install --quiet opentelemetry-distro", command)
+        self.assertIn("pip install --quiet opentelemetry-api", command)
+        self.assertIn("opentelemetry-sdk", command)
+        self.assertIn("opentelemetry-instrumentation", command)
+        self.assertIn("opentelemetry-exporter-otlp-proto-http", command)
+        self.assertIn("opentelemetry-instrumentation-flask", command)
         self.assertIn("opentelemetry-instrument flask run", command)
         self.assertIn("exec", command)
 
