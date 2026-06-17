@@ -1,6 +1,6 @@
 [project]
 name = "boundary-analyzer"
-version = "0.3.9"
+version = "0.3.10"
 description = "SCOM-based microservice boundary analysis from Jaeger traces"
 readme = "CHANGELOG.md"
 license = "MIT"

@@ -171,9 +171,15 @@ def start_jaeger(
     if _jaeger_alive(jaeger_port):
         return jaeger_port
 
-    if not _docker_available():
+    if not _docker_installed():
         raise AnalysisError(
             code=ErrorCode.DOCKER_NOT_FOUND,
+            recoverable=True,
+        )
+
+    if not _docker_available():
+        raise AnalysisError(
+            code=ErrorCode.DOCKER_DAEMON_DOWN,
             recoverable=True,
         )
 
@@ -802,9 +808,15 @@ def deploy_docker_compose(
             recoverable=False,
         )
 
-    if not _docker_available():
+    if not _docker_installed():
         raise AnalysisError(
             code=ErrorCode.DOCKER_NOT_FOUND,
+            recoverable=True,
+        )
+
+    if not _docker_available():
+        raise AnalysisError(
+            code=ErrorCode.DOCKER_DAEMON_DOWN,
             recoverable=True,
         )
 

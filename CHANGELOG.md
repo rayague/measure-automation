@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.10 (2026-06-17)
+
+### Docker error messages now accurate
+
+- **deploy.py**: `deploy_docker_compose()` and `start_jaeger()` now distinguish between Docker not installed (`DOCKER_NOT_FOUND`) and Docker daemon not running (`DOCKER_DAEMON_DOWN`). Users with Docker installed but Desktop not launched now see: *"Docker is installed but the daemon is not running — Start Docker Desktop and wait for it to be ready."* instead of the misleading *"Docker is required but was not found."*
+
 ## v0.3.9 (2026-06-17)
 
 ### Bug fixes and robustness improvements
