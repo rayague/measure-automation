@@ -617,7 +617,11 @@ def _main(argv: list[str] | None = None) -> int:
             verbose=bool(args.verbose),
             exclude_services=args.exclude_services,
         )
-        report = run_full_analysis(config)
+        try:
+            report = run_full_analysis(config)
+        except KeyboardInterrupt:
+            print("\n  ✘ Interrupted by user")
+            return 130
         return 0 if report.all_success else 1
 
     parser.error(f"Unknown command: {args.command}")

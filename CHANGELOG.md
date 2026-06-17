@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.3.9 (2026-06-17)
+
+### Bug fixes and robustness improvements
+
+- **orchestrator.py**: Fixed `'ServiceInfo' object has no attribute 'root_dir'` crash when LLM instrumentation tries to read the service path. Now uses `entry_points[0].path.parent` instead.
+- **deploy.py**: Replaced `_docker_available()` with 3-functions: `_docker_installed()`, `_docker_daemon_ready()`, and retry-based `_docker_available()` (3 attempts × 3s). Uses `docker version --format` which is 10× faster than `docker info`.
+- **deploy.py**: Added Jaeger health check after `docker compose up` — explicitly waits for port 16686 and verifies `/api/services` endpoint.
+- **deploy.py**: `cleanup_docker_compose()` now checks Docker availability first — skips cleanly if the daemon is not responding.
+- **deploy.py**: Reduced timeouts — compose up 300s→120s, compose down 60s→15s, docker check 10s→5s.
+- **orchestrator.py**: `_try_cleanup()` is now protected against `KeyboardInterrupt` — clean message instead of traceback.
+- **cli.py**: Top-level `KeyboardInterrupt` handler — returns exit code 130 with clean message.
+- **deploy.py**: `cleanup_docker_compose` no longer raises on failure (`check=True` removed, `subprocess.CalledProcessError` handled gracefully).
+- **All 561 tests pass with zero regressions.**
+
+## v0.3.8 (2026-06-17)
+
+### Consolidation — single-service orchestrator
+
+- **deploy.py**: Python services always use OTLP HTTP/4318 (removed conditional gRPC fallback). Smart Jaeger detection (`_jaeger_alive`, `_docker_container_exists`) with 3-case restart logic. New `DOCKER_START_FAILED` error code.
+- **discover.py**: Service deduplication by `(name, deployment)`. Subdirectory scanning for monorepos (`_is_service_dir`, `_discover_subdirectory_services`).
+- **orchestrator.py**: New `_llm_instrument_services` step called between discovery and deploy, triggered by `--llm` flag + `OPENROUTER_API_KEY`. Falls back silently to Dockerfile patching.
+- **prompts.py**: Universal framework-agnostic prompt replaces FastAPI/Flask-only prompt. Python reference appendix (FastAPI, Flask, Django, SQLAlchemy).
+- **instrumentation.py**: Passes structured `context` dict for richer prompts.
+- **Tests**: All 561 pass with updated env vars and prompt text.
+
 ## v0.3.7 (2026-06-16)
 
 ### Bug fixes

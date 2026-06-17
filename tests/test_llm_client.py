@@ -8,7 +8,9 @@ from boundary_analyzer.llm.client import call_llm
 
 
 class LllmClientTest(unittest.TestCase):
-    def test_no_api_key_returns_none(self):
+    @patch("boundary_analyzer.llm.client._ollama_available")
+    def test_no_api_key_returns_none(self, mock_ollama):
+        mock_ollama.return_value = False
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}):
             result = call_llm("test prompt")
             self.assertIsNone(result)

@@ -7,7 +7,6 @@ import yaml
 from boundary_analyzer.auto.deploy import (
     _build_compose_override,
     _find_compose_file,
-    _generate_otel_dockerfile,
     _get_python_original_cmd,
     _parse_dockerfile_cmd,
 )

@@ -99,12 +99,41 @@ def _wait_for_health(url: str, timeout: int = 30, interval: float = 1.0) -> bool
     return False
 
 
-def _docker_available() -> bool:
+def _docker_installed() -> bool:
     try:
-        result = subprocess.run(["docker", "info"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
+        result = subprocess.run(["docker", "--version"], capture_output=True, timeout=5)
         return result.returncode == 0
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return False
+
+
+def _docker_daemon_ready() -> bool:
+    """Return True if the Docker daemon is responding (faster than ``docker info``)."""
+    try:
+        result = subprocess.run(
+            ["docker", "version", "--format", "{{.Server.Version}}"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return result.returncode == 0 and bool(result.stdout.strip())
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+
+
+def _docker_available(retries: int = 3, delay: float = 3.0) -> bool:
+    """Return True if Docker CLI is installed AND the daemon is responding.
+
+    Retries up to ``retries`` times with ``delay`` seconds between attempts.
+    """
+    if not _docker_installed():
+        return False
+    for attempt in range(retries):
+        if _docker_daemon_ready():
+            return True
+        if attempt < retries - 1:
+            time.sleep(delay)
+    return False
 
 
 def _jaeger_alive(port: int) -> bool:
@@ -815,7 +844,7 @@ def deploy_docker_compose(
             text=True,
             encoding="utf-8",
             errors="replace",
-            timeout=300,
+            timeout=120,
             check=True,
         )
     except subprocess.CalledProcessError as e:
@@ -855,6 +884,21 @@ def deploy_docker_compose(
         )
         result.services.append(deployed)
 
+    # Verify Jaeger started (added to compose override as ``container_name``)
+    if not _wait_for_port("127.0.0.1", jaeger_port, timeout=timeout):
+        raise AnalysisError(
+            code=ErrorCode.JAEGER_NOT_READY,
+            _override_detail=f"Jaeger port {jaeger_port} not listening after {timeout}s.",
+            recoverable=True,
+        )
+
+    try:
+        r = requests.get(f"http://127.0.0.1:{jaeger_port}/api/services", timeout=10)
+        if r.status_code != 200:
+            logger.warning("Jaeger API returned status %s", r.status_code)
+    except requests.RequestException as e:
+        logger.warning("Jaeger health check failed: %s", e)
+
     return result
 
 
@@ -871,6 +915,12 @@ def cleanup_docker_compose(
     container_name: str = "mba-jaeger",
 ) -> list[AnalysisError]:
     errors: list[AnalysisError] = []
+
+    if not _docker_installed():
+        return errors
+    if not _docker_daemon_ready():
+        return errors
+
     compose_file = _find_compose_file(project.root_dir)
     if compose_file is None:
         return errors
@@ -883,13 +933,9 @@ def cleanup_docker_compose(
             cmd.extend(["-f", str(override_file)])
         cmd.extend(["down", "--remove-orphans"])
 
-        subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60, check=True)
-    except subprocess.CalledProcessError as e:
-        err = AnalysisError(
-            code=ErrorCode.DOCKER_STOP_FAILED,
-            _override_detail=e.stderr.strip() or str(e),
-        )
-        errors.append(err)
+        subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15)
+    except subprocess.TimeoutExpired:
+        logger.warning("Docker compose down timed out — skipping")
     except FileNotFoundError:
         pass
 

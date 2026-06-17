@@ -39,7 +39,6 @@ from boundary_analyzer.auto.traffic import (
     discover_endpoints_openapi,
     generate_traffic,
 )
-from boundary_analyzer.llm.context import build_project_context
 from boundary_analyzer.llm.instrumentation import generate_instrumentation
 from boundary_analyzer.pipeline.run_pipeline import run_pipeline
 
@@ -333,15 +332,15 @@ def _print_final_report(report: AnalysisReport) -> None:
 def _llm_instrument_services(project: ProjectInfo, config: FullConfig) -> None:
     """Use LLM to generate OTel instrumentation code for each Python service.
 
-    Falls back silently to existing Dockerfile patching if the LLM call fails
-    or returns invalid code.
+    Tries OpenRouter first (if API key set), then local Ollama.
+    Falls back silently to existing Dockerfile patching if all LLM options fail
+    or return invalid code.
     """
     import os
 
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
-        _print_step("!", "LLM enabled but OPENROUTER_API_KEY not set — falling back to static instrumentation")
-        return
+        _print_step("*", "No OpenRouter API key — trying local Ollama...")
 
     for svc in project.services:
         if svc.language != "python":
@@ -349,9 +348,10 @@ def _llm_instrument_services(project: ProjectInfo, config: FullConfig) -> None:
 
         _print_step("*", f"Instrumenting {svc.name} via LLM...")
 
+        svc_root = svc.entry_points[0].path.parent if svc.entry_points else project.root_dir
         try:
             code = generate_instrumentation(
-                project_path=svc.root_dir or project.root_dir,
+                project_path=svc_root,
                 jaeger_host="127.0.0.1",
                 jaeger_port=4318,
             )
@@ -718,15 +718,25 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
 def _try_cleanup(report: AnalysisReport, project: ProjectInfo, deployment: DeploymentResult | None) -> None:
     errors: list[AnalysisError] = []
 
-    if _uses_docker_compose(project):
-        errors.extend(cleanup_docker_compose(project))
-    else:
-        if deployment:
-            errors.extend(cleanup_services(deployment))
-        try:
-            stop_jaeger()
-        except AnalysisError as e:
-            errors.append(e)
+    try:
+        if _uses_docker_compose(project):
+            errors.extend(cleanup_docker_compose(project))
+        else:
+            if deployment:
+                errors.extend(cleanup_services(deployment))
+            try:
+                stop_jaeger()
+            except AnalysisError as e:
+                errors.append(e)
+    except KeyboardInterrupt:
+        _print_step("!", "Cleanup interrupted by user")
+        errors.append(
+            AnalysisError(
+                code=ErrorCode.PROCESS_KILL_FAILED,
+                scope="cleanup",
+                _override_detail="Interrupted by user during cleanup.",
+            )
+        )
 
     cleanup_step = StepResult(
         success=len(errors) == 0,
