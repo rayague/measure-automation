@@ -107,25 +107,40 @@ def _docker_available() -> bool:
         return False
 
 
+def _jaeger_alive(port: int) -> bool:
+    """Return True if Jaeger is already running and healthy on this port."""
+    if not _is_port_in_use(port):
+        return False
+    try:
+        r = requests.get(f"http://127.0.0.1:{port}/api/services", timeout=5)
+        return r.status_code == 200
+    except requests.RequestException:
+        return False
+
+
+def _docker_container_exists(name: str) -> bool:
+    """Return True if a Docker container with the given name exists."""
+    try:
+        r = subprocess.run(
+            ["docker", "inspect", "--format", "exists", name],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        return r.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+
+
 def start_jaeger(
     jaeger_port: int = 16686,
     otlp_port: int = 4318,
     container_name: str = "mba-jaeger",
     timeout: int = 30,
 ) -> int:
-    if _is_port_in_use(jaeger_port):
-        try:
-            r = requests.get(f"http://127.0.0.1:{jaeger_port}/api/services", timeout=5)
-            if r.status_code == 200:
-                return jaeger_port
-        except requests.RequestException:
-            pass
-        raise AnalysisError(
-            code=ErrorCode.DOCKER_PORT_CONFLICT,
-            scope=f"port {jaeger_port}",
-            _override_detail=f"Port {jaeger_port} (Jaeger UI) is already in use by another process.",
-            recoverable=True,
-        )
+    # Case 1 – already running and healthy
+    if _jaeger_alive(jaeger_port):
+        return jaeger_port
 
     if not _docker_available():
         raise AnalysisError(
@@ -133,43 +148,53 @@ def start_jaeger(
             recoverable=True,
         )
 
-    try:
-        subprocess.run(
-            ["docker", "rm", "-f", container_name],
-            capture_output=True,
-            timeout=10,
-        )
-    except subprocess.TimeoutExpired:
-        pass
+    # Case 2 – container exists but stopped → restart it
+    if _docker_container_exists(container_name):
+        try:
+            subprocess.run(
+                ["docker", "start", container_name],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            raise AnalysisError(
+                code=ErrorCode.DOCKER_START_FAILED,
+                _override_detail=e.stderr.strip() or str(e),
+                recoverable=True,
+            )
+    else:
+        # Case 3 – no container at all → create and run
+        try:
+            subprocess.run(
+                [
+                    "docker",
+                    "run",
+                    "-d",
+                    "--name",
+                    container_name,
+                    "-p",
+                    f"{jaeger_port}:16686",
+                    "-p",
+                    f"{otlp_port}:4318",
+                    "-p",
+                    "4317:4317",
+                    "jaegertracing/all-in-one:latest",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=60,
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            raise AnalysisError(
+                code=ErrorCode.DOCKER_PULL_FAILED,
+                _override_detail=e.stderr.strip() or str(e),
+                recoverable=True,
+            )
 
-    try:
-        subprocess.run(
-            [
-                "docker",
-                "run",
-                "-d",
-                "--name",
-                container_name,
-                "-p",
-                f"{jaeger_port}:16686",
-                "-p",
-                f"{otlp_port}:4318",
-                "-p",
-                "4317:4317",
-                "jaegertracing/all-in-one:latest",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=60,
-            check=True,
-        )
-    except subprocess.CalledProcessError as e:
-        raise AnalysisError(
-            code=ErrorCode.DOCKER_PULL_FAILED,
-            _override_detail=e.stderr.strip() or str(e),
-            recoverable=True,
-        )
-
+    # Wait for Jaeger to become healthy
     if not _wait_for_port("127.0.0.1", jaeger_port, timeout=timeout):
         raise AnalysisError(
             code=ErrorCode.JAEGER_NOT_READY,
@@ -660,33 +685,29 @@ def _build_compose_override(
         if not svc.compose_service_name:
             continue
 
-        env = [
-            f"OTEL_SERVICE_NAME={svc.name}",
-            f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4317",
-        ]
-
         svc_config: dict[str, Any] = {
-            "environment": env,
             "depends_on": {
                 container_name: {"condition": "service_started"},
             },
         }
 
         if svc.language == "python":
-            env.extend(
-                [
-                    "OTEL_METRICS_EXPORTER=none",
-                    "OTEL_LOGS_EXPORTER=none",
-                ]
-            )
-
+            env = [
+                f"OTEL_SERVICE_NAME={svc.name}",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4318",
+                "OTEL_TRACES_EXPORTER=otlp_proto_http",
+                "OTEL_METRICS_EXPORTER=none",
+                "OTEL_LOGS_EXPORTER=none",
+            ]
             build_config, _otel_entrypoint = _generate_otel_dockerfile(project.root_dir, svc)
             if build_config:
-                env[1] = f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4318"
-                env.append("OTEL_TRACES_EXPORTER=otlp_proto_http")
                 svc_config["build"] = build_config
 
         elif svc.language == "java":
+            env = [
+                f"OTEL_SERVICE_NAME={svc.name}",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4317",
+            ]
             agent_host = _ensure_java_agent()
             if agent_host:
                 env.append(f"JAVA_TOOL_OPTIONS=-javaagent:/mba-agent/{_AGENT_JAR_NAME}")
@@ -697,21 +718,40 @@ def _build_compose_override(
                 ]
 
         elif svc.language == "node":
-            env.append("NODE_OPTIONS=--require @opentelemetry/auto-instrumentations-node/register")
-            env.append("OTEL_METRICS_EXPORTER=none")
-            env.append("OTEL_LOGS_EXPORTER=none")
+            env = [
+                f"OTEL_SERVICE_NAME={svc.name}",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4317",
+                "NODE_OPTIONS=--require @opentelemetry/auto-instrumentations-node/register",
+                "OTEL_METRICS_EXPORTER=none",
+                "OTEL_LOGS_EXPORTER=none",
+            ]
 
         elif svc.language == "php":
-            env.append("OTEL_PHP_AUTOLOAD_ENABLED=true")
-            env.append("OTEL_METRICS_EXPORTER=none")
-            env.append("OTEL_LOGS_EXPORTER=none")
+            env = [
+                f"OTEL_SERVICE_NAME={svc.name}",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4318",
+                "OTEL_PHP_AUTOLOAD_ENABLED=true",
+                "OTEL_METRICS_EXPORTER=none",
+                "OTEL_LOGS_EXPORTER=none",
+            ]
 
         elif svc.language == "dotnet":
-            env.append("OTEL_DOTNET_AUTO_TRACES_EXPORTER=otlp")
-            env.append("OTEL_DOTNET_AUTO_METRICS_EXPORTER=none")
-            env.append("OTEL_DOTNET_AUTO_LOGS_EXPORTER=none")
-            env.append("OTEL_DOTNET_AUTO_FLUSH_ON_UNHANDLEDEXCEPTION=true")
+            env = [
+                f"OTEL_SERVICE_NAME={svc.name}",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4317",
+                "OTEL_DOTNET_AUTO_TRACES_EXPORTER=otlp",
+                "OTEL_DOTNET_AUTO_METRICS_EXPORTER=none",
+                "OTEL_DOTNET_AUTO_LOGS_EXPORTER=none",
+                "OTEL_DOTNET_AUTO_FLUSH_ON_UNHANDLEDEXCEPTION=true",
+            ]
 
+        else:
+            env = [
+                f"OTEL_SERVICE_NAME={svc.name}",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4318",
+            ]
+
+        svc_config["environment"] = env
         override["services"][svc.compose_service_name] = svc_config
 
     return yaml.dump(override, default_flow_style=False, sort_keys=False)

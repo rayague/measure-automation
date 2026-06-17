@@ -4,22 +4,53 @@ Each prompt is a function that takes context data and returns a complete prompt 
 """
 
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
-
-INSTRUMENTATION_SYSTEM = """You are an expert in Python microservices and OpenTelemetry instrumentation.
-Your task is to add complete OpenTelemetry tracing to a FastAPI/Flask microservice.
+INSTRUMENTATION_SYSTEM = """\
+You are the instrumentation engine of MBA (Microservice Boundary Analyzer).
+Your ONLY task is to add OpenTelemetry (OTel) distributed tracing to a
+microservice so that:
+  - HTTP request spans are sent to Jaeger
+  - Database query spans are sent to Jaeger
+  - Metrics and logs exporters are DISABLED (traces only)
+  - The service.name attribute equals the provided SERVICE_NAME
 
 RULES:
-- Use OTLP gRPC exporter pointing to %s
-- Add ALL necessary imports at the top of the file
-- Instrument the web framework, database (SQLAlchemy), and HTTP client (httpx/requests)
-- Do NOT change any existing logic, routes, or behaviour
-- Do NOT remove or alter existing imports, middleware, or configuration
-- Add the instrumentation code in the correct location (lifespan for FastAPI, after app creation for Flask)
-- Return ONLY the COMPLETE modified file content, no explanations
-- If you cannot add instrumentation, start your response with "ERROR:"
+  1. Never remove, rename, or change existing code logic
+  2. Never change database models, route handlers, or business logic
+  3. Use ONLY official OTel packages for the target language
+  4. Always use BatchSpanProcessor, never SimpleSpanProcessor
+  5. The service.name MUST equal the provided SERVICE_NAME
+  6. Return ONLY the COMPLETE modified entry point file content — no explanations, no markdown
+  7. If you CANNOT safely instrument, respond with exactly "ERROR:" followed by the reason
+
+OTel endpoint: %s
+Transport: OTLP HTTP (port 4318)
+
+## Python-specific Reference
+
+For FastAPI:
+  - Use FastAPIInstrumentor.instrument_app(app) AFTER app creation
+  - Import from opentelemetry.instrumentation.fastapi
+
+For Flask:
+  - Use FlaskInstrumentor().instrument_app(app) AFTER app = Flask(__name__)
+  - Import from opentelemetry.instrumentation.flask
+
+For Django:
+  - Add bootstrap code to manage.py or wsgi.py BEFORE django.setup()
+  - Import from opentelemetry.instrumentation.django
+
+For SQLAlchemy:
+  - Call SQLAlchemyInstrumentor().instrument() BEFORE creating any engine
+  - Import from opentelemetry.instrumentation.sqlalchemy
+
+Key packages (already available in the Docker image):
+  - opentelemetry-distro, opentelemetry-sdk, opentelemetry-api
+  - opentelemetry-exporter-otlp-proto-http
+  - opentelemetry-instrumentation (provides the entrypoint wrapper)
 
 THE CODE MUST BE VALID PYTHON. Every import must exist in the OpenTelemetry ecosystem."""
 
@@ -27,11 +58,54 @@ THE CODE MUST BE VALID PYTHON. Every import must exist in the OpenTelemetry ecos
 def build_instrumentation_prompt(
     context_text: str,
     jaeger_host: str = "localhost",
-    jaeger_port: int = 4317,
+    jaeger_port: int = 4318,
+    context: dict[str, Any] | None = None,
 ) -> str:
-    """Build the prompt for generating OTel instrumentation code."""
+    """Build the prompt for generating OTel instrumentation code.
+
+    Accepts either a pre-formatted ``context_text`` string (backward compat)
+    or a structured ``context`` dict from ``build_project_context()``.
+    """
     otel_endpoint = f"http://{jaeger_host}:{jaeger_port}"
     sys_prompt = INSTRUMENTATION_SYSTEM % otel_endpoint
+
+    if context is not None:
+        lines = [
+            f"Service name: {context.get('service_name', 'unknown')}",
+            f"Language: {context.get('framework', 'unknown')}",
+            f"Framework: {context.get('framework', 'unknown')}",
+            f"ORM: {context.get('orm', 'unknown')}",
+            f"HTTP client: {context.get('http_client', 'unknown')}",
+            f"Has Dockerfile: {context.get('has_dockerfile', False)}",
+            f"Entry file: {context.get('main_file', 'not found')}",
+            "",
+            "--- File Tree ---",
+        ]
+        structure = context.get("structure", [])
+        for entry in structure[:60]:
+            lines.append(f"  {entry}")
+
+        routes = context.get("api_routes", [])
+        if routes:
+            lines.append("")
+            lines.append("--- API Routes Detected ---")
+            for route in routes[:20]:
+                lines.append(f"  {route['file']}:{route['line']}  {route['route']}")
+
+        main_content = context.get("main_content", "")
+        if main_content:
+            lines.append("")
+            lines.append(f"--- Entry Point: {context.get('main_file', 'main.py')} ---")
+            lines.append(main_content)
+
+        req_content = context.get("requirements_content", "")
+        if req_content:
+            lines.append("")
+            lines.append(f"--- {context.get('requirements_file', 'requirements.txt')} ---")
+            lines.append(req_content)
+
+        context_text = "\n".join(lines)
+
     return f"""{sys_prompt}
 
 Here is the complete project context:
@@ -41,7 +115,7 @@ Here is the complete project context:
 ---
 
 Add OpenTelemetry instrumentation to the main application file.
-Return ONLY the complete modified file content."""
+Return ONLY the complete modified file content — no explanations, no markdown."""
 
 
 def build_analysis_prompt(

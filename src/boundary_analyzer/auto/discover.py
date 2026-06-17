@@ -81,30 +81,71 @@ def discover_project(root: str | Path) -> ProjectInfo:
                 )
             )
     else:
-        entries = detection.entries or plugin.find_entry_points(root_path)
+        # Try subdirectory scanning for monorepo layouts
+        subdir_services = _discover_subdirectory_services(root_path)
 
-        if not entries:
-            raise AnalysisError(
-                code=ErrorCode.ENTRY_NOT_FOUND,
-                scope=str(root_path),
-                recoverable=False,
-            )
+        if subdir_services:
+            for svc_name, host_port, build_context in subdir_services:
+                if build_context and build_context.is_dir():
+                    try:
+                        sub_plugin, sub_detection = detect_language(build_context)
+                        entries = sub_detection.entries or sub_plugin.find_entry_points(build_context)
+                        lang = sub_detection.language or detection.language
+                        fw = sub_detection.framework or (entries[0].framework if entries else detection.framework)
+                    except (AnalysisError, Exception):
+                        entries = []
+                        lang = detection.language
+                        fw = detection.framework
+                else:
+                    entries = []
+                    lang = detection.language
+                    fw = detection.framework
 
-        for entry in entries:
-            port = plugin.guess_port(entry)
-            service_name = _derive_service_name(entry.path, root_path)
-            framework = detection.framework or plugin.detect_framework(root_path, entry)
-
-            services.append(
-                ServiceInfo(
-                    name=service_name,
-                    language=detection.language,
-                    framework=framework,
-                    entry_points=[entry],
-                    ports=[port] if port else [],
-                    deployment="docker" if has_docker else "direct",
+                services.append(
+                    ServiceInfo(
+                        name=svc_name,
+                        language=lang,
+                        framework=fw,
+                        entry_points=entries[:1] if entries else [],
+                        ports=[host_port] if host_port else [],
+                        deployment="direct",
+                    )
                 )
-            )
+        else:
+            entries = detection.entries or plugin.find_entry_points(root_path)
+
+            if not entries:
+                raise AnalysisError(
+                    code=ErrorCode.ENTRY_NOT_FOUND,
+                    scope=str(root_path),
+                    recoverable=False,
+                )
+
+            for entry in entries:
+                port = plugin.guess_port(entry)
+                service_name = _derive_service_name(entry.path, root_path)
+                framework = detection.framework or plugin.detect_framework(root_path, entry)
+
+                services.append(
+                    ServiceInfo(
+                        name=service_name,
+                        language=detection.language,
+                        framework=framework,
+                        entry_points=[entry],
+                        ports=[port] if port else [],
+                        deployment="docker" if has_docker else "direct",
+                    )
+                )
+
+    # Deduplicate services by (name, deployment)
+    seen: set[tuple[str, str]] = set()
+    unique_services: list[ServiceInfo] = []
+    for svc in services:
+        key = (svc.name, svc.deployment or "direct")
+        if key not in seen:
+            seen.add(key)
+            unique_services.append(svc)
+    services = unique_services
 
     return ProjectInfo(
         services=services,
@@ -114,6 +155,41 @@ def discover_project(root: str | Path) -> ProjectInfo:
         framework=detection.framework,
         plugins_loaded=[plugin.name],
     )
+
+
+def _is_service_dir(path: Path) -> bool:
+    """Heuristic: does this directory look like a microservice?"""
+    indicators = [
+        "package.json",
+        "requirements.txt",
+        "pyproject.toml",
+        "pom.xml",
+        "build.gradle",
+        "composer.json",
+        "go.mod",
+        "Cargo.toml",
+        "Dockerfile",
+    ]
+    return any((path / ind).exists() for ind in indicators)
+
+
+def _discover_subdirectory_services(root: Path) -> list[tuple[str, int | None, Path | None]]:
+    """Fallback: scan one level deep for service subdirectories."""
+    results: list[tuple[str, int | None, Path | None]] = []
+    seen: set[str] = set()
+
+    for child in sorted(root.iterdir()):
+        if not child.is_dir():
+            continue
+        if child.name.startswith(".") or child.name in {"node_modules", "__pycache__", "dist", "build", ".git", "venv", ".venv"}:
+            continue
+        if child.name in seen:
+            continue
+        if _is_service_dir(child):
+            seen.add(child.name)
+            results.append((child.name, None, child))
+
+    return results
 
 
 def _discover_compose_app_services(root: Path) -> list[tuple[str, int | None, Path | None]]:

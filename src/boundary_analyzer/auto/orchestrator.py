@@ -39,6 +39,8 @@ from boundary_analyzer.auto.traffic import (
     discover_endpoints_openapi,
     generate_traffic,
 )
+from boundary_analyzer.llm.context import build_project_context
+from boundary_analyzer.llm.instrumentation import generate_instrumentation
 from boundary_analyzer.pipeline.run_pipeline import run_pipeline
 
 """Orchestrator for fully automatic microservice boundary analysis.
@@ -328,6 +330,64 @@ def _print_final_report(report: AnalysisReport) -> None:
     _console.print(f"  Duration: [bold]{report.total_duration_seconds:.1f}[/]s")
 
 
+def _llm_instrument_services(project: ProjectInfo, config: FullConfig) -> None:
+    """Use LLM to generate OTel instrumentation code for each Python service.
+
+    Falls back silently to existing Dockerfile patching if the LLM call fails
+    or returns invalid code.
+    """
+    import os
+
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        _print_step("!", "LLM enabled but OPENROUTER_API_KEY not set — falling back to static instrumentation")
+        return
+
+    for svc in project.services:
+        if svc.language != "python":
+            continue
+
+        _print_step("*", f"Instrumenting {svc.name} via LLM...")
+
+        try:
+            code = generate_instrumentation(
+                project_path=svc.root_dir or project.root_dir,
+                jaeger_host="127.0.0.1",
+                jaeger_port=4318,
+            )
+        except Exception as e:
+            logger.warning("LLM instrumentation failed for %s: %s", svc.name, e)
+            continue
+
+        if code is None:
+            _print_step("!", f"LLM returned no code for {svc.name} — using static template")
+            continue
+
+        try:
+            compile(code, f"{svc.name}_otel.py", "exec")
+        except SyntaxError as e:
+            _print_step("!", f"LLM generated invalid Python for {svc.name}: {e}")
+            continue
+
+        entry = svc.entry_points[0] if svc.entry_points else None
+        if entry is None:
+            _print_step("!", f"No entry point for {svc.name} — cannot apply")
+            continue
+
+        entry_path = entry.path
+        if not entry_path.exists():
+            _print_step("!", f"Entry point not found: {entry_path}")
+            continue
+
+        backup_path = entry_path.with_suffix(entry_path.suffix + ".mba_bak")
+        if not backup_path.exists():
+            import shutil
+            shutil.copy2(entry_path, backup_path)
+
+        entry_path.write_text(code, encoding="utf-8")
+        _print_step("v", f"{svc.name} → instrumented via LLM")
+
+
 def run_full_analysis(config: FullConfig) -> AnalysisReport:
     """Run the complete automatic analysis pipeline from discovery through cleanup.
 
@@ -377,6 +437,10 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
         report.total_duration_seconds = time.time() - start_time
         _print_final_report(report)
         return report
+
+    # ── LLM Instrumentation Step (optional) ─────────────────────────────
+    if config.llm:
+        _llm_instrument_services(project, config)
 
     if _uses_docker_compose(project):
         try:

@@ -78,7 +78,8 @@ class ComposeOverrideTest(unittest.TestCase):
         self.assertIn("myapp", data["services"])
         env = data["services"]["myapp"]["environment"]
         self.assertIn("OTEL_SERVICE_NAME=myapp", env)
-        self.assertIn("OTEL_EXPORTER_OTLP_ENDPOINT=http://mba-jaeger:4317", env)
+        self.assertIn("OTEL_EXPORTER_OTLP_ENDPOINT=http://mba-jaeger:4318", env)
+        self.assertIn("OTEL_TRACES_EXPORTER=otlp_proto_http", env)
         self.assertIn("OTEL_METRICS_EXPORTER=none", env)
         self.assertIn("OTEL_LOGS_EXPORTER=none", env)
         self.assertIn("depends_on", data["services"]["myapp"])

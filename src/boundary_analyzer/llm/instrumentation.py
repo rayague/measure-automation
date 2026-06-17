@@ -36,6 +36,7 @@ def generate_instrumentation(
         context_text,
         jaeger_host=jaeger_host,
         jaeger_port=jaeger_port,
+        context=context,
     )
 
     result = call_llm(prompt, temperature=0.1, max_tokens=4000)

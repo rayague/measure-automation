@@ -41,6 +41,7 @@ class ErrorCode(Enum):
     DOCKER_PERMISSION = "deploy.docker.PERMISSION_DENIED"
     DOCKER_PORT_CONFLICT = "deploy.docker.PORT_CONFLICT"
     DOCKER_PULL_FAILED = "deploy.docker.PULL_FAILED"
+    DOCKER_START_FAILED = "deploy.docker.START_FAILED"
     DOCKER_BUILD_FAILED = "deploy.docker.BUILD_FAILED"
     DOCKER_COMPOSE_FAILED = "deploy.docker.COMPOSE_FAILED"
     JAEGER_NOT_READY = "deploy.jaeger.NOT_READY"
@@ -193,6 +194,12 @@ _ERROR_MESSAGES: dict[ErrorCode, tuple[str, str, str, bool]] = {
         "Failed to pull the Jaeger Docker image.",
         "docker pull jaegertracing/all-in-one:latest failed.",
         "Check your internet connection, or pull manually: docker pull jaegertracing/all-in-one:1.60",
+        True,
+    ),
+    ErrorCode.DOCKER_START_FAILED: (
+        "Failed to start the Jaeger Docker container.",
+        "docker start mba-jaeger failed.",
+        "Check container logs: docker logs mba-jaeger\nOr remove and recreate: docker rm -f mba-jaeger",
         True,
     ),
     ErrorCode.DOCKER_BUILD_FAILED: (

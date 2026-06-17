@@ -15,8 +15,8 @@ class LllmPromptsTest(unittest.TestCase):
     def test_build_instrumentation_prompt_has_system_instructions(self):
         from boundary_analyzer.llm.prompts import INSTRUMENTATION_SYSTEM
 
-        self.assertIn("OTLP gRPC", INSTRUMENTATION_SYSTEM)
-        self.assertIn("COMPLETE modified file", INSTRUMENTATION_SYSTEM)
+        self.assertIn("OTLP HTTP", INSTRUMENTATION_SYSTEM)
+        self.assertIn("COMPLETE modified entry point file", INSTRUMENTATION_SYSTEM)
         self.assertIn("VALID PYTHON", INSTRUMENTATION_SYSTEM)
 
     def test_build_analysis_prompt_includes_data(self):
