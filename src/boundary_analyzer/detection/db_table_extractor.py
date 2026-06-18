@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,8 @@ import pandas as pd
 from boundary_analyzer._utils import save_csv
 
 """Extract database operations from trace spans (SQL and NoSQL)."""
+
+logger = logging.getLogger(__name__)
 
 # Simple regex patterns for SQL table extraction.
 # Supports:
@@ -201,6 +204,14 @@ def extract_db_operations(spans_df: pd.DataFrame) -> pd.DataFrame:
     db_spans = spans_df[is_db].copy()
 
     if db_spans.empty:
+        logger.warning(
+            "No DB spans found in %d total spans. "
+            "This means no traces contain db.system/db.statement tags or SQL-like operation names. "
+            "Check that DB instrumentation packages are installed "
+            "(opentelemetry-instrumentation-psycopg2, sqlalchemy, etc.) "
+            "and that DB calls are being traced.",
+            len(spans_df),
+        )
         return pd.DataFrame(columns=["trace_id", "span_id", "service_name", "db_system", "db_statement", "tables"])
 
     # Parse tags once (stringified JSON list)

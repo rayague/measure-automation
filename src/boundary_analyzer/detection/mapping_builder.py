@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,8 @@ import pandas as pd
 from boundary_analyzer._utils import save_csv
 
 """Build endpoint-to-DB-table mappings by walking parent span chains."""
+
+logger = logging.getLogger(__name__)
 
 
 def _build_span_lookup(spans_df: pd.DataFrame) -> dict[tuple[str, str], dict[str, Any]]:
@@ -128,7 +131,24 @@ def build_endpoint_table_mapping(
             )
 
     if not mappings:
+        logger.warning(
+            "No endpoint-to-table mappings could be built from %d DB operations. "
+            "The parent-span chain walking may have failed. Check that HTTP endpoint "
+            "spans exist and that DB spans have valid parent span IDs.",
+            len(db_ops_df),
+        )
         return pd.DataFrame(columns=["service_name", "endpoint_key", "table", "count"])
+
+    unknown_count = sum(1 for m in mappings if m["endpoint_key"] == "unknown_endpoint")
+    total_mappings = len(mappings)
+    if unknown_count > total_mappings * 0.5:
+        logger.warning(
+            "%d/%d mappings are 'unknown_endpoint' (>50%%). "
+            "Parent-span chain walking failed to link DB spans to HTTP endpoints. "
+            "This is often caused by missing parent_span_id values or span ID format "
+            "mismatches between traces.",
+            unknown_count, total_mappings,
+        )
 
     # Aggregate counts
     df = pd.DataFrame(mappings)

@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.4 (2026-06-18)
+
+### Fix SCOM = 0 services and missing DB instrumentation
+
+- **deploy.py**: Added `_OTEL_DB_PACKAGES` (psycopg2, sqlalchemy, dbapi, pymongo, redis, mysql, pymysql) — DB instrumentation packages are now installed in the Docker image, fixing `Psycopg2Instrumentor` import failures and missing `db.system` spans
+- **db_table_extractor.py**: Warning logged when 0 DB spans are found among total spans, guiding users to check DB instrumentation
+- **mapping_builder.py**: Warning logged when >50% of endpoint-to-table mappings are `unknown_endpoint`, flagging parent-span chain walking failures
+- **orchestrator.py**: Case-insensitive service name matching between discovered services and Jaeger; warning when discovered service names are absent from Jaeger
+
 ## v0.6.3 (2026-06-18)
 
 ### Reuse manually started Jaeger in Docker Compose

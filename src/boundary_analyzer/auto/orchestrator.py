@@ -104,12 +104,29 @@ def _export_jaeger_traces(
         )
 
     if service_filter:
-        services = [s for s in services if s in service_filter]
+        service_filter_lower = {s.lower() for s in service_filter}
+        matched = []
+        unmatched = []
+        for s in services:
+            if s in service_filter or s.lower() in service_filter_lower:
+                matched.append(s)
+            else:
+                unmatched.append(s)
+        if unmatched:
+            logger.warning(
+                "Service name mismatch between discovery and Jaeger: "
+                "discovered=%s, not found in Jaeger=%s. "
+                "Check that OTEL_SERVICE_NAME env var matches the service name in docker-compose.yml.",
+                service_filter, unmatched,
+            )
+        services = matched
 
     if not services:
         raise AnalysisError(
             code=ErrorCode.NO_TRACES,
-            _override_detail="No services found in Jaeger.",
+            _override_detail=f"No services found in Jaeger matching {service_filter}. "
+            f"Available in Jaeger: {services}. "
+            "Check OTEL_SERVICE_NAME env var matches docker-compose service names.",
             recoverable=True,
         )
 

@@ -33,6 +33,16 @@ _OTEL_FRAMEWORK_PACKAGES: dict[str, str] = {
     "aiohttp": "opentelemetry-instrumentation-aiohttp-client",
 }
 
+_OTEL_DB_PACKAGES: list[str] = [
+    "opentelemetry-instrumentation-psycopg2",
+    "opentelemetry-instrumentation-sqlalchemy",
+    "opentelemetry-instrumentation-dbapi",
+    "opentelemetry-instrumentation-pymongo",
+    "opentelemetry-instrumentation-redis",
+    "opentelemetry-instrumentation-mysql",
+    "opentelemetry-instrumentation-pymysql",
+]
+
 
 @dataclass
 class DeployedService:
@@ -822,9 +832,12 @@ def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[st
         insert_pos = last_ep_idx
 
     fw_pkg = _OTEL_FRAMEWORK_PACKAGES.get(svc.framework, "")
+    db_pkgs = " ".join(_OTEL_DB_PACKAGES)
     otel_pkgs = "opentelemetry-distro opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation opentelemetry-exporter-otlp-proto-http"
     if fw_pkg:
         otel_pkgs += f" {fw_pkg}"
+    if db_pkgs:
+        otel_pkgs += f" {db_pkgs}"
     otel_run = f"RUN pip install --no-cache-dir {otel_pkgs}"
     lines.insert(insert_pos, otel_run)
 
