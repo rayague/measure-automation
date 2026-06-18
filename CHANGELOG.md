@@ -1,5 +1,61 @@
 # Changelog
 
+## v0.6.0 (2026-06-18)
+
+### Port Conflict Detection & Recovery
+
+- **deploy.py**: `_ensure_jaeger_ports_free()` — proactive check before `docker compose up`. Frees ports 4318/16686 by force-removing zombie `mba-jaeger` container. Clear error if another process holds the port
+- **deploy.py**: `_parse_docker_error()` — scans streaming output for 4 known patterns ("port is already allocated", "cannot connect to daemon", "permission denied", "no such image") and produces a specific fix message instead of the generic "check syntax"
+- **orchestrator.py**: `_try_cleanup()` now force-removes `mba-jaeger` container after every run to prevent zombie containers
+
+### LLM Reliability (OpenRouter + Ollama)
+
+- **prompts.py**: New rule #8 — LLM is explicitly allowed to add OTel instrumentation around database operations as long as the original query logic is unchanged. Prevents false refusals like "Cannot instrument database queries"
+- **instrumentation.py**: Two-stage retry — if OpenRouter fails (None, refusal, or syntax error), automatically retries with local Ollama before giving up
+- **orchestrator.py**: Clear messages showing what was tried ("OpenRouter API key detected — will fall back to local Ollama if needed") and actionable tips ("Install Ollama (ollama.com) and pull qwen2.5-coder")
+
+## v0.5.0 (2026-06-18)
+
+### Robustness & Performance
+
+- **deploy.py**: Threaded streaming for `docker compose up` — real-time output on stderr with 60-line rotating tail for error diagnostics, 300s timeout, `proc.stdout.close()` on Windows to unblock reader thread
+- **deploy.py**: Platform-aware Docker daemon timeout — 25s on Windows (WSL2/Hyper-V latency), 10s on Linux
+- **deploy.py**: Deduplicated `_find_otel_dockerfiles` → `find_otel_dockerfiles` (public), removed duplicate from orchestrator
+- **orchestrator.py**: Proactive Docker check with visible "waiting up to 60s..." feedback before any deploy; `_ensure_docker()` with real elapsed time reporting
+- **instrumentation_marker.py**: `cleanup_orphans()` — scans for orphan `.mba_bak`, `.mba-Dockerfile`, `.mba-compose-override.yml` without marker (pre-v0.4.0 compat). Uses `os.walk` with directory pruning to skip `.venv`/`node_modules`/`__pycache__`
+- **prompts.py**: LLM sentinel `jaeger_host="env"` now tells the model to read `os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", ...)` at runtime instead of generating `http://env:4318`
+- **orchestrator.py**: LLM instrumentation passes `"env"` for Docker Compose projects, `"127.0.0.1"` for local projects
+
+### Tests
+- 565 tests (+7 new), 0 regressions
+- 7 new tests: `build_instrumentation_prompt(jaeger_host="env")` sentinel, `_extract_host_port()` with all formats including `127.0.0.1:5000:5000`
+
+## v0.4.0 (2026-06-17)
+
+### Version-Aware Instrumentation System (new feature)
+
+- **NEW**: `.mba-instrumented` marker file written after successful deploy, recording version, mode, and all artifacts created (backups, Dockerfile overrides, compose overrides)
+- **NEW**: `check_stale_instrumentation()` detects instrumentation from a different MBA version at the start of `mba full` and automatically cleans up before re-instrumenting
+- **NEW**: `cleanup_instrumentation()` restores backup files (`.mba_bak` → original), deletes generated `.mba-Dockerfile` and `.mba-compose-override.yml` files
+- **NEW**: On each run, if marker exists with a different version, cleanup runs automatically before discovery
+
+### Docker Compose Robustness (bug fixes)
+
+- **deploy.py**: Added `subprocess.TimeoutExpired` handler in `deploy_docker_compose()` — previously an unhandled crash; now produces a clear `DOCKER_COMPOSE_FAILED` error
+- **deploy.py**: `_generate_otel_dockerfile()` now logs warnings on all 7 silent failure paths instead of returning `(None, None)` with no user feedback
+- **discover.py**: Fixed port extraction from Docker Compose YAML. The old `p.rsplit(":", 1)[0].rsplit(":", 1)[0]` was broken for `host_ip:host_port:container_port` format (e.g., `127.0.0.1:5000:5000`). Now uses a proper `_extract_host_port()` helper
+
+### LLM Chain Improvements (bug fixes + diagnostics)
+
+- **instrumentation.py**: Added `logger.warning()` for each reason the LLM returns `None`: API/Ollama failure, `"ERROR:"` refusal (with the actual reason), and `SyntaxError` in generated code. Previously all three were silent
+- **context.py**: Extended `_find_main_file()` to recognize all entry point names from the Python plugin: `run.py`, `manage.py`, `wsgi.py`, `api.py` (in addition to existing `main.py`, `app.py`, `server.py`). Also checks subdirectories (`app/`, `src/`, `application/`) for all these names
+- **context.py**: Added `"language"` key to context dict (value: `"python"`) so the prompt template correctly shows `"Language: python"` instead of duplicating the framework name
+- **prompts.py**: Fixed `"Language:"` label to read `context.get('language', 'python')` instead of `context.get('framework', 'unknown')`
+
+## v0.3.11 (2026-06-17)
+
+### Fix Docker daemon detection on Windows
+
 ## v0.3.10 (2026-06-17)
 
 ### Docker error messages now accurate

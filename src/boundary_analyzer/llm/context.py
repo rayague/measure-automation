@@ -17,17 +17,22 @@ def _safe_read(path: Path) -> str:
     return ""
 
 
+_MAIN_FILE_NAMES = [
+    "main.py", "app.py", "server.py", "run.py", "manage.py", "wsgi.py", "api.py",
+]
+
+
 def _find_main_file(project_path: Path) -> Path | None:
     """Try to find the main application entry point."""
-    candidates = [
-        project_path / "app" / "main.py",
-        project_path / "main.py",
-        project_path / "src" / "main.py",
-        project_path / "application" / "main.py",
-        project_path / "app.py",
-        project_path / "server.py",
-    ]
-    for c in candidates:
+    # Check known subdirectories first (most common patterns)
+    for sub in ["app", "src", "application"]:
+        for name in _MAIN_FILE_NAMES:
+            c = project_path / sub / name
+            if c.exists():
+                return c
+    # Then check root
+    for name in _MAIN_FILE_NAMES:
+        c = project_path / name
         if c.exists():
             return c
     return None
@@ -160,9 +165,11 @@ def build_project_context(project_path: Path) -> dict[str, Any]:
     main_file = _find_main_file(project_path)
     req_file = _find_requirements(project_path)
 
+    framework = _detect_framework_from_files(project_path)
     context: dict[str, Any] = {
+        "language": "python",
         "service_name": _get_service_name(project_path),
-        "framework": _detect_framework_from_files(project_path),
+        "framework": framework,
         "orm": _detect_orm(project_path),
         "http_client": _detect_http_client(project_path),
         "project_path": str(project_path),

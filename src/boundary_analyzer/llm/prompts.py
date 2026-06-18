@@ -18,13 +18,14 @@ microservice so that:
   - The service.name attribute equals the provided SERVICE_NAME
 
 RULES:
-  1. Never remove, rename, or change existing code logic
-  2. Never change database models, route handlers, or business logic
-  3. Use ONLY official OTel packages for the target language
-  4. Always use BatchSpanProcessor, never SimpleSpanProcessor
-  5. The service.name MUST equal the provided SERVICE_NAME
-  6. Return ONLY the COMPLETE modified entry point file content — no explanations, no markdown
-  7. If you CANNOT safely instrument, respond with exactly "ERROR:" followed by the reason
+   1. Never remove, rename, or change existing code logic
+   2. Never change database models, route handlers, or business logic
+   3. Use ONLY official OTel packages for the target language
+   4. Always use BatchSpanProcessor, never SimpleSpanProcessor
+   5. The service.name MUST equal the provided SERVICE_NAME
+   6. Return ONLY the COMPLETE modified entry point file content — no explanations, no markdown
+   7. If you CANNOT safely instrument, respond with exactly "ERROR:" followed by the reason
+   8. You MAY add OpenTelemetry instrumentation calls around database operations (SQLAlchemyInstrumentor, cursor.execute wrappers, etc.) as long as the original query logic and parameters remain unchanged. Adding OTel imports and setup code does NOT count as "changing existing code logic."
 
 OTel endpoint: %s
 Transport: OTLP HTTP (port 4318)
@@ -66,13 +67,21 @@ def build_instrumentation_prompt(
     Accepts either a pre-formatted ``context_text`` string (backward compat)
     or a structured ``context`` dict from ``build_project_context()``.
     """
-    otel_endpoint = f"http://{jaeger_host}:{jaeger_port}"
-    sys_prompt = INSTRUMENTATION_SYSTEM % otel_endpoint
+    if jaeger_host == "env":
+        otel_endpoint = "runtime env var OTEL_EXPORTER_OTLP_ENDPOINT (default http://127.0.0.1:4318)"
+        endpoint_note = (
+            "\nIMPORTANT: The OTel endpoint is NOT known at code-generation time. "
+            "Use: os.environ.get('OTEL_EXPORTER_OTLP_ENDPOINT', 'http://127.0.0.1:4318')"
+        )
+    else:
+        otel_endpoint = f"http://{jaeger_host}:{jaeger_port}"
+        endpoint_note = ""
+    sys_prompt = (INSTRUMENTATION_SYSTEM % otel_endpoint) + endpoint_note
 
     if context is not None:
         lines = [
             f"Service name: {context.get('service_name', 'unknown')}",
-            f"Language: {context.get('framework', 'unknown')}",
+            f"Language: {context.get('language', 'python')}",
             f"Framework: {context.get('framework', 'unknown')}",
             f"ORM: {context.get('orm', 'unknown')}",
             f"HTTP client: {context.get('http_client', 'unknown')}",

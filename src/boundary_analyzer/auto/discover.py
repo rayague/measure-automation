@@ -192,6 +192,29 @@ def _discover_subdirectory_services(root: Path) -> list[tuple[str, int | None, P
     return results
 
 
+def _extract_host_port(ports: list) -> int | None:
+    """Extract the host port from a Docker Compose ports list.
+
+    Handles all standard Docker Compose port formats:
+    - ``"5000:5000"`` (host_port:container_port)
+    - ``"127.0.0.1:5000:5000"`` (host_ip:host_port:container_port)
+    - ``8000`` (bare integer — same host and container port)
+    """
+    for p in ports:
+        if isinstance(p, int):
+            return p
+        if isinstance(p, str):
+            parts = p.split(":")
+            try:
+                if len(parts) == 2:
+                    return int(parts[0])
+                if len(parts) == 3:
+                    return int(parts[1])
+            except (ValueError, TypeError):
+                continue
+    return None
+
+
 def _discover_compose_app_services(root: Path) -> list[tuple[str, int | None, Path | None]]:
     compose_file = None
     for name in ["docker-compose.yml", "docker-compose.yaml"]:
@@ -218,21 +241,7 @@ def _discover_compose_app_services(root: Path) -> list[tuple[str, int | None, Pa
         if "build" not in svc_config:
             continue
 
-        host_port = None
-        ports = svc_config.get("ports", [])
-        for p in ports:
-            if isinstance(p, str) and ":" in p:
-                try:
-                    host_port = int(p.rsplit(":", 1)[0].rsplit(":", 1)[0])
-                except (ValueError, TypeError):
-                    pass
-                break
-            elif isinstance(p, (int, str)):
-                try:
-                    host_port = int(p)
-                except (ValueError, TypeError):
-                    pass
-                break
+        host_port = _extract_host_port(svc_config.get("ports", []))
 
         build_context = None
         build_val = svc_config.get("build")

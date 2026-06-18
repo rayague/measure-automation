@@ -213,3 +213,35 @@ class DockerComposeDiscoverTest(unittest.TestCase):
         self.assertEqual(len(project.services), 1)
         self.assertEqual(project.services[0].name, "web")
         self.assertEqual(project.services[0].framework, "fastapi")
+
+
+class ExtractHostPortTest(unittest.TestCase):
+    def test_short_format(self):
+        from boundary_analyzer.auto.discover import _extract_host_port
+
+        self.assertEqual(_extract_host_port(["5000:5000"]), 5000)
+
+    def test_long_format_with_host_ip(self):
+        from boundary_analyzer.auto.discover import _extract_host_port
+
+        self.assertEqual(_extract_host_port(["127.0.0.1:5000:5000"]), 5000)
+
+    def test_bare_integer(self):
+        from boundary_analyzer.auto.discover import _extract_host_port
+
+        self.assertEqual(_extract_host_port([8000]), 8000)
+
+    def test_first_valid_port_returned(self):
+        from boundary_analyzer.auto.discover import _extract_host_port
+
+        self.assertEqual(_extract_host_port(["3000:3000", "4000:4000"]), 3000)
+
+    def test_empty_list_returns_none(self):
+        from boundary_analyzer.auto.discover import _extract_host_port
+
+        self.assertIsNone(_extract_host_port([]))
+
+    def test_no_valid_port_returns_none(self):
+        from boundary_analyzer.auto.discover import _extract_host_port
+
+        self.assertIsNone(_extract_host_port(["invalid", "also:bad"]))

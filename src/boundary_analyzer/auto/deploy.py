@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import json
 import logging
 import os
@@ -8,6 +9,7 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -108,20 +110,20 @@ def _docker_installed() -> bool:
 
 
 def _docker_daemon_ready() -> bool:
-    """Return True if the Docker daemon is responding (faster than ``docker info``)."""
+    """Return True if the Docker daemon is responding."""
+    timeout = 25 if os.name == "nt" else 10
     try:
         result = subprocess.run(
-            ["docker", "version", "--format", "{{.Server.Version}}"],
+            ["docker", "info"],
             capture_output=True,
-            text=True,
-            timeout=5,
+            timeout=timeout,
         )
-        return result.returncode == 0 and bool(result.stdout.strip())
+        return result.returncode == 0
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return False
 
 
-def _docker_available(retries: int = 3, delay: float = 3.0) -> bool:
+def docker_available(retries: int = 3, delay: float = 3.0) -> bool:
     """Return True if Docker CLI is installed AND the daemon is responding.
 
     Retries up to ``retries`` times with ``delay`` seconds between attempts.
@@ -145,6 +147,108 @@ def _jaeger_alive(port: int) -> bool:
         return r.status_code == 200
     except requests.RequestException:
         return False
+
+
+def _parse_docker_error(captured_lines: list[str]) -> tuple[str, str | None, bool]:
+    """Analyze captured Docker output for known failure patterns.
+
+    Returns (detail, fix, recoverable) where:
+    - detail: user-facing error description
+    - fix: suggested fix command (or None)
+    - recoverable: whether the error is potentially recoverable
+    """
+    full_output = "\n".join(captured_lines).lower()
+
+    if "port is already allocated" in full_output or "port is already in use" in full_output:
+        return (
+            "One or more required ports are already in use by another container or process.",
+            "Run: docker rm -f mba-jaeger 2>nul, then check if ports 16686 and 4318 are free with: netstat -aon | findstr :4318",
+            True,
+        )
+
+    if "cannot connect to the docker daemon" in full_output:
+        return (
+            "Docker daemon stopped responding during deployment.",
+            "Start Docker Desktop and wait for it to be ready, then re-run mba full.",
+            True,
+        )
+
+    if "permission denied" in full_output:
+        return (
+            "Permission denied — Docker or file system access issue.",
+            "Run Docker Desktop as administrator, or check file permissions on your project directory.",
+            True,
+        )
+
+    if "no such image" in full_output:
+        return (
+            "A required Docker image could not be found or pulled.",
+            "Check your internet connection and docker-compose.yml image references.",
+            True,
+        )
+
+    if "network" in full_output and ("not found" in full_output or "already exists" in full_output or "error" in full_output):
+        return (
+            "Docker network error — previous networks may conflict.",
+            "Run: docker network prune -f, then re-run mba full.",
+            True,
+        )
+
+    if captured_lines:
+        raw = "\n".join(captured_lines[-10:])
+        return (
+            f"Docker Compose failed. Last output:\n{raw}",
+            "Inspect the error above, fix the issue, and re-run mba full.",
+            True,
+        )
+
+    return (
+        "Docker Compose failed to start services with no output.",
+        "Run manually: docker compose up -d, then check the error.",
+        True,
+    )
+
+
+def _ensure_jaeger_ports_free(
+    jaeger_port: int = 16686,
+    otlp_port: int = 4318,
+    container_name: str = "mba-jaeger",
+) -> None:
+    """Check if Jaeger ports are free; try to clean up zombie containers.
+
+    Raises AnalysisError with a clear fix message if a port remains in use.
+    """
+    if not _is_port_in_use(jaeger_port) and not _is_port_in_use(otlp_port):
+        return
+
+    logger.info("Port %s or %s is in use — attempting to remove leftover Jaeger container...", jaeger_port, otlp_port)
+    sys.stderr.write(f"  ! Port {jaeger_port} or {otlp_port} in use — cleaning up old Jaeger container...\n")
+    sys.stderr.flush()
+
+    try:
+        subprocess.run(
+            ["docker", "rm", "-f", container_name],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        time.sleep(1)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    still_busy = [p for p in (jaeger_port, otlp_port) if _is_port_in_use(p)]
+    if still_busy:
+        ports_str = ", ".join(str(p) for p in still_busy)
+        raise AnalysisError(
+            code=ErrorCode.DOCKER_COMPOSE_FAILED,
+            _override_detail=(
+                f"Port(s) {ports_str} are still in use after removing container '{container_name}'. "
+                "Another process is holding the port."
+            ),
+            recoverable=True,
+        )
+
+    logger.info("Removed leftover Jaeger container and freed ports")
 
 
 def _docker_container_exists(name: str) -> bool:
@@ -177,11 +281,13 @@ def start_jaeger(
             recoverable=True,
         )
 
-    if not _docker_available():
+    if not docker_available():
         raise AnalysisError(
             code=ErrorCode.DOCKER_DAEMON_DOWN,
             recoverable=True,
         )
+
+    _ensure_jaeger_ports_free(jaeger_port, otlp_port, container_name)
 
     # Case 2 – container exists but stopped → restart it
     if _docker_container_exists(container_name):
@@ -566,29 +672,35 @@ def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[st
     """
     compose_file = _find_compose_file(root_dir)
     if not compose_file:
+        logger.warning("No compose file found for %s", svc.compose_service_name)
         return None, None
 
     try:
         with open(compose_file, encoding="utf-8") as f:
             data = yaml.safe_load(f)
-    except (OSError, PermissionError, yaml.YAMLError):
+    except (OSError, PermissionError, yaml.YAMLError) as e:
+        logger.warning("Cannot read compose file for %s: %s", svc.compose_service_name, e)
         return None, None
 
     if not data or "services" not in data:
+        logger.warning("No services in compose file for %s", svc.compose_service_name)
         return None, None
 
     svc_config = data.get("services", {}).get(svc.compose_service_name, {})
     if not svc_config:
+        logger.warning("Service %s not found in compose file", svc.compose_service_name)
         return None, None
 
     build_info = _get_build_info(root_dir, compose_file, svc.compose_service_name, svc_config)
     if build_info is None:
+        logger.warning("No build info found for %s", svc.compose_service_name)
         return None, None
 
     df_path = build_info["df_path"]
     try:
         content = df_path.read_text(encoding="utf-8")
-    except OSError:
+    except OSError as e:
+        logger.warning("Cannot read Dockerfile for %s: %s", svc.compose_service_name, e)
         return None, None
 
     # Check there is at least one CMD or ENTRYPOINT to wrap
@@ -597,6 +709,7 @@ def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[st
         for line in content.splitlines()
     )
     if not has_runnable:
+        logger.warning("No CMD or ENTRYPOINT in Dockerfile for %s", svc.compose_service_name)
         return None, None
 
     lines = content.splitlines()
@@ -645,7 +758,8 @@ def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[st
     otel_df = build_info["build_context"] / ".mba-Dockerfile"
     try:
         otel_df.write_text(modified_content, encoding="utf-8")
-    except OSError:
+    except OSError as e:
+        logger.warning("Cannot write .mba-Dockerfile for %s: %s", svc.compose_service_name, e)
         return None, None
 
     if isinstance(build_info["build_val"], str):
@@ -660,7 +774,7 @@ def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[st
     return build_config, None
 
 
-def _find_otel_dockerfiles(project_root: Path) -> list[Path]:
+def find_otel_dockerfiles(project_root: Path) -> list[Path]:
     """Return paths of all .mba-Dockerfile files generated during this run."""
     results: list[Path] = []
     compose_file = _find_compose_file(project_root)
@@ -737,6 +851,12 @@ def _build_compose_override(
             build_config, _otel_entrypoint = _generate_otel_dockerfile(project.root_dir, svc)
             if build_config:
                 svc_config["build"] = build_config
+            else:
+                logger.warning(
+                    "Could not patch Dockerfile for %s — deploying without OTel packages. "
+                    "OTel env vars will be set but the app won't be instrumented.",
+                    svc.compose_service_name,
+                )
 
         elif svc.language == "java":
             env = [
@@ -814,11 +934,13 @@ def deploy_docker_compose(
             recoverable=True,
         )
 
-    if not _docker_available():
+    if not docker_available():
         raise AnalysisError(
             code=ErrorCode.DOCKER_DAEMON_DOWN,
             recoverable=True,
         )
+
+    _ensure_jaeger_ports_free(jaeger_port, otlp_port, container_name)
 
     result = DeploymentResult(
         jaeger_port=jaeger_port,
@@ -837,40 +959,78 @@ def deploy_docker_compose(
             recoverable=True,
         )
 
+    cmd = [
+        "docker",
+        "compose",
+        "-f",
+        str(compose_file),
+        "-f",
+        str(override_file),
+        "up",
+        "-d",
+        "--build",
+        "--remove-orphans",
+    ]
+
     try:
-        cmd = [
-            "docker",
-            "compose",
-            "-f",
-            str(compose_file),
-            "-f",
-            str(override_file),
-            "up",
-            "-d",
-            "--build",
-            "--remove-orphans",
-        ]
-        subprocess.run(
+        proc = subprocess.Popen(
             cmd,
-            capture_output=True,
-            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             encoding="utf-8",
             errors="replace",
-            timeout=120,
-            check=True,
-        )
-    except subprocess.CalledProcessError as e:
-        _remove_override_file(override_file)
-        raise AnalysisError(
-            code=ErrorCode.DOCKER_COMPOSE_FAILED,
-            _override_detail=e.stderr.strip() or str(e),
-            recoverable=True,
         )
     except FileNotFoundError:
         _remove_override_file(override_file)
         raise AnalysisError(
             code=ErrorCode.DOCKER_NOT_FOUND,
             recoverable=True,
+        )
+
+    captured_lines: collections.deque[str] = collections.deque(maxlen=60)
+
+    def _reader(p: subprocess.Popen, buf: collections.deque) -> None:
+        assert p.stdout is not None
+        try:
+            for line in p.stdout:
+                sys.stderr.write(line)
+                sys.stderr.flush()
+                buf.append(line.rstrip("\r\n"))
+        except ValueError:
+            pass
+
+    reader = threading.Thread(target=_reader, args=(proc, captured_lines), daemon=True)
+    reader.start()
+
+    try:
+        retcode = proc.wait(timeout=300)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        if proc.stdout:
+            proc.stdout.close()
+        reader.join(timeout=5)
+        _remove_override_file(override_file)
+        detail_lines = list(captured_lines)
+        detail = "\n".join(detail_lines[-20:]) if detail_lines else "docker compose timed out after 300 seconds."
+        logger.warning("Docker Compose build timed out — see output above")
+        raise AnalysisError(
+            code=ErrorCode.DOCKER_COMPOSE_FAILED,
+            _override_detail=detail,
+            recoverable=True,
+        )
+
+    if proc.stdout:
+        proc.stdout.close()
+    reader.join(timeout=5)
+
+    if retcode != 0:
+        _remove_override_file(override_file)
+        detail_lines = list(captured_lines)
+        detail, fix, recoverable = _parse_docker_error(detail_lines)
+        raise AnalysisError(
+            code=ErrorCode.DOCKER_COMPOSE_FAILED,
+            _override_detail=f"{detail}\n\nFix: {fix}",
+            recoverable=recoverable,
         )
 
     for svc in project.services:
@@ -957,7 +1117,7 @@ def cleanup_docker_compose(
     except OSError:
         pass
 
-    for otel_df in _find_otel_dockerfiles(project.root_dir):
+    for otel_df in find_otel_dockerfiles(project.root_dir):
         try:
             otel_df.unlink()
         except OSError:

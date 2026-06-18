@@ -19,6 +19,15 @@ class LllmPromptsTest(unittest.TestCase):
         self.assertIn("COMPLETE modified entry point file", INSTRUMENTATION_SYSTEM)
         self.assertIn("VALID PYTHON", INSTRUMENTATION_SYSTEM)
 
+    def test_build_instrumentation_prompt_env_sentinel(self):
+        from boundary_analyzer.llm.prompts import build_instrumentation_prompt
+
+        prompt = build_instrumentation_prompt("DATA", jaeger_host="env")
+        self.assertIn("OTEL_EXPORTER_OTLP_ENDPOINT", prompt)
+        self.assertIn("os.environ.get", prompt)
+        self.assertIn("127.0.0.1:4318", prompt)
+        self.assertNotIn("http://env:4318", prompt)
+
     def test_build_analysis_prompt_includes_data(self):
         from boundary_analyzer.llm.prompts import build_analysis_prompt
 

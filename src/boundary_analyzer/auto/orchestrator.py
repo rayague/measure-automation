@@ -21,11 +21,22 @@ from boundary_analyzer.auto.deploy import (
     cleanup_services,
     deploy_docker_compose,
     deploy_services,
+    docker_available,
+    find_otel_dockerfiles,
     start_jaeger,
     stop_jaeger,
 )
 from boundary_analyzer.auto.discover import discover_project
 from boundary_analyzer.auto.errors import AnalysisError, ErrorCode, unexpected
+from boundary_analyzer.auto.instrumentation_marker import (
+    InstrumentationMarker,
+    MarkerArtifact,
+    check_stale_instrumentation,
+    cleanup_instrumentation,
+    cleanup_orphans,
+    read_marker,
+    write_marker,
+)
 from boundary_analyzer.auto.models import (
     AnalysisReport,
     Endpoint,
@@ -329,18 +340,49 @@ def _print_final_report(report: AnalysisReport) -> None:
     _console.print(f"  Duration: [bold]{report.total_duration_seconds:.1f}[/]s")
 
 
-def _llm_instrument_services(project: ProjectInfo, config: FullConfig) -> None:
+def _collect_marker_artifacts(project: ProjectInfo, backup_artifacts: list[MarkerArtifact]) -> list[MarkerArtifact]:
+    """Collect all artifacts generated during instrumentation + deploy."""
+    artifacts = list(backup_artifacts)
+
+    override_path = project.root_dir / ".mba-compose-override.yml"
+    if override_path.exists():
+        artifacts.append(MarkerArtifact(
+            type="compose_override",
+            path=".mba-compose-override.yml",
+        ))
+
+    for otel_df in find_otel_dockerfiles(project.root_dir):
+        try:
+            df_rel = otel_df.relative_to(project.root_dir).as_posix()
+            artifacts.append(MarkerArtifact(
+                type="dockerfile_override", path=df_rel,
+            ))
+        except ValueError:
+            artifacts.append(MarkerArtifact(
+                type="dockerfile_override", path=str(otel_df),
+            ))
+
+    return artifacts
+
+
+def _llm_instrument_services(project: ProjectInfo, config: FullConfig) -> list[MarkerArtifact]:
     """Use LLM to generate OTel instrumentation code for each Python service.
 
     Tries OpenRouter first (if API key set), then local Ollama.
-    Falls back silently to existing Dockerfile patching if all LLM options fail
+    Falls back to existing Dockerfile patching if all LLM options fail
     or return invalid code.
+
+    Returns a list of backup artifacts created for the instrumentation marker.
     """
     import os
 
     api_key = os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        _print_step("*", "No OpenRouter API key — trying local Ollama...")
+    if api_key:
+        _print_step("*", "OpenRouter API key detected — will fall back to local Ollama if needed")
+    else:
+        _print_step("*", "No OpenRouter API key — trying local Ollama only")
+
+    backup_artifacts: list[MarkerArtifact] = []
 
     for svc in project.services:
         if svc.language != "python":
@@ -349,24 +391,27 @@ def _llm_instrument_services(project: ProjectInfo, config: FullConfig) -> None:
         _print_step("*", f"Instrumenting {svc.name} via LLM...")
 
         svc_root = svc.entry_points[0].path.parent if svc.entry_points else project.root_dir
+        jaeger_host = "env" if _uses_docker_compose(project) else "127.0.0.1"
         try:
             code = generate_instrumentation(
                 project_path=svc_root,
-                jaeger_host="127.0.0.1",
+                jaeger_host=jaeger_host,
                 jaeger_port=4318,
             )
         except Exception as e:
             logger.warning("LLM instrumentation failed for %s: %s", svc.name, e)
+            _print_step("!", f"LLM exception for {svc.name}: {e} — using static template")
             continue
 
         if code is None:
-            _print_step("!", f"LLM returned no code for {svc.name} — using static template")
+            _print_step("!", f"All LLM options failed for {svc.name} — using static template")
+            _print_step("*", "Tip: Install Ollama (ollama.com) and pull qwen2.5-coder for local LLM support")
             continue
 
         try:
             compile(code, f"{svc.name}_otel.py", "exec")
         except SyntaxError as e:
-            _print_step("!", f"LLM generated invalid Python for {svc.name}: {e}")
+            _print_step("!", f"LLM code invalid for {svc.name}: {e} — using static template")
             continue
 
         entry = svc.entry_points[0] if svc.entry_points else None
@@ -387,6 +432,42 @@ def _llm_instrument_services(project: ProjectInfo, config: FullConfig) -> None:
         entry_path.write_text(code, encoding="utf-8")
         _print_step("v", f"{svc.name} → instrumented via LLM")
 
+        try:
+            orig_rel = entry_path.relative_to(project.root_dir).as_posix()
+            bak_rel = backup_path.relative_to(project.root_dir).as_posix()
+            backup_artifacts.append(MarkerArtifact(
+                type="backup", original=orig_rel, backup=bak_rel,
+            ))
+        except ValueError:
+            pass
+
+    return backup_artifacts
+
+
+def _ensure_docker() -> None:
+    """Proactively check Docker availability with visible feedback.
+
+    Raises AnalysisError if Docker is not available after the timeout.
+    """
+    if docker_available():
+        return
+
+    _print_step("!", "Docker daemon not responding yet — waiting up to 60 s...")
+    deadline = time.time() + 60
+    attempts = 0
+    while time.time() < deadline:
+        time.sleep(5)
+        attempts += 1
+        if docker_available():
+            _print_step("v", f"Docker daemon ready after ~{attempts * 5}s")
+            return
+
+    raise AnalysisError(
+        code=ErrorCode.DOCKER_DAEMON_DOWN,
+        _override_detail=f"Docker daemon not ready after ~{attempts * 5}s.",
+        recoverable=True,
+    )
+
 
 def run_full_analysis(config: FullConfig) -> AnalysisReport:
     """Run the complete automatic analysis pipeline from discovery through cleanup.
@@ -402,6 +483,12 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
     )
     start_time = time.time()
     deployment: DeploymentResult | None = None
+
+    if cleanup_orphans(config.project_dir):
+        _print_step("v", "Cleaned up orphan artifacts from a previous version")
+
+    if check_stale_instrumentation(config.project_dir):
+        _print_step("v", "Cleaned up stale instrumentation from a previous version")
 
     try:
         _print_step("*", "Discovering project...")
@@ -439,10 +526,12 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
         return report
 
     # ── LLM Instrumentation Step (optional) ─────────────────────────────
+    backup_artifacts: list[MarkerArtifact] = []
     if config.llm:
-        _llm_instrument_services(project, config)
+        backup_artifacts = _llm_instrument_services(project, config)
 
     if _uses_docker_compose(project):
+        _ensure_docker()
         try:
             _print_step("*", "Deploying via Docker Compose...")
             deployment = deploy_docker_compose(
@@ -468,6 +557,13 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
                 data=deployment,
             )
             _print_step("v", f"{ready_count}/{total_count} services ready")
+
+            artifacts = _collect_marker_artifacts(project, backup_artifacts)
+            if artifacts:
+                write_marker(
+                    project.root_dir,
+                    InstrumentationMarker(artifacts=artifacts),
+                )
         except AnalysisError as e:
             report.steps["deploy"] = StepResult(
                 success=False,
@@ -480,6 +576,7 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
             _print_final_report(report)
             return report
     else:
+        _ensure_docker()
         try:
             _print_step("*", "Starting Jaeger...")
             jaeger_port = start_jaeger(
@@ -522,6 +619,13 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
                 data=deployment,
             )
             _print_step("v", f"{ready_count}/{total_count} services ready")
+
+            artifacts = _collect_marker_artifacts(project, backup_artifacts)
+            if artifacts:
+                write_marker(
+                    project.root_dir,
+                    InstrumentationMarker(artifacts=artifacts),
+                )
         except AnalysisError as e:
             report.steps["deploy"] = StepResult(
                 success=False,
@@ -718,6 +822,8 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
 def _try_cleanup(report: AnalysisReport, project: ProjectInfo, deployment: DeploymentResult | None) -> None:
     errors: list[AnalysisError] = []
 
+    marker = read_marker(project.root_dir)
+
     try:
         if _uses_docker_compose(project):
             errors.extend(cleanup_docker_compose(project))
@@ -728,6 +834,17 @@ def _try_cleanup(report: AnalysisReport, project: ProjectInfo, deployment: Deplo
                 stop_jaeger()
             except AnalysisError as e:
                 errors.append(e)
+
+        # Force-remove any leftover Jaeger container from a previous crash
+        import subprocess
+        try:
+            subprocess.run(
+                ["docker", "rm", "-f", "mba-jaeger"],
+                capture_output=True,
+                timeout=10,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
     except KeyboardInterrupt:
         _print_step("!", "Cleanup interrupted by user")
         errors.append(
@@ -737,6 +854,9 @@ def _try_cleanup(report: AnalysisReport, project: ProjectInfo, deployment: Deplo
                 _override_detail="Interrupted by user during cleanup.",
             )
         )
+
+    if marker:
+        cleanup_instrumentation(project.root_dir, marker)
 
     cleanup_step = StepResult(
         success=len(errors) == 0,
