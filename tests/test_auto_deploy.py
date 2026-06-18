@@ -84,6 +84,35 @@ class ComposeOverrideTest(unittest.TestCase):
         self.assertIn("depends_on", data["services"]["myapp"])
         self.assertIn("mba-jaeger", data["services"]["myapp"]["depends_on"])
 
+    def test_build_override_reuses_external_jaeger(self):
+        svc = ServiceInfo(
+            name="myapp",
+            language="python",
+            framework="flask",
+            entry_points=[EntryPoint(path=Path("app.py"), framework="flask")],
+            deployment="docker-compose",
+            compose_service_name="myapp",
+            ports=[8000],
+        )
+        project = self._make_project([svc])
+        yaml_str = _build_compose_override(
+            project,
+            include_jaeger=False,
+            otel_host="host.docker.internal",
+        )
+        data = yaml.safe_load(yaml_str)
+        self.assertNotIn("mba-jaeger", data["services"])
+        env = data["services"]["myapp"]["environment"]
+        self.assertIn(
+            "OTEL_EXPORTER_OTLP_ENDPOINT=http://host.docker.internal:4318",
+            env,
+        )
+        self.assertNotIn("depends_on", data["services"]["myapp"])
+        self.assertIn(
+            "host.docker.internal:host-gateway",
+            data["services"]["myapp"]["extra_hosts"],
+        )
+
     def test_build_override_skips_non_compose_services(self):
         svc = ServiceInfo(
             name="direct-app",

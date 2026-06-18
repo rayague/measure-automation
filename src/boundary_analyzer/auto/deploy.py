@@ -256,6 +256,29 @@ def _parse_docker_error(captured_lines: list[str]) -> tuple[str, str | None, boo
     )
 
 
+def _resolve_compose_jaeger(
+    jaeger_port: int = 16686,
+    otlp_port: int = 4318,
+    container_name: str = "mba-jaeger",
+) -> tuple[bool, str]:
+    """Decide whether to add Jaeger to the compose override or reuse a running instance.
+
+    Returns ``(include_jaeger_service, otel_endpoint_host)``.
+    When Jaeger is already healthy on the host (e.g. manually started via
+    ``docker run --name jaeger``), services reach it through ``host.docker.internal``.
+    """
+    if _jaeger_alive(jaeger_port):
+        logger.info("Reusing existing Jaeger on port %s", jaeger_port)
+        sys.stderr.write(
+            f"  ✔ Jaeger already running on port {jaeger_port} — reusing it\n"
+        )
+        sys.stderr.flush()
+        return False, "host.docker.internal"
+
+    _ensure_jaeger_ports_free(jaeger_port, otlp_port, container_name)
+    return True, container_name
+
+
 def _ensure_jaeger_ports_free(
     jaeger_port: int = 16686,
     otlp_port: int = 4318,
@@ -294,13 +317,21 @@ def _ensure_jaeger_ports_free(
     still_busy = [p for p in (jaeger_port, otlp_port) if _is_port_in_use(p)]
     if still_busy:
         ports_str = ", ".join(str(p) for p in still_busy)
+        if _jaeger_alive(jaeger_port):
+            logger.info(
+                "Port(s) %s in use by a healthy Jaeger instance — caller should reuse it",
+                ports_str,
+            )
+            return
         raise AnalysisError(
             code=ErrorCode.DOCKER_COMPOSE_FAILED,
             _override_detail=(
                 f"Port(s) {ports_str} are still in use after removing zombie Jaeger containers. "
                 "Another process or non-Jaeger container is holding the port.\n"
                 f"Run: netstat -aon | findstr :{jaeger_port} to find the process PID, "
-                f"then: taskkill /F /PID <PID>"
+                f"then: taskkill /F /PID <PID>\n"
+                "If you started Jaeger manually, ensure it responds at "
+                f"http://127.0.0.1:{jaeger_port}/api/services or stop it first."
             ),
             recoverable=True,
         )
@@ -874,33 +905,37 @@ def _build_compose_override(
     jaeger_port: int = 16686,
     otlp_port: int = 4318,
     container_name: str = "mba-jaeger",
+    include_jaeger: bool = True,
+    otel_host: str | None = None,
 ) -> str:
-    override: dict[str, Any] = {
-        "services": {
-            container_name: {
-                "image": "jaegertracing/all-in-one:latest",
-                "ports": [
-                    f"{jaeger_port}:16686",
-                    f"{otlp_port}:4318",
-                ],
-            },
-        },
-    }
+    otel_host = otel_host or container_name
+    override: dict[str, Any] = {"services": {}}
+
+    if include_jaeger:
+        override["services"][container_name] = {
+            "image": "jaegertracing/all-in-one:latest",
+            "ports": [
+                f"{jaeger_port}:16686",
+                f"{otlp_port}:4318",
+            ],
+        }
 
     for svc in project.services:
         if not svc.compose_service_name:
             continue
 
-        svc_config: dict[str, Any] = {
-            "depends_on": {
+        svc_config: dict[str, Any] = {}
+        if include_jaeger:
+            svc_config["depends_on"] = {
                 container_name: {"condition": "service_started"},
-            },
-        }
+            }
+        else:
+            svc_config["extra_hosts"] = ["host.docker.internal:host-gateway"]
 
         if svc.language == "python":
             env = [
                 f"OTEL_SERVICE_NAME={svc.name}",
-                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4318",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{otel_host}:4318",
                 "OTEL_TRACES_EXPORTER=otlp_proto_http",
                 "OTEL_METRICS_EXPORTER=none",
                 "OTEL_LOGS_EXPORTER=none",
@@ -918,7 +953,7 @@ def _build_compose_override(
         elif svc.language == "java":
             env = [
                 f"OTEL_SERVICE_NAME={svc.name}",
-                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4317",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{otel_host}:4317",
             ]
             agent_host = _ensure_java_agent()
             if agent_host:
@@ -932,7 +967,7 @@ def _build_compose_override(
         elif svc.language == "node":
             env = [
                 f"OTEL_SERVICE_NAME={svc.name}",
-                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4317",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{otel_host}:4317",
                 "NODE_OPTIONS=--require @opentelemetry/auto-instrumentations-node/register",
                 "OTEL_METRICS_EXPORTER=none",
                 "OTEL_LOGS_EXPORTER=none",
@@ -941,7 +976,7 @@ def _build_compose_override(
         elif svc.language == "php":
             env = [
                 f"OTEL_SERVICE_NAME={svc.name}",
-                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4318",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{otel_host}:4318",
                 "OTEL_PHP_AUTOLOAD_ENABLED=true",
                 "OTEL_METRICS_EXPORTER=none",
                 "OTEL_LOGS_EXPORTER=none",
@@ -950,7 +985,7 @@ def _build_compose_override(
         elif svc.language == "dotnet":
             env = [
                 f"OTEL_SERVICE_NAME={svc.name}",
-                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4317",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{otel_host}:4317",
                 "OTEL_DOTNET_AUTO_TRACES_EXPORTER=otlp",
                 "OTEL_DOTNET_AUTO_METRICS_EXPORTER=none",
                 "OTEL_DOTNET_AUTO_LOGS_EXPORTER=none",
@@ -960,7 +995,7 @@ def _build_compose_override(
         else:
             env = [
                 f"OTEL_SERVICE_NAME={svc.name}",
-                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{container_name}:4318",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{otel_host}:4318",
             ]
 
         svc_config["environment"] = env
@@ -997,14 +1032,23 @@ def deploy_docker_compose(
             recoverable=True,
         )
 
-    _ensure_jaeger_ports_free(jaeger_port, otlp_port, container_name)
+    include_jaeger, otel_host = _resolve_compose_jaeger(
+        jaeger_port, otlp_port, container_name,
+    )
 
     result = DeploymentResult(
         jaeger_port=jaeger_port,
         otlp_port=otlp_port,
     )
 
-    override_yaml = _build_compose_override(project, jaeger_port, otlp_port, container_name)
+    override_yaml = _build_compose_override(
+        project,
+        jaeger_port,
+        otlp_port,
+        container_name,
+        include_jaeger=include_jaeger,
+        otel_host=otel_host,
+    )
     override_file = project.root_dir / ".mba-compose-override.yml"
     try:
         override_file.write_text(override_yaml, encoding="utf-8")

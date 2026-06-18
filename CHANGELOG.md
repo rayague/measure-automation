@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.3 (2026-06-18)
+
+### Reuse manually started Jaeger in Docker Compose
+
+- **deploy.py**: `_resolve_compose_jaeger()` — when Jaeger is already healthy on ports 4318/16686 (e.g. `docker run --name jaeger`), MBA reuses it instead of failing with "port already in use". Compose services reach it via `host.docker.internal:4318` with `extra_hosts: host-gateway`
+- **deploy.py**: `_build_compose_override()` accepts `include_jaeger` and `otel_host` for external Jaeger mode
+- **deploy.py**: clearer error when ports are busy but Jaeger is not healthy
+
 ## v0.6.0 (2026-06-18)
 
 ### Port Conflict Detection & Recovery
