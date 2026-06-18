@@ -532,6 +532,8 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
 
     if _uses_docker_compose(project):
         _ensure_docker()
+        _print_step("*", "Cleaning up previous Docker Compose project...")
+        cleanup_docker_compose(project)
         try:
             _print_step("*", "Deploying via Docker Compose...")
             deployment = deploy_docker_compose(

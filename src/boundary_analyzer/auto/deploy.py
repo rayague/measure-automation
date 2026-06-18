@@ -162,7 +162,17 @@ def _parse_docker_error(captured_lines: list[str]) -> tuple[str, str | None, boo
     if "port is already allocated" in full_output or "port is already in use" in full_output:
         return (
             "One or more required ports are already in use by another container or process.",
-            "Run: docker rm -f mba-jaeger 2>nul, then check if ports 16686 and 4318 are free with: netstat -aon | findstr :4318",
+            "Run: docker rm -f $(docker ps -aq --filter name=mba-jaeger) 2>nul, "
+            "then: netstat -aon | findstr :4318 to find the process PID, "
+            "then: taskkill /F /PID <PID>",
+            True,
+        )
+
+    if "container name" in full_output and "is already in use" in full_output:
+        return (
+            "A container with the same name already exists from a previous run.",
+            "Run: docker rm -f $(docker ps -aq --filter name=mba-jaeger) "
+            "&& docker compose -f docker-compose.yml down --remove-orphans",
             True,
         )
 
@@ -187,15 +197,52 @@ def _parse_docker_error(captured_lines: list[str]) -> tuple[str, str | None, boo
             True,
         )
 
-    if "network" in full_output and ("not found" in full_output or "already exists" in full_output or "error" in full_output):
+    if "network" in full_output and ("not found" in full_output or "already exists" in full_output):
         return (
             "Docker network error — previous networks may conflict.",
             "Run: docker network prune -f, then re-run mba full.",
             True,
         )
 
+    if "pool overlaps" in full_output or "overlaps with other one" in full_output:
+        return (
+            "Docker network IP address pool overlaps with another network.",
+            "Run: docker network prune -f, then re-run mba full.",
+            True,
+        )
+
+    if "failed to solve" in full_output and ("did not find" in full_output or "no such host" in full_output):
+        return (
+            "Docker build failed because a dependency could not be fetched "
+            "(pip registry failure or network issue).",
+            "Check your internet connection and try again. If behind a proxy, verify HTTP_PROXY settings.",
+            True,
+        )
+
+    if "failed to solve" in full_output:
+        return (
+            "Docker build failed — the image could not be built.",
+            "Check the build output above for the specific error. "
+            "Common issues: missing packages, pip install failures, or syntax errors in Dockerfile.",
+            True,
+        )
+
+    if "error getting credentials" in full_output:
+        return (
+            "Docker registry credential error.",
+            "Run: docker logout, then try again. If using Docker Desktop, check your login status.",
+            True,
+        )
+
+    if "no matching manifest" in full_output or "not found in the manifest list" in full_output:
+        return (
+            "A Docker image does not support your platform architecture.",
+            "Add the --platform flag (e.g., --platform=linux/amd64) to the service image in docker-compose.yml.",
+            True,
+        )
+
     if captured_lines:
-        raw = "\n".join(captured_lines[-10:])
+        raw = "\n".join(captured_lines[-15:])
         return (
             f"Docker Compose failed. Last output:\n{raw}",
             "Inspect the error above, fix the issue, and re-run mba full.",
@@ -225,14 +272,22 @@ def _ensure_jaeger_ports_free(
     sys.stderr.write(f"  ! Port {jaeger_port} or {otlp_port} in use — cleaning up old Jaeger container...\n")
     sys.stderr.flush()
 
+    # Find ALL containers whose name contains the target name (handles
+    # compose-generated names like scenario1_mba-jaeger_1, etc.)
     try:
-        subprocess.run(
-            ["docker", "rm", "-f", container_name],
-            capture_output=True,
-            text=True,
-            timeout=10,
+        ps = subprocess.run(
+            ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.ID}}"],
+            capture_output=True, text=True, timeout=10,
         )
-        time.sleep(1)
+        zombie_ids = [cid.strip() for cid in ps.stdout.splitlines() if cid.strip()]
+        if zombie_ids:
+            sys.stderr.write(f"     Found {len(zombie_ids)} zombie container(s) — removing...\n")
+            sys.stderr.flush()
+            subprocess.run(
+                ["docker", "rm", "-f"] + zombie_ids,
+                capture_output=True, text=True, timeout=15,
+            )
+            time.sleep(1)
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
 
@@ -242,8 +297,10 @@ def _ensure_jaeger_ports_free(
         raise AnalysisError(
             code=ErrorCode.DOCKER_COMPOSE_FAILED,
             _override_detail=(
-                f"Port(s) {ports_str} are still in use after removing container '{container_name}'. "
-                "Another process is holding the port."
+                f"Port(s) {ports_str} are still in use after removing zombie Jaeger containers. "
+                "Another process or non-Jaeger container is holding the port.\n"
+                f"Run: netstat -aon | findstr :{jaeger_port} to find the process PID, "
+                f"then: taskkill /F /PID <PID>"
             ),
             recoverable=True,
         )
