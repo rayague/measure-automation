@@ -1024,6 +1024,13 @@ def _main(argv: list[str] | None = None) -> int:
         try:
             meta = save_run(report)
             _console.print(f"  Saved run: [cyan]mba runs show {meta.id}[/]")
+            if report.report_path and report.report_path.parent.exists():
+                if "mba_scom_" in report.report_path.parent.name:
+                    try:
+                        import shutil
+                        shutil.rmtree(report.report_path.parent)
+                    except OSError as e:
+                        logger.warning("Failed to clean up temp report dir: %s", e)
         except Exception as e:
             logger.warning("Failed to save run: %s", e)
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.7.3 (2026-06-19)
+
+### Bug fixes & resilience improvements
+
+- **Version sync**: `__version__` bumped from 0.6.6 → 0.7.3 to match `pyproject.toml`.
+- **Jaeger reset** (`_ensure_jaeger_ports_free`): Added port-based container lookup (`docker ps --filter publish=<port>`) alongside name-based lookup. Fixes `--reset-jaeger` failing when Jaeger container has a different name.
+- **Jaeger reset** (`_reset_jaeger_container`): Now accepts `otlp_port`, searches by both name and published port, passes `otlp_port` to `start_jaeger()`. Also called in the local-process deployment branch.
+- **Trace isolation** (`_export_jaeger_traces`): Added `start_time` parameter. Traces are now filtered client-side by span `startTime`, preventing old traces from polluting SCOM analysis across runs.
+- **Alpine Dockerfile** (`_generate_otel_dockerfile`): Fixed line-index shift logic — uses `num_inserted` counter instead of hardcoded `+1`, preventing ENTRYPOINT corruption on Alpine images.
+- **Report path** (`orchestrator.py`): `output_dir` is now only deleted if analysis step failed. Temp dir cleaned in `cli.py` after `save_run`.
+- **DNS fallback** (`_build_compose_override`): When `include_jaeger=False`, `otel_host` is forced to `host.docker.internal` so services never depend on fragile Docker DNS resolution.
+- **Java volume quoting**: Removed nested double quotes in volume mount string.
+
 ## v0.7.2 (2026-06-19)
 
 ### Traffic gen for POST endpoints, Jaeger isolation, endpoint count display

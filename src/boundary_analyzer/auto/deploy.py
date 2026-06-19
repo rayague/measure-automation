@@ -362,24 +362,37 @@ def _ensure_jaeger_ports_free(
     sys.stderr.write(f"  ! Port {jaeger_port} or {otlp_port} in use — cleaning up old Jaeger container...\n")
     sys.stderr.flush()
 
-    # Find ALL containers whose name contains the target name (handles
-    # compose-generated names like scenario1_mba-jaeger_1, etc.)
+    zombie_ids = set()
     try:
-        ps = subprocess.run(
+        ps1 = subprocess.run(
             ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.ID}}"],
             capture_output=True, text=True, timeout=10,
         )
-        zombie_ids = [cid.strip() for cid in ps.stdout.splitlines() if cid.strip()]
-        if zombie_ids:
-            sys.stderr.write(f"     Found {len(zombie_ids)} zombie container(s) — removing...\n")
-            sys.stderr.flush()
+        for cid in ps1.stdout.splitlines():
+            if cid.strip():
+                zombie_ids.add(cid.strip())
+
+        ps2 = subprocess.run(
+            ["docker", "ps", "-a", "--filter", f"publish={jaeger_port}", "--format", "{{.ID}}"],
+            capture_output=True, text=True, timeout=10,
+        )
+        for cid in ps2.stdout.splitlines():
+            if cid.strip():
+                zombie_ids.add(cid.strip())
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    if zombie_ids:
+        sys.stderr.write(f"     Found {len(zombie_ids)} zombie container(s) — removing...\n")
+        sys.stderr.flush()
+        try:
             subprocess.run(
-                ["docker", "rm", "-f"] + zombie_ids,
+                ["docker", "rm", "-f"] + list(zombie_ids),
                 capture_output=True, text=True, timeout=15,
             )
             time.sleep(1)
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+        except (FileNotFoundError, subprocess.SubprocessError):
+            pass
 
     still_busy = [p for p in (jaeger_port, otlp_port) if _is_port_in_use(p)]
     if still_busy:
@@ -933,25 +946,29 @@ def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[st
         otel_pkgs += f" {db_pkgs}"
     otel_run = f"RUN pip install --no-cache-dir {otel_pkgs}"
 
+    num_inserted = 0
     # If base image is Alpine, install build deps before pip install
     if _is_alpine_image(df_path):
         apk_run = "RUN apk add --no-cache gcc musl-dev linux-headers"
         lines.insert(insert_pos, apk_run)
         insert_pos += 1
+        num_inserted += 1
 
     lines.insert(insert_pos, otel_run)
+    insert_pos += 1
+    num_inserted += 1
 
     # Inject ENTRYPOINT directly into the Dockerfile so Docker uses it
     # at runtime, avoiding Docker Compose v5 clearing CMD when entrypoint
     # is overridden in the compose YAML.
     otel_entrypoint = 'ENTRYPOINT ["opentelemetry-instrument"]'
     if last_ep_idx >= 0:
-        if insert_pos <= last_ep_idx:
-            last_ep_idx += 1  # shifted by otel_run insert
+        if (insert_pos - num_inserted) <= last_ep_idx:
+            last_ep_idx += num_inserted
         lines[last_ep_idx] = otel_entrypoint
     else:
-        if insert_pos <= last_cmd_idx:
-            last_cmd_idx += 1  # shifted by otel_run insert
+        if (insert_pos - num_inserted) <= last_cmd_idx:
+            last_cmd_idx += num_inserted
         lines.insert(last_cmd_idx, otel_entrypoint)
 
     modified_content = "\n".join(lines)
@@ -1022,7 +1039,10 @@ def _build_compose_override(
     include_jaeger: bool = True,
     otel_host: str | None = None,
 ) -> str:
-    otel_host = otel_host or container_name
+    if not include_jaeger:
+        otel_host = "host.docker.internal"
+    else:
+        otel_host = otel_host or container_name
     override: dict[str, Any] = {"services": {}}
 
     if include_jaeger:
@@ -1075,7 +1095,7 @@ def _build_compose_override(
                 env.append("OTEL_METRICS_EXPORTER=none")
                 env.append("OTEL_LOGS_EXPORTER=none")
                 svc_config["volumes"] = [
-                    f'"{agent_host}:/mba-agent:ro"',
+                    f"{agent_host}:/mba-agent:ro",
                 ]
 
         elif svc.language == "node":

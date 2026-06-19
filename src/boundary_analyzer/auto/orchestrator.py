@@ -94,6 +94,7 @@ def _export_jaeger_traces(
     jaeger_port: int = 16686,
     max_traces: int = 100,
     lookback_minutes: int = 10,
+    start_time: float | None = None,
 ) -> int:
     base_url = f"http://127.0.0.1:{jaeger_port}"
     services_url = f"{base_url}/api/services"
@@ -155,6 +156,17 @@ def _export_jaeger_traces(
             )
 
         traces = data.get("data", [])
+        if start_time is not None:
+            # Convert start_time (seconds) to microseconds, subtracting 10 seconds safety margin
+            start_time_us = int((start_time - 10.0) * 1000000)
+            filtered_traces = []
+            for t in traces:
+                spans = t.get("spans") or []
+                if any(s.get("startTime", 0) >= start_time_us for s in spans):
+                    filtered_traces.append(t)
+            traces = filtered_traces
+            data["data"] = traces
+
         if not traces:
             continue
 
@@ -604,7 +616,7 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
         _print_step("*", "Cleaning up previous Docker Compose project...")
         cleanup_docker_compose(project)
         if config.reset_jaeger:
-            _reset_jaeger_container(config.jaeger_port)
+            _reset_jaeger_container(config.jaeger_port, config.otlp_port)
         try:
             _print_step("*", "Deploying via Docker Compose...")
             deployment = deploy_docker_compose(
@@ -650,6 +662,8 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
             return report
     else:
         _ensure_docker()
+        if config.reset_jaeger:
+            _reset_jaeger_container(config.jaeger_port, config.otlp_port)
         try:
             _print_step("*", "Starting Jaeger...")
             jaeger_port = start_jaeger(
@@ -800,6 +814,7 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
             service_filter=service_names,
             jaeger_port=config.jaeger_port,
             lookback_minutes=config.lookback_minutes,
+            start_time=start_time,
         )
         if trace_count == 0:
             raise AnalysisError(
@@ -874,13 +889,20 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
             errors=[unexpected("analyze", e)],
         )
     finally:
-        # Clean up temp directories created during collect + analyze
-        for tmp in (traces_dir, output_dir):
-            if tmp and tmp.exists():
+        # Clean up traces temp directory
+        if traces_dir and traces_dir.exists():
+            try:
+                shutil.rmtree(traces_dir)
+            except OSError as rm_err:
+                logger.warning("Failed to clean up temp dir %s: %s", traces_dir, rm_err)
+
+        # Clean up output temp directory only if SCOM analyze failed
+        if not report.steps.get("analyze") or not report.steps["analyze"].success:
+            if output_dir and output_dir.exists():
                 try:
-                    shutil.rmtree(tmp)
+                    shutil.rmtree(output_dir)
                 except OSError as rm_err:
-                    logger.warning("Failed to clean up temp dir %s: %s", tmp, rm_err)
+                    logger.warning("Failed to clean up temp dir %s: %s", output_dir, rm_err)
 
     if config.no_clean and deployment:
         report.steps.setdefault(
@@ -954,7 +976,7 @@ def _try_cleanup(report: AnalysisReport, project: ProjectInfo, deployment: Deplo
     report.steps["cleanup"] = cleanup_step
 
 
-def _reset_jaeger_container(jaeger_port: int = 16686) -> None:
+def _reset_jaeger_container(jaeger_port: int = 16686, otlp_port: int = 4318) -> None:
     """Stop and remove the existing Jaeger container, then start a fresh one.
 
     Ensures no old traces from previous runs pollute the current analysis.
@@ -964,11 +986,33 @@ def _reset_jaeger_container(jaeger_port: int = 16686) -> None:
 
     container_name = "mba-jaeger"
     _print_step("*", f"Resetting Jaeger container ({container_name})...")
+    zombie_ids = set()
     try:
-        subprocess.run(
-            ["docker", "rm", "-f", container_name],
-            capture_output=True, timeout=10,
+        ps1 = subprocess.run(
+            ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.ID}}"],
+            capture_output=True, text=True, timeout=10,
         )
+        for cid in ps1.stdout.splitlines():
+            if cid.strip():
+                zombie_ids.add(cid.strip())
+
+        ps2 = subprocess.run(
+            ["docker", "ps", "-a", "--filter", f"publish={jaeger_port}", "--format", "{{.ID}}"],
+            capture_output=True, text=True, timeout=10,
+        )
+        for cid in ps2.stdout.splitlines():
+            if cid.strip():
+                zombie_ids.add(cid.strip())
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
-    start_jaeger(port=jaeger_port)
+
+    if zombie_ids:
+        try:
+            subprocess.run(
+                ["docker", "rm", "-f"] + list(zombie_ids),
+                capture_output=True, text=True, timeout=15,
+            )
+        except (FileNotFoundError, subprocess.SubprocessError):
+            pass
+
+    start_jaeger(jaeger_port=jaeger_port, otlp_port=otlp_port)
