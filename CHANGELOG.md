@@ -1,13 +1,26 @@
 # Changelog
 
-## v0.7.7 (2026-06-19)
+## v0.7.8 (2026-06-19)
 
-### Critical bug fixes
+### Critical fixes — Dashboard heatmap now works end-to-end
 
-- **`_build_heatmap` KeyError 'count'**: `_load_endpoint_table_map_from` was falling back to `service_scom.csv` which has completely different columns (no `endpoint_key`/`table`/`count`). Removed the wrong fallback; returns empty DataFrame instead → heatmap gracefully shows empty figure.
-- **CLI `runs show` shows `?` for SCOM=0.0**: `s.get("SCOM") or s.get("scom") or "?"` treats `0.0` as falsy. Replaced with `is not None` checks. Same fix for Endpoints, Tables, and `classify_scom` input.
-- **French labels removed everywhere**: `classify_scom()` now returns English: "Very cohesive", "Cohesive", "Weakly cohesive", "Not cohesive". Dashboard column header changed from "Cohésion" → "Cohesion". Definitions block "Threshold / Seuil" → "Threshold".
-- **Dashboard hover/click UX**: Added CSS `:hover` rule for DataTable rows (`cursor: pointer` background highlight). Active cell state also styled. Click now properly navigates to detail view (was crashing due to KeyError above).
+- **Dashboard heatmap now has data (Problem B)**: 
+  - `orchestrator.py` now includes `mapping_df` in `report.scom_results` alongside `scom_df`/`rank_df`.
+  - `cli.py` now reads `interim/endpoint_table_map.csv` and adds it to `report.scom_results["mapping_df"]`.
+  - `run_registry.py:save_run()` explicitly saves `mapping_df` to `interim/endpoint_table_map.csv` in the run directory (independent of temp-dir copy).
+  - `run_registry.py:save_run()` also copies `interim/` and `processed/` directories from the temp directory for full data preservation.
+  - `_load_endpoint_table_map_from` falls back to `endpoint_table_map.csv` at run dir root with proper try/except.
+  - `_build_heatmap` guards every column access (`service_name`, `endpoint_key`, `table`, `count`) — returns empty figure gracefully if any column is missing.
+- **Epoch date "1970-01-01" fixed (Problem C)**: `_data_provenance_card` now tries multiple `service_rank.csv` paths (processed/ then root), and reads `meta.json` timestamp for accurate "Generated" date.
+- **Avg SCOM label clarified (Problem D)**: Changed from "Avg SCOM" to "Avg SCOM (all)" to distinguish from individual service SCOM.
+- **`_discover_endpoints_for_service` service_dir fix**: When `entry_points` contain absolute paths, use the parent directory as `service_dir` instead of `project_info.root_dir`.
+
+### Previous v0.7.7 (already published)
+
+- `_build_heatmap` KeyError 'count' — wrong fallback `service_scom.csv` removed
+- CLI `runs show` showed `?` for SCOM=0.0 — `or` bug fixed with `is not None`
+- All French labels removed (English: "Very cohesive", "Cohesive", etc.)
+- DataTable hover CSS + "Cohésion" → "Cohesion"
 
 ## v0.7.6 (2026-06-19)
 

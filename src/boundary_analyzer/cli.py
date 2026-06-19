@@ -886,6 +886,11 @@ def _main(argv: list[str] | None = None) -> int:
                 import pandas as pd
                 report.scom_results["suspicious_df"] = pd.read_csv(sus_csv)
 
+            mapping_csv = output_dir / "interim" / "endpoint_table_map.csv"
+            if mapping_csv.exists():
+                import pandas as pd
+                report.scom_results["mapping_df"] = pd.read_csv(mapping_csv)
+
             saved_run = save_run(report)
             saved_run_id = saved_run.id
         except Exception as e:

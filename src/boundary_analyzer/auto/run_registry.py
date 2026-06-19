@@ -165,14 +165,8 @@ def _build_run_meta(report: Any, run_id: str, report_path: Path, boundaries_dir:
     traffic_step = report.step("traffic")
     traffic_data = traffic_step.data if traffic_step else {}
     if isinstance(traffic_data, dict):
-        all_req = sum(
-            getattr(t, "total_requests", 0) if not isinstance(t, dict) else t.get("total_requests", 0)
-            for t in traffic_data.values()
-        )
-        all_ok = sum(
-            getattr(t, "successful_requests", 0) if not isinstance(t, dict) else t.get("successful_requests", 0)
-            for t in traffic_data.values()
-        )
+        all_req = sum(getattr(t, "total_requests", 0) if not isinstance(t, dict) else t.get("total_requests", 0) for t in traffic_data.values())
+        all_ok = sum(getattr(t, "successful_requests", 0) if not isinstance(t, dict) else t.get("successful_requests", 0) for t in traffic_data.values())
     else:
         all_req = 0
         all_ok = 0
@@ -229,6 +223,17 @@ def save_run(
             except Exception as e:
                 logger.warning("Failed to save %s: %s", csv_name, e)
 
+    # Explicitly save mapping_df to interim/endpoint_table_map.csv so the dashboard heatmap works.
+    # This is the reliable path — independent of temp-dir copy which can fail on Windows.
+    mapping_df = sources.get("mapping_df")
+    if mapping_df is not None and hasattr(mapping_df, "to_csv") and not mapping_df.empty:
+        try:
+            interim_dir = run_dir / "interim"
+            interim_dir.mkdir(parents=True, exist_ok=True)
+            mapping_df.to_csv(interim_dir / "endpoint_table_map.csv", index=False)
+        except Exception as e:
+            logger.warning("Failed to save endpoint_table_map.csv: %s", e)
+
     saved_report_path = run_dir / REPORT_FILE
     original_report = report.report_path
     if original_report and Path(original_report).exists():
@@ -237,6 +242,21 @@ def save_run(
         except OSError as e:
             logger.warning("Failed to copy report: %s", e)
             saved_report_path = Path("")
+
+        temp_dir = Path(original_report).parent
+        interim_src = temp_dir / "interim"
+        if interim_src.exists():
+            try:
+                shutil.copytree(interim_src, run_dir / "interim", dirs_exist_ok=True)
+            except Exception as e:
+                logger.warning("Failed to copy interim directory to registry: %s", e)
+
+        processed_src = temp_dir / "processed"
+        if processed_src.exists():
+            try:
+                shutil.copytree(processed_src, run_dir / "processed", dirs_exist_ok=True)
+            except Exception as e:
+                logger.warning("Failed to copy processed directory to registry: %s", e)
     else:
         saved_report_path = Path("")
 

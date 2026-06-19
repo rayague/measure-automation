@@ -41,10 +41,14 @@ def _load_service_rank_from(base_dir: Path) -> pd.DataFrame:
 def _load_endpoint_table_map_from(base_dir: Path) -> pd.DataFrame:
     paths = [
         base_dir / "interim" / "endpoint_table_map.csv",
+        base_dir / "endpoint_table_map.csv",  # fallback: some runs save it at root
     ]
     for p in paths:
         if p.exists():
-            return pd.read_csv(p)
+            try:
+                return pd.read_csv(p)
+            except (pd.errors.EmptyDataError, pd.errors.ParserError, OSError):
+                continue
     return pd.DataFrame()
 
 
@@ -139,29 +143,36 @@ def _build_trend_chart(trend_df: pd.DataFrame) -> go.Figure:
     fig = go.Figure()
     colors = [T["cyan"], T["amber"], T["red"], T["green"], "#bf7ff5", "#00d4aa", "#ff8c42", "#e040fb"]
     for i, svc in enumerate(trend_df.index):
-        fig.add_trace(go.Scatter(
-            x=trend_df.columns,
-            y=trend_df.loc[svc],
-            mode="lines+markers",
-            name=svc,
-            line=dict(color=colors[i % len(colors)], width=2),
-            marker=dict(size=6),
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=trend_df.columns,
+                y=trend_df.loc[svc],
+                mode="lines+markers",
+                name=svc,
+                line=dict(color=colors[i % len(colors)], width=2),
+                marker=dict(size=6),
+            )
+        )
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family=T["font_mono"], color=T["text_secondary"], size=10),
         xaxis=dict(
-            showgrid=True, gridcolor=T["border"],
-            tickangle=-30, title="",
+            showgrid=True,
+            gridcolor=T["border"],
+            tickangle=-30,
+            title="",
         ),
         yaxis=dict(
-            showgrid=True, gridcolor=T["border"],
-            range=[0, 1], title="SCOM",
+            showgrid=True,
+            gridcolor=T["border"],
+            range=[0, 1],
+            title="SCOM",
             tickformat=".2f",
         ),
         legend=dict(
-            orientation="h", y=-0.3,
+            orientation="h",
+            y=-0.3,
             font=dict(size=9, color=T["text_muted"]),
         ),
         margin=dict(l=40, r=20, t=10, b=80),
@@ -357,11 +368,27 @@ def _build_radar_chart(row: pd.Series) -> go.Figure:
 
 
 def _build_heatmap(mapping_df: pd.DataFrame, service_name: str) -> go.Figure:
+    if mapping_df.empty or "service_name" not in mapping_df.columns:
+        return go.Figure()
+
     service_df = mapping_df[mapping_df["service_name"] == service_name]
     if service_df.empty:
         return go.Figure()
 
-    pivot = service_df.pivot_table(index="endpoint_key", columns="table", values="count", fill_value=0)
+    if "endpoint_key" not in service_df.columns or "table" not in service_df.columns:
+        return go.Figure()
+
+    if "count" not in service_df.columns:
+        service_df = service_df.copy()
+        service_df["count"] = 1
+
+    pivot = service_df.pivot_table(
+        index="endpoint_key",
+        columns="table",
+        values="count",
+        aggfunc="sum",
+        fill_value=0,
+    )
 
     cscale = [
         [0.0, "rgba(6,8,15,1)"],
@@ -446,7 +473,9 @@ def create_app(data_dir: Path | None = None) -> dash.Dash:
             break
 
     app.layout = lambda: serve_layout(
-        cli_data_dir, run_id=initial_run_id, all_runs=runs_meta,
+        cli_data_dir,
+        run_id=initial_run_id,
+        all_runs=runs_meta,
         cli_data_dir_str=str(cli_data_dir.resolve()),
     )
     register_callbacks(app)
@@ -455,6 +484,7 @@ def create_app(data_dir: Path | None = None) -> dash.Dash:
 
 def _resolve_run_path(run_id: str) -> Path | None:
     from boundary_analyzer.auto.run_registry import get_run_path
+
     return get_run_path(run_id)
 
 

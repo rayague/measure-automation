@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import re
 from datetime import datetime
@@ -193,9 +194,12 @@ def _trend_chart_card(base_dir: Path, trend_df: pd.DataFrame | None = None) -> h
         return html.Div()
 
     fig = _build_trend_chart(trend_df)
-    return _card("SCOM Trend — across recent runs", [
-        dcc.Graph(figure=fig, config={"displayModeBar": False}),
-    ])
+    return _card(
+        "SCOM Trend — across recent runs",
+        [
+            dcc.Graph(figure=fig, config={"displayModeBar": False}),
+        ],
+    )
 
 
 def _data_provenance_card(data_dir: Path) -> html.Div:
@@ -238,7 +242,12 @@ def _data_provenance_card(data_dir: Path) -> html.Div:
         except (pd.errors.EmptyDataError, pd.errors.ParserError, ValueError, KeyError) as e:
             logger.warning("[Dashboard] Could not read spans data: %s", e)
 
-    rank_path = data_dir / "processed" / "service_rank.csv"
+    # Look for rank file in multiple locations (run dirs save at root, pipeline saves in processed/)
+    rank_path_candidates = [
+        data_dir / "processed" / "service_rank.csv",
+        data_dir / "service_rank.csv",
+    ]
+    rank_path = next((p for p in rank_path_candidates if p.exists()), rank_path_candidates[0])
     if rank_path.exists():
         try:
             rank_df = pd.read_csv(rank_path)
@@ -267,28 +276,41 @@ def _data_provenance_card(data_dir: Path) -> html.Div:
         except (pd.errors.EmptyDataError, pd.errors.ParserError, ValueError, KeyError) as e:
             logger.warning("[Dashboard] Could not read service rank data: %s", e)
 
-    try:
-        mtime = rank_path.stat().st_mtime if rank_path.exists() else 0
-        dt = datetime.fromtimestamp(mtime)
+    # Determine the generated timestamp: prefer meta.json, fallback to file mtime
+    generated_label = None
+    meta_path = data_dir / "meta.json"
+    if meta_path.exists():
+        try:
+            with open(meta_path, encoding="utf-8") as _f:
+                _meta = json.load(_f)
+            _ts = _meta.get("timestamp", "")
+            if _ts:
+                generated_label = datetime.fromisoformat(_ts).strftime("%Y-%m-%d %H:%M:%S")
+        except (OSError, json.JSONDecodeError, ValueError):
+            pass
+    if generated_label is None and rank_path.exists():
+        try:
+            _mtime = rank_path.stat().st_mtime
+            generated_label = datetime.fromtimestamp(_mtime).strftime("%Y-%m-%d %H:%M:%S")
+        except OSError:
+            pass
+    if generated_label:
         rows.append(
             html.Div(
                 [
                     html.Span("Generated: ", style={"color": T["cyan"], "fontFamily": T["font_mono"], "fontSize": "11px"}),
                     html.Span(
-                        dt.strftime("%Y-%m-%d %H:%M:%S"),
+                        generated_label,
                         style={"color": T["text_muted"], "fontFamily": T["font_mono"], "fontSize": "11px"},
                     ),
                 ]
             )
         )
-    except OSError:
-        pass
 
     return _card("Data Provenance", rows, style_extra={"marginBottom": "20px"})
 
 
-def _overview_layout(rank_df: pd.DataFrame, summary: dict, base_dir: Path,
-                     trend_df: pd.DataFrame | None = None) -> html.Div:
+def _overview_layout(rank_df: pd.DataFrame, summary: dict, base_dir: Path, trend_df: pd.DataFrame | None = None) -> html.Div:
     total = summary.get("total_services", 0)
     suspect = summary.get("suspicious_count", 0)
     healthy = summary.get("safe_count", 0)
@@ -303,7 +325,7 @@ def _overview_layout(rank_df: pd.DataFrame, summary: dict, base_dir: Path,
                     _metric_card("Total Services", total, "cyan"),
                     _metric_card("Suspicious", suspect, "red"),
                     _metric_card("Healthy", healthy, "green"),
-                    _metric_card("Avg SCOM", f"{avg_scom:.3f}", "amber"),
+                    _metric_card("Avg SCOM (all)", f"{avg_scom:.3f}", "amber"),
                 ],
             ),
             _card(
@@ -975,8 +997,7 @@ def _build_run_selector(all_runs: list[dict] | None, current_run_id: str) -> tup
     return opts, selected
 
 
-def serve_layout(base_dir: Path, run_id: str = "", all_runs: list[dict] | None = None,
-                 cli_data_dir_str: str = "") -> html.Div:
+def serve_layout(base_dir: Path, run_id: str = "", all_runs: list[dict] | None = None, cli_data_dir_str: str = "") -> html.Div:
     run_options, selected_run = _build_run_selector(all_runs, run_id)
     return html.Div(
         style={"minHeight": "100vh", "background": T["bg_base"], "position": "relative"},

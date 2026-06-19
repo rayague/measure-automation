@@ -6,12 +6,11 @@ import logging
 import shutil
 import tempfile
 import time
-
-import pandas as pd
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
 import requests
 from rich.console import Console
 from rich.panel import Panel
@@ -125,7 +124,8 @@ def _export_jaeger_traces(
                 "Service name mismatch between discovery and Jaeger: "
                 "discovered=%s, not found in Jaeger=%s. "
                 "Check that OTEL_SERVICE_NAME env var matches the service name in docker-compose.yml.",
-                service_filter, unmatched,
+                service_filter,
+                unmatched,
             )
         services = matched
 
@@ -203,7 +203,14 @@ def _discover_endpoints_for_service(
     source = "OpenAPI"
 
     if not endpoints:
-        endpoints = discover_endpoints_ast(service_info, project_info.root_dir)
+        service_dir = project_info.root_dir
+        if service_info.entry_points:
+            ep_path = Path(service_info.entry_points[0].path)
+            if ep_path.is_absolute():
+                service_dir = ep_path.parent
+            else:
+                service_dir = project_info.root_dir / ep_path.parent
+        endpoints = discover_endpoints_ast(service_info, service_dir)
         source = "AST"
 
     return endpoints, source
@@ -380,21 +387,29 @@ def _collect_marker_artifacts(project: ProjectInfo, backup_artifacts: list[Marke
 
     override_path = project.root_dir / ".mba-compose-override.yml"
     if override_path.exists():
-        artifacts.append(MarkerArtifact(
-            type="compose_override",
-            path=".mba-compose-override.yml",
-        ))
+        artifacts.append(
+            MarkerArtifact(
+                type="compose_override",
+                path=".mba-compose-override.yml",
+            )
+        )
 
     for otel_df in find_otel_dockerfiles(project.root_dir):
         try:
             df_rel = otel_df.relative_to(project.root_dir).as_posix()
-            artifacts.append(MarkerArtifact(
-                type="dockerfile_override", path=df_rel,
-            ))
+            artifacts.append(
+                MarkerArtifact(
+                    type="dockerfile_override",
+                    path=df_rel,
+                )
+            )
         except ValueError:
-            artifacts.append(MarkerArtifact(
-                type="dockerfile_override", path=str(otel_df),
-            ))
+            artifacts.append(
+                MarkerArtifact(
+                    type="dockerfile_override",
+                    path=str(otel_df),
+                )
+            )
 
     return artifacts
 
@@ -459,6 +474,7 @@ def _llm_instrument_services(project: ProjectInfo, config: FullConfig) -> list[M
             continue
 
         import shutil
+
         backup_path = entry_path.with_suffix(entry_path.suffix + ".mba_bak")
         if backup_path.exists():
             # Create numbered backup to avoid overwriting previous backup
@@ -477,9 +493,13 @@ def _llm_instrument_services(project: ProjectInfo, config: FullConfig) -> list[M
         try:
             orig_rel = entry_path.relative_to(project.root_dir).as_posix()
             bak_rel = backup_path.relative_to(project.root_dir).as_posix()
-            backup_artifacts.append(MarkerArtifact(
-                type="backup", original=orig_rel, backup=bak_rel,
-            ))
+            backup_artifacts.append(
+                MarkerArtifact(
+                    type="backup",
+                    original=orig_rel,
+                    backup=bak_rel,
+                )
+            )
         except ValueError:
             pass
 
@@ -528,7 +548,7 @@ def _wait_for_jaeger_traces(
     deadline = time.time() + timeout
     waited = 0
     while time.time() < deadline:
-        for svc in (service_names or []):
+        for svc in service_names or []:
             try:
                 resp = _requests.get(
                     f"http://127.0.0.1:{jaeger_port}/api/traces",
@@ -545,8 +565,8 @@ def _wait_for_jaeger_traces(
         time.sleep(poll_interval)
         waited += poll_interval
     logger.warning(
-        "No Jaeger traces found after %ds — proceeding anyway. "
-        "Increase --lookback or verify OTEL export.", timeout,
+        "No Jaeger traces found after %ds — proceeding anyway. Increase --lookback or verify OTEL export.",
+        timeout,
     )
 
 
@@ -864,12 +884,14 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
 
         scom_csv = output_dir / "processed" / "service_scom.csv"
         rank_csv = output_dir / "processed" / "service_rank.csv"
+        mapping_csv = output_dir / "interim" / "endpoint_table_map.csv"
         report_path = output_dir / "report.md"
 
         scom_df = pd.read_csv(scom_csv) if scom_csv.exists() else pd.DataFrame()
         rank_df = pd.read_csv(rank_csv) if rank_csv.exists() else pd.DataFrame()
+        mapping_df = pd.read_csv(mapping_csv) if mapping_csv.exists() else pd.DataFrame()
 
-        report.scom_results = {"scom_df": scom_df, "rank_df": rank_df}
+        report.scom_results = {"scom_df": scom_df, "rank_df": rank_df, "mapping_df": mapping_df}
         report.report_path = report_path
 
         analyze_success = rc == 0 and not scom_df.empty
@@ -946,6 +968,7 @@ def _try_cleanup(report: AnalysisReport, project: ProjectInfo, deployment: Deplo
 
         # Force-remove any leftover Jaeger container from a previous crash
         import subprocess
+
         try:
             subprocess.run(
                 ["docker", "rm", "-f", "mba-jaeger"],
@@ -982,6 +1005,7 @@ def _reset_jaeger_container(jaeger_port: int = 16686, otlp_port: int = 4318) -> 
     Ensures no old traces from previous runs pollute the current analysis.
     """
     import subprocess
+
     from boundary_analyzer.auto.deploy import start_jaeger
 
     container_name = "mba-jaeger"
@@ -990,7 +1014,9 @@ def _reset_jaeger_container(jaeger_port: int = 16686, otlp_port: int = 4318) -> 
     try:
         ps1 = subprocess.run(
             ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.ID}}"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
         for cid in ps1.stdout.splitlines():
             if cid.strip():
@@ -998,7 +1024,9 @@ def _reset_jaeger_container(jaeger_port: int = 16686, otlp_port: int = 4318) -> 
 
         ps2 = subprocess.run(
             ["docker", "ps", "-a", "--filter", f"publish={jaeger_port}", "--format", "{{.ID}}"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
         for cid in ps2.stdout.splitlines():
             if cid.strip():
@@ -1010,7 +1038,9 @@ def _reset_jaeger_container(jaeger_port: int = 16686, otlp_port: int = 4318) -> 
         try:
             subprocess.run(
                 ["docker", "rm", "-f"] + list(zombie_ids),
-                capture_output=True, text=True, timeout=15,
+                capture_output=True,
+                text=True,
+                timeout=15,
             )
         except (FileNotFoundError, subprocess.SubprocessError):
             pass
