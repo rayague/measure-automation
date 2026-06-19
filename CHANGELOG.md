@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.6 (2026-06-19)
+
+### Bug fix
+
+- **`_load_llm_analysis` NameError**: `REPORT_FILE` imported as `_REPORT_FILE` but used without underscore. Fixed by using `_REPORT_FILE`.
+
 ## v0.7.5 (2026-06-19)
 
 ### Dashboard & SCOM classification
