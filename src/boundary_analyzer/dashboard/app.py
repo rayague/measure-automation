@@ -79,7 +79,7 @@ def _load_llm_analysis(data_dir: Path | None = None) -> str | None:
     candidates = []
     if data_dir:
         candidates.append(data_dir / "report.md")
-        candidates.append(data_dir / REPORT_FILE)
+        candidates.append(data_dir / _REPORT_FILE)
     candidates.append(Path("reports/latest/report.md"))
     for path in candidates:
         if path and path.exists():
