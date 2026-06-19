@@ -1,10 +1,10 @@
 # Changelog
 
-## v0.7.3 (2026-06-19)
+## v0.7.4 (2026-06-19)
 
 ### Bug fixes & resilience improvements
 
-- **Version sync**: `__version__` bumped from 0.6.6 → 0.7.3 to match `pyproject.toml`.
+- **Version sync**: `__version__` bumped from 0.6.6 → 0.7.4 to match `pyproject.toml`.
 - **Jaeger reset** (`_ensure_jaeger_ports_free`): Added port-based container lookup (`docker ps --filter publish=<port>`) alongside name-based lookup. Fixes `--reset-jaeger` failing when Jaeger container has a different name.
 - **Jaeger reset** (`_reset_jaeger_container`): Now accepts `otlp_port`, searches by both name and published port, passes `otlp_port` to `start_jaeger()`. Also called in the local-process deployment branch.
 - **Trace isolation** (`_export_jaeger_traces`): Added `start_time` parameter. Traces are now filtered client-side by span `startTime`, preventing old traces from polluting SCOM analysis across runs.
