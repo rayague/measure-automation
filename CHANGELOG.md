@@ -1,5 +1,40 @@
 # Changelog
 
+## v0.7.0 (2026-06-19)
+
+### Full audit — 71 bugs fixed (11 P0, 17 P1, 43 P2)
+
+- **11 P0 fixes**: entry_points[0] IndexError, health_endpoint=None→URL, 4xx treated healthy, error msg empty list, temp dirs leak, pandas import order, hardcoded report path, bool(NaN)=True, logging.basicConfig no-op, Windows zombies (`_kill_process_tree`)
+- **17 P1 fixes**: Docker DNS order, CWD in check_container_alive, host.docker.internal Linux, empty ProjectInfo, lookback CLI arg, dashboard dropdown, TOCTOU runs.json, flush delay, --data-dir ignored, multi-network connect, Alpine build deps, LLM multi-lang, per-service Dockerfile, volume path quoting, fallback CID, LLM numbered backups, zero table falsy, dashboard KeyErrors
+- **Run comparison**: `mba runs compare` — side-by-side SCOM per service with Δ column
+- **SCOM trend chart**: multi-run timeline per service in dashboard
+- **Process management**: cross-platform `_kill_process_tree()` (Unix SIGKILL / Windows taskkill)
+- **Adaptive polling**: hardcoded `time.sleep(3/5)` replaced with adaptive Jaeger API poll and trace wait
+
+## v0.6.6 (2026-06-18)
+
+### Fix traces never reaching external Jaeger (SCOM=0 root cause)
+
+- **deploy.py**: `_resolve_external_jaeger_host()` now returns the Jaeger **container name** instead of its bridge-network IP. After `docker compose up`, `_connect_jaeger_to_compose_network()` attaches the external Jaeger container to the compose project's user-defined network. Services resolve the Jaeger hostname via Docker DNS instead of trying (and failing) to reach an IP on a separate bridge network.
+
+  **Before**: `OTEL_EXPORTER_OTLP_ENDPOINT=http://172.17.0.2:4318` — unreachable from compose user-defined network.
+  **After**: `OTEL_EXPORTER_OTLP_ENDPOINT=http://mba-jaeger:4318` — resolves via DNS on the shared compose network.
+
+  Falls back to bridge gateway IP or `host.docker.internal` if no Jaeger container is found.
+
+## v0.6.5 (2026-06-18)
+
+### SCOM robustness, Jaeger reachability, container health, new `analyze` command
+
+- **mapping_builder.py**: `_normalize_id()` fixes SCOM=0 root cause — trace_id/span_id now consistently converted to strings across DataFrames, preventing dict-key lookup failures when pandas reads hex IDs as float from CSV. Added debug logging for chain-walk statistics (found/fallback/no-parent counts).
+- **deploy.py**: `_resolve_external_jaeger_host()` replaces raw `host.docker.internal` with Docker container IP resolution (works in Alpine/musl containers) and Docker bridge gateway fallback — `host.docker.internal` is last resort.
+- **deploy.py**: `_check_container_alive()` — post-deploy container health check. If a container has exited/crashed, captures `docker logs --tail 20` and surfaces it in the deployment result with a clear error message.
+- **cli.py**: New `mba analyze <traffic_file>` subcommand — runs SCOM pipeline (steps 2–8) on an existing Jaeger JSON traces file without deployment or trace collection. Supports `--language`, `--skip-no-db`, `--threshold`, `--dashboard`.
+- **cli.py**: `--language` flag added to `mba analyze` and `mba full` — bypasses auto-detection for non-Python projects.
+
+### Tests
+- 3 new tests: container alive without Docker, external Jaeger host resolution, trace_id/span_id format mismatch cross-DataFrame mapping
+
 ## v0.6.4 (2026-06-18)
 
 ### Fix SCOM = 0 services and missing DB instrumentation
