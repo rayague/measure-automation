@@ -130,7 +130,7 @@ def _build_table(df: pd.DataFrame) -> Any:
             {"name": "#", "id": "rank"},
             {"name": "Service", "id": "service_name"},
             {"name": "SCOM", "id": "scom_score", "type": "numeric", "format": {"specifier": ".4f"}},
-            {"name": "Cohésion", "id": "cohesion"},
+            {"name": "Cohesion", "id": "cohesion"},
             {"name": "Endpoints", "id": "endpoints_count", "type": "numeric"},
             {"name": "Tables", "id": "tables_count", "type": "numeric"},
             {"name": "Status", "id": "is_suspicious"},
@@ -169,6 +169,14 @@ def _build_table(df: pd.DataFrame) -> Any:
                 "backgroundColor": T["cyan_dim"],
                 "border": f"1px solid {T['cyan_glow']}",
             },
+            {
+                "if": {"state": "active"},
+                "backgroundColor": "rgba(0, 229, 255, 0.06)",
+                "border": f"1px solid {T['border_hot']}",
+            },
+        ],
+        css=[
+            {"selector": ".dash-table-tbody tr:hover", "rule": "background-color: rgba(0, 229, 255, 0.04) !important; cursor: pointer;"},
         ],
         page_size=8,
         row_selectable="single",
@@ -696,7 +704,7 @@ def _definitions_block(rank_df: pd.DataFrame) -> html.Div:
                 "A 0–1 cohesion score per service computed from endpoint→table access overlap. 1.0 means endpoints touch highly-overlapping tables (high cohesion); lower values mean endpoints access more disjoint table sets (potential Wrong Cut).",
             ),
             _term_row(
-                "Threshold / Seuil",
+                "Threshold",
                 f"Services with SCOM < threshold are flagged suspicious. Current threshold={thresh_txt} ({method_txt}).",
             ),
             _term_row(

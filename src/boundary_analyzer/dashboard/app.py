@@ -41,7 +41,6 @@ def _load_service_rank_from(base_dir: Path) -> pd.DataFrame:
 def _load_endpoint_table_map_from(base_dir: Path) -> pd.DataFrame:
     paths = [
         base_dir / "interim" / "endpoint_table_map.csv",
-        base_dir / "service_scom.csv",
     ]
     for p in paths:
         if p.exists():

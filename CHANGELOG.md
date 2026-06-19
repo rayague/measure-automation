@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.7.7 (2026-06-19)
+
+### Critical bug fixes
+
+- **`_build_heatmap` KeyError 'count'**: `_load_endpoint_table_map_from` was falling back to `service_scom.csv` which has completely different columns (no `endpoint_key`/`table`/`count`). Removed the wrong fallback; returns empty DataFrame instead → heatmap gracefully shows empty figure.
+- **CLI `runs show` shows `?` for SCOM=0.0**: `s.get("SCOM") or s.get("scom") or "?"` treats `0.0` as falsy. Replaced with `is not None` checks. Same fix for Endpoints, Tables, and `classify_scom` input.
+- **French labels removed everywhere**: `classify_scom()` now returns English: "Very cohesive", "Cohesive", "Weakly cohesive", "Not cohesive". Dashboard column header changed from "Cohésion" → "Cohesion". Definitions block "Threshold / Seuil" → "Threshold".
+- **Dashboard hover/click UX**: Added CSS `:hover` rule for DataTable rows (`cursor: pointer` background highlight). Active cell state also styled. Click now properly navigates to detail view (was crashing due to KeyError above).
+
 ## v0.7.6 (2026-06-19)
 
 ### Bug fix

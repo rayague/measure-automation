@@ -970,12 +970,13 @@ def _main(argv: list[str] | None = None) -> int:
                 table.add_column("Cohésion")
                 table.add_column("Status")
                 for s in scoms:
-                    name = s.get("Service") or s.get("service") or "?"
-                    ep = s.get("Endpoints") or s.get("endpoints") or "?"
-                    tbl = s.get("Tables") or s.get("tables") or s.get("Tables/Collections") or "?"
-                    scom_val = s.get("SCOM") or s.get("scom") or "?"
-                    susp = s.get("is_suspicious") or s.get("Suspicious") or ""
-                    coh = classify_scom(s.get("SCOM") or s.get("scom"))
+                    name = s.get("Service") if s.get("Service") is not None else (s.get("service") or "?")
+                    ep = s.get("Endpoints") if s.get("Endpoints") is not None else (s.get("endpoints") or "?")
+                    tbl = s.get("Tables") if s.get("Tables") is not None else (s.get("tables") or s.get("Tables/Collections") or "?")
+                    scom_val = s.get("SCOM") if s.get("SCOM") is not None else (s.get("scom") if s.get("scom") is not None else "?")
+                    susp = s.get("is_suspicious") if s.get("is_suspicious") is not None else (s.get("Suspicious") or "")
+                    raw_scom = s.get("SCOM") if s.get("SCOM") is not None else s.get("scom")
+                    coh = classify_scom(raw_scom)
                     label = "⚠" if susp else "✔"
                     table.add_row(str(name), str(ep), str(tbl), str(scom_val), coh, label)
                 _console.print(table)

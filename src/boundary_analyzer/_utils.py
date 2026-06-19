@@ -24,10 +24,10 @@ def classify_scom(value: float | int | str | None) -> str:
     """Classify a SCOM score into a human-readable cohesion label.
 
     Thresholds:
-        >= 0.8  → Très cohésif
-        >= 0.5  → Cohésif
-        >= 0.3  → Peu cohésif
-        <  0.3  → Pas cohésif
+        >= 0.8  → Very cohesive
+        >= 0.5  → Cohesive
+        >= 0.3  → Weakly cohesive
+        <  0.3  → Not cohesive
         NaN/None → N/A
     """
     if value is None:
@@ -39,9 +39,9 @@ def classify_scom(value: float | int | str | None) -> str:
     if pd.isna(v):
         return "N/A"
     if v >= 0.8:
-        return "Très cohésif"
+        return "Very cohesive"
     if v >= 0.5:
-        return "Cohésif"
+        return "Cohesive"
     if v >= 0.3:
-        return "Peu cohésif"
-    return "Pas cohésif"
+        return "Weakly cohesive"
+    return "Not cohesive"
