@@ -959,6 +959,7 @@ def _main(argv: list[str] | None = None) -> int:
             _console.print(f"  [bold]Services:[/] {len(svcs)}\n")
 
             if scoms:
+                from boundary_analyzer._utils import classify_scom
                 from rich.table import Table
 
                 table = Table(show_header=True, header_style="bold cyan")
@@ -966,6 +967,7 @@ def _main(argv: list[str] | None = None) -> int:
                 table.add_column("Endpoints")
                 table.add_column("Tables")
                 table.add_column("SCOM")
+                table.add_column("Cohésion")
                 table.add_column("Status")
                 for s in scoms:
                     name = s.get("Service") or s.get("service") or "?"
@@ -973,8 +975,9 @@ def _main(argv: list[str] | None = None) -> int:
                     tbl = s.get("Tables") or s.get("tables") or s.get("Tables/Collections") or "?"
                     scom_val = s.get("SCOM") or s.get("scom") or "?"
                     susp = s.get("is_suspicious") or s.get("Suspicious") or ""
+                    coh = classify_scom(s.get("SCOM") or s.get("scom"))
                     label = "⚠" if susp else "✔"
-                    table.add_row(str(name), str(ep), str(tbl), str(scom_val), label)
+                    table.add_row(str(name), str(ep), str(tbl), str(scom_val), coh, label)
                 _console.print(table)
 
             report_path = meta.get("report_path", "")

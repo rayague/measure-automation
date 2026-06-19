@@ -28,17 +28,25 @@ logger = logging.getLogger(__name__)
 
 
 def _load_service_rank_from(base_dir: Path) -> pd.DataFrame:
-    path = base_dir / "processed" / "service_rank.csv"
-    if not path.exists():
-        return pd.DataFrame()
-    return pd.read_csv(path)
+    paths = [
+        base_dir / "processed" / "service_rank.csv",
+        base_dir / "service_rank.csv",
+    ]
+    for path in paths:
+        if path.exists():
+            return pd.read_csv(path)
+    return pd.DataFrame()
 
 
 def _load_endpoint_table_map_from(base_dir: Path) -> pd.DataFrame:
-    path = base_dir / "interim" / "endpoint_table_map.csv"
-    if not path.exists():
-        return pd.DataFrame()
-    return pd.read_csv(path)
+    paths = [
+        base_dir / "interim" / "endpoint_table_map.csv",
+        base_dir / "service_scom.csv",
+    ]
+    for p in paths:
+        if p.exists():
+            return pd.read_csv(p)
+    return pd.DataFrame()
 
 
 def _load_all(base_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
@@ -164,14 +172,19 @@ def _build_trend_chart(trend_df: pd.DataFrame) -> go.Figure:
 
 
 def _get_data_freshness(base_dir: Path) -> str:
-    rank_path = base_dir / "processed" / "service_rank.csv"
-    try:
-        if rank_path.exists():
-            mtime = rank_path.stat().st_mtime
-            dt = datetime.fromtimestamp(mtime)
-            return dt.strftime("%Y-%m-%d %H:%M:%S")
-    except OSError:
-        pass
+    candidates = [
+        base_dir / "processed" / "service_rank.csv",
+        base_dir / "service_rank.csv",
+        base_dir / "meta.json",
+    ]
+    for path in candidates:
+        try:
+            if path.exists():
+                mtime = path.stat().st_mtime
+                dt = datetime.fromtimestamp(mtime)
+                return dt.strftime("%Y-%m-%d %H:%M:%S")
+        except OSError:
+            pass
     return "unknown"
 
 

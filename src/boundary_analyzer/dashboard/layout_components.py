@@ -112,13 +112,16 @@ def _build_table(df: pd.DataFrame) -> Any:
     if df.empty:
         return dash_table.DataTable()  # type: ignore[attr-defined]
 
+    from boundary_analyzer._utils import classify_scom
+
     required_cols = ["rank", "service_name", "scom_score", "is_suspicious"]
-    available = [c for c in required_cols if c in df.columns]
+    available_ = [c for c in required_cols if c in df.columns]
     for extra in ["endpoints_count", "tables_count"]:
         if extra in df.columns:
-            available.append(extra)
-    disp = df[available].copy()
+            available_.append(extra)
+    disp = df[available_].copy()
     disp["is_suspicious"] = disp["is_suspicious"].map({True: "⚠ suspect", False: "✓ healthy"})
+    disp["cohesion"] = disp["scom_score"].apply(classify_scom)
 
     return dash_table.DataTable(  # type: ignore[attr-defined]
         id="service-table",
@@ -127,6 +130,7 @@ def _build_table(df: pd.DataFrame) -> Any:
             {"name": "#", "id": "rank"},
             {"name": "Service", "id": "service_name"},
             {"name": "SCOM", "id": "scom_score", "type": "numeric", "format": {"specifier": ".4f"}},
+            {"name": "Cohésion", "id": "cohesion"},
             {"name": "Endpoints", "id": "endpoints_count", "type": "numeric"},
             {"name": "Tables", "id": "tables_count", "type": "numeric"},
             {"name": "Status", "id": "is_suspicious"},

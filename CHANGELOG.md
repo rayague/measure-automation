@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7.5 (2026-06-19)
+
+### Dashboard & SCOM classification
+
+- **Dashboard**: `_load_service_rank_from`, `_load_endpoint_table_map_from`, and `_get_data_freshness` now fall back to run-registry filenames (`service_rank.csv`, `service_scom.csv`, `meta.json`) when the old pipeline paths (`processed/`, `interim/`) don't exist. Fixes `UPDATED: unknown` on the dashboard.
+- **SCOM cohesion labels**: New `classify_scom()` function in `_utils.py` with thresholds (≥0.8 Très cohésif, ≥0.5 Cohésif, ≥0.3 Peu cohésif, <0.3 Pas cohésif). Added "Cohésion" column to both `mba runs show` CLI output and the dashboard table.
+- **Tests**: 567 passed, 0 failed — no regressions.
+
 ## v0.7.4 (2026-06-19)
 
 ### Bug fixes & resilience improvements
