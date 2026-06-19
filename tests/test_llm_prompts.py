@@ -17,7 +17,7 @@ class LllmPromptsTest(unittest.TestCase):
 
         self.assertIn("OTLP HTTP", INSTRUMENTATION_SYSTEM)
         self.assertIn("COMPLETE modified entry point file", INSTRUMENTATION_SYSTEM)
-        self.assertIn("VALID PYTHON", INSTRUMENTATION_SYSTEM)
+        self.assertIn("VALID SYNTAX FOR THE TARGET LANGUAGE", INSTRUMENTATION_SYSTEM)
 
     def test_build_instrumentation_prompt_env_sentinel(self):
         from boundary_analyzer.llm.prompts import build_instrumentation_prompt

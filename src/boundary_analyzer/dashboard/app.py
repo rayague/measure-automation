@@ -15,6 +15,7 @@ import dash
 import pandas as pd
 import plotly.graph_objects as go
 
+from boundary_analyzer.auto.run_registry import REPORT_FILE as _REPORT_FILE
 from boundary_analyzer.dashboard.charts import create_summary_cards
 from boundary_analyzer.dashboard.design_tokens import (
     GLOBAL_CSS,
@@ -66,23 +67,100 @@ def _load_all(base_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
     return rank_df_local, mapping_df_local, summary_local
 
 
-def _load_llm_analysis() -> str | None:
-    path = Path("reports/latest/report.md")
-    if not path.exists():
-        return None
-    try:
-        content = path.read_text(encoding="utf-8")
-        marker = "## AI-Powered Analysis"
-        if marker in content:
-            section = content.split(marker, 1)[1].strip()
-            next_h1 = section.find("\n# ")
-            if next_h1 != -1:
-                section = section[:next_h1]
-            return section if section.strip() else None
-    except OSError as e:
-        logger.warning("[Dashboard] Could not read %s: %s", path, e)
-        return None
+def _load_llm_analysis(data_dir: Path | None = None) -> str | None:
+    candidates = []
+    if data_dir:
+        candidates.append(data_dir / "report.md")
+        candidates.append(data_dir / REPORT_FILE)
+    candidates.append(Path("reports/latest/report.md"))
+    for path in candidates:
+        if path and path.exists():
+            try:
+                content = path.read_text(encoding="utf-8")
+                marker = "## AI-Powered Analysis"
+                if marker in content:
+                    section = content.split(marker, 1)[1].strip()
+                    next_h1 = section.find("\n# ")
+                    if next_h1 != -1:
+                        section = section[:next_h1]
+                    if section.strip():
+                        return section.strip()
+            except OSError as e:
+                logger.warning("[Dashboard] Could not read %s: %s", path, e)
     return None
+
+
+def _load_trends(base_dir: Path, max_runs: int = 10) -> pd.DataFrame:
+    """Load SCOM scores across recent runs for trend visualisation.
+
+    Returns a DataFrame with:
+      - index: service name
+      - columns: run timestamps (YYYY-MM-DD HH:MM)
+      - values: SCOM score per service per run
+    """
+    from boundary_analyzer.auto.run_registry import list_runs, load_run_meta
+
+    # Infer data root from base_dir, defaulting to "data"
+    data_root_guess = base_dir.parent.parent if base_dir.parent.name == "runs" else Path("data")
+    all_runs = list_runs(data_root=data_root_guess)[:max_runs]
+    if not all_runs:
+        return pd.DataFrame()
+
+    # Gather SCOM per run
+    records: list[dict] = []
+    for r in reversed(all_runs):
+        meta = load_run_meta(r["id"], data_root_guess)
+        if not meta:
+            continue
+        ts = meta.get("timestamp", "")[:16].replace("T", " ")
+        for s in meta.get("scom_results", []):
+            name = s.get("Service") or s.get("service") or "?"
+            scom_val = s.get("SCOM") or s.get("scom") or 0.0
+            try:
+                records.append({"service": name, "run_ts": ts, "scom": float(scom_val)})
+            except (ValueError, TypeError):
+                continue
+
+    if not records:
+        return pd.DataFrame()
+    df = pd.DataFrame(records)
+    return df.pivot_table(index="service", columns="run_ts", values="scom", aggfunc="first")
+
+
+def _build_trend_chart(trend_df: pd.DataFrame) -> go.Figure:
+    """Build a multi-line trend chart showing SCOM per service over runs."""
+    fig = go.Figure()
+    colors = [T["cyan"], T["amber"], T["red"], T["green"], "#bf7ff5", "#00d4aa", "#ff8c42", "#e040fb"]
+    for i, svc in enumerate(trend_df.index):
+        fig.add_trace(go.Scatter(
+            x=trend_df.columns,
+            y=trend_df.loc[svc],
+            mode="lines+markers",
+            name=svc,
+            line=dict(color=colors[i % len(colors)], width=2),
+            marker=dict(size=6),
+        ))
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family=T["font_mono"], color=T["text_secondary"], size=10),
+        xaxis=dict(
+            showgrid=True, gridcolor=T["border"],
+            tickangle=-30, title="",
+        ),
+        yaxis=dict(
+            showgrid=True, gridcolor=T["border"],
+            range=[0, 1], title="SCOM",
+            tickformat=".2f",
+        ),
+        legend=dict(
+            orientation="h", y=-0.3,
+            font=dict(size=9, color=T["text_muted"]),
+        ),
+        margin=dict(l=40, r=20, t=10, b=80),
+        hovermode="x unified",
+    )
+    return fig
 
 
 def _get_data_freshness(base_dir: Path) -> str:
@@ -311,11 +389,15 @@ def _build_heatmap(mapping_df: pd.DataFrame, service_name: str) -> go.Figure:
 
 
 def create_app(data_dir: Path | None = None) -> dash.Dash:
+    from boundary_analyzer.auto.run_registry import list_runs
     from boundary_analyzer.dashboard.callbacks import register_callbacks
     from boundary_analyzer.dashboard.layout_components import serve_layout
 
     app = dash.Dash(
         __name__,
+        # Needed because layout components (dcc.Location, dcc.Store) are
+        # created dynamically by serve_layout() — callbacks reference them
+        # before any page has rendered.
         suppress_callback_exceptions=True,
         external_stylesheets=[
             "https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;600&display=swap",
@@ -341,10 +423,27 @@ def create_app(data_dir: Path | None = None) -> dash.Dash:
     </body>
 </html>"""
 
-    base_dir = data_dir or Path("data")
-    app.layout = lambda: serve_layout(base_dir)
-    register_callbacks(app, base_dir)
+    # Initial run info (from CLI --run flag) — used to seed the dropdown + first load
+    cli_data_dir = data_dir or Path("data")
+    initial_run_id = ""
+    runs_meta = list_runs(data_root=cli_data_dir)
+    for r in runs_meta:
+        rp = _resolve_run_path(r.get("id", ""))
+        if rp and str(rp.resolve()) == str(cli_data_dir.resolve()):
+            initial_run_id = r.get("id", "")
+            break
+
+    app.layout = lambda: serve_layout(
+        cli_data_dir, run_id=initial_run_id, all_runs=runs_meta,
+        cli_data_dir_str=str(cli_data_dir.resolve()),
+    )
+    register_callbacks(app)
     return app
+
+
+def _resolve_run_path(run_id: str) -> Path | None:
+    from boundary_analyzer.auto.run_registry import get_run_path
+    return get_run_path(run_id)
 
 
 # ── Entry point ────────────────────────────────────────────────────────────

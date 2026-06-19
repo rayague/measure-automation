@@ -5,6 +5,7 @@ from pathlib import Path
 
 from boundary_analyzer.llm.client import _call_ollama, call_llm
 from boundary_analyzer.llm.context import (
+    _detect_language,
     build_project_context,
     format_context_for_prompt,
 )
@@ -39,10 +40,11 @@ def generate_instrumentation(
         jaeger_port: gRPC port of the Jaeger/OTel collector (default: 4317).
 
     Returns:
-        The modified main.py content as a string, or None if all LLM options
-        fail or produce invalid Python.
+        The modified entry point file content as a string, or None if all LLM
+        options fail or produce invalid code.
     """
-    context = build_project_context(project_path)
+    lang = _detect_language(project_path)
+    context = build_project_context(project_path, lang)
     context_text = format_context_for_prompt(context)
 
     prompt = build_instrumentation_prompt(
@@ -52,10 +54,19 @@ def generate_instrumentation(
         context=context,
     )
 
+    is_python = lang == "python"
+
+    def _validate(result: str) -> bool:
+        if result.startswith("ERROR:"):
+            return False
+        if is_python:
+            return _validate_python(result)
+        return True  # non-Python: trust LLM syntax
+
     # ── Attempt 1: OpenRouter (via call_llm, which also tries Ollama as fallback) ──
     result = call_llm(prompt, temperature=0.1, max_tokens=4000)
 
-    if result is not None and not result.startswith("ERROR:") and _validate_python(result):
+    if result is not None and _validate(result):
         return result
 
     # Log why the first attempt failed
@@ -71,7 +82,7 @@ def generate_instrumentation(
     logger.info("Retrying with local Ollama for %s...", project_path)
     ollama_result = _call_ollama(prompt, temperature=0.1, max_tokens=4000)
 
-    if ollama_result is not None and not ollama_result.startswith("ERROR:") and _validate_python(ollama_result):
+    if ollama_result is not None and _validate(ollama_result):
         logger.info("Ollama succeeded for %s", project_path)
         return ollama_result
 

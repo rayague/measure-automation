@@ -15,6 +15,8 @@ Add these 2 lines BEFORE django.setup() in your manage.py or wsgi.py:
     init_tracing()
 """
 
+from __future__ import annotations
+
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.django import DjangoInstrumentor

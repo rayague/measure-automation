@@ -185,7 +185,7 @@ def _find_orphan_artifacts(project_root: Path) -> list[Path]:
         dirpath = Path(dirpath_str)
 
         for fn in filenames:
-            if fn == ".mba-Dockerfile" or fn.endswith(".mba_bak"):
+            if fn.startswith(".mba-Dockerfile") or fn.endswith(".mba_bak"):
                 orphans.append(dirpath / fn)
 
     return orphans
@@ -204,7 +204,7 @@ def _remove_orphan_artifacts(project_root: Path, orphans: list[Path]) -> None:
             elif path.name == ".mba-compose-override.yml":
                 path.unlink()
                 logger.info("Removed orphan compose override %s", path)
-            elif path.name == ".mba-Dockerfile":
+            elif path.name.startswith(".mba-Dockerfile"):
                 path.unlink()
                 logger.info("Removed orphan Dockerfile %s", path)
         except OSError as e:

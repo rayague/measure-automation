@@ -3,6 +3,8 @@
 Each prompt is a function that takes context data and returns a complete prompt string.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -25,35 +27,57 @@ RULES:
    5. The service.name MUST equal the provided SERVICE_NAME
    6. Return ONLY the COMPLETE modified entry point file content — no explanations, no markdown
    7. If you CANNOT safely instrument, respond with exactly "ERROR:" followed by the reason
-   8. You MAY add OpenTelemetry instrumentation calls around database operations (SQLAlchemyInstrumentor, cursor.execute wrappers, etc.) as long as the original query logic and parameters remain unchanged. Adding OTel imports and setup code does NOT count as "changing existing code logic."
+   8. You MAY add OpenTelemetry instrumentation calls around database operations (instrumentor, wrapper) as long as the original query logic and parameters remain unchanged. Adding OTel imports and setup code does NOT count as "changing existing code logic."
 
 OTel endpoint: %s
 Transport: OTLP HTTP (port 4318)
 
-## Python-specific Reference
+## Language-specific Reference
 
+### Python
 For FastAPI:
   - Use FastAPIInstrumentor.instrument_app(app) AFTER app creation
   - Import from opentelemetry.instrumentation.fastapi
-
 For Flask:
   - Use FlaskInstrumentor().instrument_app(app) AFTER app = Flask(__name__)
   - Import from opentelemetry.instrumentation.flask
-
 For Django:
   - Add bootstrap code to manage.py or wsgi.py BEFORE django.setup()
   - Import from opentelemetry.instrumentation.django
-
 For SQLAlchemy:
   - Call SQLAlchemyInstrumentor().instrument() BEFORE creating any engine
   - Import from opentelemetry.instrumentation.sqlalchemy
+Key packages: opentelemetry-distro, opentelemetry-sdk, opentelemetry-api,
+opentelemetry-exporter-otlp-proto-http, opentelemetry-instrumentation
 
-Key packages (already available in the Docker image):
-  - opentelemetry-distro, opentelemetry-sdk, opentelemetry-api
-  - opentelemetry-exporter-otlp-proto-http
-  - opentelemetry-instrumentation (provides the entrypoint wrapper)
+### Node.js / TypeScript
+Use @opentelemetry/sdk-node with:
+  - @opentelemetry/instrumentation-http for HTTP server/client
+  - @opentelemetry/instrumentation-express or @opentelemetry/instrumentation-fastify for framework
+  - @opentelemetry/instrumentation-dns, @opentelemetry/instrumentation-net for DB
+  - @opentelemetry/exporter-trace-otlp-proto for OTLP HTTP export
+  - Add OTel setup as the FIRST require/import before any other module
+  - service.name in resource attributes
 
-THE CODE MUST BE VALID PYTHON. Every import must exist in the OpenTelemetry ecosystem."""
+### Java
+Use opentelemetry-javaagent(-all).jar with:
+  - -javaagent:path/to/opentelemetry-javaagent.jar
+  - -Dotel.javaagent.extensions=... for DB instrumentation
+  - -Dotel.service.name=... -Dotel.traces.exporter=otlp
+  - -Dotel.exporter.otlp.protocol=http/protobuf
+  - Add the javaagent JVM argument to the Dockerfile ENTRYPOINT or CMD
+  - OR use the OTel Spring Boot starter if using Spring Boot
+
+### Go
+Use otelhttp and otelsql:
+  - go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp
+  - go.opentelemetry.io/contrib/instrumentation/database/sql/otelsql
+  - go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp
+  - Wrap HTTP handler with otelhttp.NewHandler
+  - Wrap sql.DB with otelsql.Open
+
+THE CODE MUST BE VALID SYNTAX FOR THE TARGET LANGUAGE. Every import/require must exist
+in the official OpenTelemetry ecosystem."""
 
 
 def build_instrumentation_prompt(
@@ -79,9 +103,10 @@ def build_instrumentation_prompt(
     sys_prompt = (INSTRUMENTATION_SYSTEM % otel_endpoint) + endpoint_note
 
     if context is not None:
+        lang = context.get("language", "python")
         lines = [
+            f"Language: {lang}",
             f"Service name: {context.get('service_name', 'unknown')}",
-            f"Language: {context.get('language', 'python')}",
             f"Framework: {context.get('framework', 'unknown')}",
             f"ORM: {context.get('orm', 'unknown')}",
             f"HTTP client: {context.get('http_client', 'unknown')}",
@@ -107,11 +132,11 @@ def build_instrumentation_prompt(
             lines.append(f"--- Entry Point: {context.get('main_file', 'main.py')} ---")
             lines.append(main_content)
 
-        req_content = context.get("requirements_content", "")
-        if req_content:
+        deps_content = context.get("deps_content", "")
+        if deps_content:
             lines.append("")
-            lines.append(f"--- {context.get('requirements_file', 'requirements.txt')} ---")
-            lines.append(req_content)
+            lines.append(f"--- {context.get('deps_file', 'deps')} ---")
+            lines.append(deps_content)
 
         context_text = "\n".join(lines)
 

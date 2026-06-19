@@ -145,7 +145,7 @@ class LllmContextTest(unittest.TestCase):
         self.assertIsInstance(ctx["structure"], list)
         self.assertIsInstance(ctx["api_routes"], list)
         self.assertIn("FastAPI", ctx["main_content"])
-        self.assertIn("fastapi", ctx["requirements_content"])
+        self.assertIn("fastapi", ctx["deps_content"])
 
     def test_build_project_context_no_files(self):
         from boundary_analyzer.llm.context import build_project_context
@@ -154,7 +154,7 @@ class LllmContextTest(unittest.TestCase):
 
         self.assertEqual(ctx["framework"], "unknown")
         self.assertIsNone(ctx["main_file"])
-        self.assertIsNone(ctx["requirements_file"])
+        self.assertIsNone(ctx["deps_file"])
         self.assertFalse(ctx["has_dockerfile"])
 
     def test_format_context_for_prompt(self):

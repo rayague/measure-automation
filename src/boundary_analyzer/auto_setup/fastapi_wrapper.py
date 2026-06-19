@@ -12,6 +12,8 @@ YOU DO NOT NEED TO EDIT THIS FILE.
 Just call init_tracing() at the top of your main.py (before app = FastAPI()).
 """
 
+from __future__ import annotations
+
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor

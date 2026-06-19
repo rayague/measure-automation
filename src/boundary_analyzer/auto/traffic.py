@@ -331,8 +331,7 @@ def _extract_fastapi_endpoints(tree: ast.AST) -> list[Endpoint]:
         if not args:
             continue
 
-        path_val = args[0].value
-        assert isinstance(path_val, str)
+        path_val: str = args[0].value
         if _is_health_path(path_val):
             continue
 
@@ -366,8 +365,7 @@ def _extract_flask_endpoints(tree: ast.AST) -> list[Endpoint]:
         if not args:
             continue
 
-        path_val = args[0].value
-        assert isinstance(path_val, str)
+        path_val: str = args[0].value
         if _is_health_path(path_val):
             continue
 
@@ -448,9 +446,12 @@ def _generate_query_params(params: list[dict[str, Any]]) -> dict[str, str]:
     return result
 
 
-def _generate_request_body(schema: dict[str, Any] | None) -> dict[str, Any] | list[Any] | None:
+def _generate_request_body(
+    schema: dict[str, Any] | None,
+    endpoint_path: str = "",
+) -> dict[str, Any] | list[Any] | None:
     if schema is None:
-        return None
+        return _guess_body_from_path(endpoint_path)
 
     if "$ref" in schema:
         return {"dummy": True}
@@ -467,6 +468,33 @@ def _generate_request_body(schema: dict[str, Any] | None) -> dict[str, Any] | li
         return [_generate_value(items)]
 
     return {"value": _random_string(10)}
+
+
+def _guess_body_from_path(path: str) -> dict[str, Any]:
+    """Guess a sensible JSON body for a POST/PUT/PATCH endpoint from its path.
+
+    Falls back to a generic object that covers common CRUD patterns.
+    """
+    lower = path.lower()
+
+    # Detect key entities in the path (the last meaningful segment)
+    parts = [p for p in lower.split("/") if p and p not in ("api", "v1", "v2")]
+    entity = parts[-1] if parts else "item"
+
+    # Common CRUD operations — return relevant body
+    if "insert" in lower or "create" in lower or "add" in lower:
+        return {entity: _random_string(8), "name": _random_string(8), "value": _random_string(8)}
+    if "update" in lower or "edit" in lower or "modify" in lower:
+        return {"id": random.randint(1, 100), entity: _random_string(8), "name": _random_string(8)}
+    if "delete" in lower or "remove" in lower:
+        return {"id": random.randint(1, 100)}
+    if "login" in lower or "auth" in lower:
+        return {"username": f"user_{_random_string(4)}", "password": _random_string(12)}
+    if "register" in lower or "signup" in lower:
+        return {"username": f"user_{_random_string(4)}", "email": f"{_random_string(6)}@test.com", "password": _random_string(12)}
+
+    # Generic fallback — try common field names
+    return {"id": random.randint(1, 100), "name": _random_string(8), "value": _random_string(8)}
 
 
 def _generate_value(schema: dict[str, Any], name: str = "") -> Any:
@@ -546,7 +574,7 @@ def _send_request(
         elif _is_llm_path(path):
             body = _generate_llm_payload()
         else:
-            body = _generate_request_body(request_body)
+            body = _generate_request_body(request_body, endpoint_path=path)
 
     try:
         resp = requests.request(
@@ -557,7 +585,22 @@ def _send_request(
             headers=headers,
             timeout=config.timeout,
         )
-        return resp.status_code < 500, resp.status_code, url
+        if resp.status_code < 500:
+            return True, resp.status_code, url
+        # 4xx with body — maybe the guessed body was wrong; try common fallbacks
+        if method in ("POST", "PUT", "PATCH") and body:
+            for _fallback in [{"id": 1}, {"name": "test"}, {}, {"value": "test"}]:
+                if _fallback == body:
+                    continue
+                resp2 = requests.request(
+                    method=method, url=url, params=query_params if query_params else None,
+                    json=_fallback, headers=headers, timeout=config.timeout,
+                )
+                if resp2.status_code < 400:
+                    return True, resp2.status_code, url
+                if resp2.status_code < 500:
+                    return False, resp2.status_code, url
+        return False, resp.status_code, url
     except requests.RequestException as e:
         return False, 0, f"{url} ({e})"
 

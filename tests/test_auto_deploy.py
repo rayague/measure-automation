@@ -6,9 +6,11 @@ import yaml
 
 from boundary_analyzer.auto.deploy import (
     _build_compose_override,
+    _check_container_alive,
     _find_compose_file,
     _get_python_original_cmd,
     _parse_dockerfile_cmd,
+    _resolve_external_jaeger_host,
 )
 from boundary_analyzer.auto.models import EntryPoint, ProjectInfo, ServiceInfo
 
@@ -385,14 +387,14 @@ class PythonInstrumentOverrideTest(unittest.TestCase):
         # build override points to .mba-Dockerfile
         self.assertIn("build", svc_cfg)
         self.assertEqual(svc_cfg["build"]["context"], "./app")
-        self.assertEqual(svc_cfg["build"]["dockerfile"], ".mba-Dockerfile")
+        self.assertEqual(svc_cfg["build"]["dockerfile"], ".mba-Dockerfile-web")
 
         # entrypoint is baked into the Dockerfile, not in the compose override
         self.assertNotIn("entrypoint", svc_cfg)
         self.assertNotIn("command", svc_cfg)
 
         # Verify .mba-Dockerfile was generated correctly
-        otel_df = self.tmpdir / "app" / ".mba-Dockerfile"
+        otel_df = self.tmpdir / "app" / ".mba-Dockerfile-web"
         self.assertTrue(otel_df.exists())
         otel_content = otel_df.read_text(encoding="utf-8")
         self.assertIn("opentelemetry-distro", otel_content)
@@ -423,3 +425,14 @@ class PythonInstrumentOverrideTest(unittest.TestCase):
         self.assertIn("environment", svc_cfg)
         self.assertNotIn("entrypoint", svc_cfg)
         self.assertNotIn("command", svc_cfg)
+
+
+class ContainerCheckTest(unittest.TestCase):
+    def test_check_container_alive_no_docker(self):
+        alive, logs = _check_container_alive("nonexistent-service")
+        self.assertIsInstance(logs, str)
+
+    def test_resolve_external_jaeger_host_no_docker(self):
+        host, container_name = _resolve_external_jaeger_host(16686)
+        self.assertNotEqual(host, "")
+        # container_name may be None (no Jaeger found) or a string (Jaeger running)

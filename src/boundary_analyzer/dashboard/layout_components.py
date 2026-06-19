@@ -112,7 +112,12 @@ def _build_table(df: pd.DataFrame) -> Any:
     if df.empty:
         return dash_table.DataTable()  # type: ignore[attr-defined]
 
-    disp = df[["rank", "service_name", "scom_score", "endpoints_count", "tables_count", "is_suspicious"]].copy()
+    required_cols = ["rank", "service_name", "scom_score", "is_suspicious"]
+    available = [c for c in required_cols if c in df.columns]
+    for extra in ["endpoints_count", "tables_count"]:
+        if extra in df.columns:
+            available.append(extra)
+    disp = df[available].copy()
     disp["is_suspicious"] = disp["is_suspicious"].map({True: "⚠ suspect", False: "✓ healthy"})
 
     return dash_table.DataTable(  # type: ignore[attr-defined]
@@ -165,6 +170,20 @@ def _build_table(df: pd.DataFrame) -> Any:
         row_selectable="single",
         style_as_list_view=True,
     )
+
+
+def _trend_chart_card(base_dir: Path, trend_df: pd.DataFrame | None = None) -> html.Div:
+    from boundary_analyzer.dashboard.app import _build_trend_chart, _load_trends
+
+    if trend_df is None:
+        trend_df = _load_trends(base_dir)
+    if trend_df.empty or len(trend_df.columns) < 2:
+        return html.Div()
+
+    fig = _build_trend_chart(trend_df)
+    return _card("SCOM Trend — across recent runs", [
+        dcc.Graph(figure=fig, config={"displayModeBar": False}),
+    ])
 
 
 def _data_provenance_card(data_dir: Path) -> html.Div:
@@ -256,7 +275,8 @@ def _data_provenance_card(data_dir: Path) -> html.Div:
     return _card("Data Provenance", rows, style_extra={"marginBottom": "20px"})
 
 
-def _overview_layout(rank_df: pd.DataFrame, summary: dict, base_dir: Path) -> html.Div:
+def _overview_layout(rank_df: pd.DataFrame, summary: dict, base_dir: Path,
+                     trend_df: pd.DataFrame | None = None) -> html.Div:
     total = summary.get("total_services", 0)
     suspect = summary.get("suspicious_count", 0)
     healthy = summary.get("safe_count", 0)
@@ -283,6 +303,7 @@ def _overview_layout(rank_df: pd.DataFrame, summary: dict, base_dir: Path) -> ht
                     ),
                 ],
             ),
+            _trend_chart_card(base_dir, trend_df),
             _card(
                 "Service Cohesion Ranking",
                 [
@@ -316,7 +337,7 @@ def _overview_layout(rank_df: pd.DataFrame, summary: dict, base_dir: Path) -> ht
                 ],
                 style_extra={"marginBottom": "0"},
             ),
-            _llm_analysis_card(),
+            _llm_analysis_card(base_dir),
         ],
     )
 
@@ -352,8 +373,8 @@ def _render_inline(text: str) -> list:
     return parts
 
 
-def _llm_analysis_card() -> html.Div:
-    analysis = _load_llm_analysis()
+def _llm_analysis_card(base_dir: Path | None = None) -> html.Div:
+    analysis = _load_llm_analysis(base_dir)
     if analysis is None:
         return html.Div()
 
@@ -379,7 +400,7 @@ def _llm_analysis_card() -> html.Div:
     in_code_block = False
     code_lines: list[str] = []
     in_list = False
-    list_items: list = []
+    list_items: list[Any] = []
     in_table = False
     table_rows: list[list[str]] = []
 
@@ -716,7 +737,8 @@ def _detail_layout(
         return html.Div("Service not found.")
 
     row = svc.iloc[0]
-    is_suspicious = bool(row["is_suspicious"])
+    raw = row.get("is_suspicious")
+    is_suspicious = bool(raw) if pd.notna(raw) else False
     accent = T["red"] if is_suspicious else T["cyan"]
 
     explanation = (
@@ -876,19 +898,80 @@ def _build_data_warning(
     return data_warning_local
 
 
-def serve_layout(base_dir: Path) -> html.Div:
+def _build_page_content(
+    base_dir: Path,
+    run_id: str = "",
+) -> html.Div:
+    """Build the main page content (overview + detail) for a given data directory.
+
+    Called once on initial load and again whenever the run selector changes.
+    """
+    from boundary_analyzer.dashboard.app import _load_trends
+
     rank_df, mapping_df, summary = _load_all(base_dir)
+    trend_df = _load_trends(base_dir) if not rank_df.empty else pd.DataFrame()
     data_warning = _build_data_warning(rank_df, mapping_df, base_dir)
-    data_freshness = _get_data_freshness(base_dir)
-    try:
-        data_source_label = str(base_dir.resolve())
-    except OSError:
-        data_source_label = str(base_dir)
+
+    children = [
+        data_warning,
+        html.Div(
+            id="overview-page",
+            children=_overview_layout(rank_df, summary, base_dir, trend_df=trend_df) if not rank_df.empty else [],
+        ),
+        html.Div(
+            id="detail-page",
+            style={"display": "none"},
+            children=[
+                html.Div(
+                    style={
+                        "display": "flex",
+                        "alignItems": "center",
+                        "justifyContent": "space-between",
+                        "marginBottom": "28px",
+                    },
+                    children=[
+                        html.Div(id="detail-title"),
+                        html.Button(
+                            "← Overview",
+                            id="back-button",
+                            n_clicks=0,
+                            className="back-btn",
+                        ),
+                    ],
+                ),
+                html.Div(id="detail-content"),
+            ],
+        ),
+    ]
+    return html.Div(children=children)
+
+
+def _build_run_selector(all_runs: list[dict] | None, current_run_id: str) -> tuple[list[dict], str]:
+    """Build dropdown options + selected value for the run selector."""
+    opts: list[dict] = [{"label": "Latest data (data/)", "value": ""}]
+    selected = ""
+    if all_runs:
+        for r in all_runs:
+            rid = r.get("id", "")
+            label = f"{r.get('project_name', '?')} — {rid}"
+            opts.append({"label": label, "value": rid})
+            if rid == current_run_id:
+                selected = rid
+    if not selected and current_run_id:
+        opts.insert(1, {"label": current_run_id, "value": current_run_id})
+        selected = current_run_id
+    return opts, selected
+
+
+def serve_layout(base_dir: Path, run_id: str = "", all_runs: list[dict] | None = None,
+                 cli_data_dir_str: str = "") -> html.Div:
+    run_options, selected_run = _build_run_selector(all_runs, run_id)
     return html.Div(
         style={"minHeight": "100vh", "background": T["bg_base"], "position": "relative"},
         children=[
             html.Div(id="reload-dummy", style={"display": "none"}),
             dcc.Location(id="url", refresh=False),
+            dcc.Store(id="cli-data-dir", data=cli_data_dir_str),
             html.Header(
                 style={
                     "position": "sticky",
@@ -989,52 +1072,46 @@ def serve_layout(base_dir: Path) -> html.Div:
                 },
                 children=[
                     html.Div(
-                        style={"display": "flex", "alignItems": "center", "gap": "8px"},
+                        style={"display": "flex", "alignItems": "center", "gap": "16px", "flexWrap": "wrap"},
                         children=[
-                            html.Span(
-                                "DATA SOURCE",
-                                style={
-                                    "fontFamily": T["font_mono"],
-                                    "fontSize": "8px",
-                                    "letterSpacing": "2px",
-                                    "color": T["text_muted"],
-                                },
+                            html.Div(
+                                style={"display": "flex", "alignItems": "center", "gap": "8px"},
+                                children=[
+                                    html.Span(
+                                        "RUN",
+                                        style={
+                                            "fontFamily": T["font_mono"],
+                                            "fontSize": "8px",
+                                            "letterSpacing": "2px",
+                                            "color": T["text_muted"],
+                                        },
+                                    ),
+                                    dcc.Dropdown(
+                                        id="run-selector",
+                                        options=run_options,
+                                        value=selected_run,
+                                        clearable=False,
+                                        style={
+                                            "width": "320px",
+                                            "fontFamily": T["font_mono"],
+                                            "fontSize": "11px",
+                                            "background": "transparent",
+                                        },
+                                    ),
+                                ],
                             ),
-                            html.Span(
-                                data_source_label,
-                                style={
-                                    "fontFamily": T["font_mono"],
-                                    "fontSize": "10px",
-                                    "color": T["cyan"],
-                                },
+                            html.Div(
+                                id="data-source-info",
                             ),
                         ],
                     ),
                     html.Div(
-                        style={"display": "flex", "alignItems": "center", "gap": "8px"},
-                        children=[
-                            html.Span(
-                                "LAST UPDATED",
-                                style={
-                                    "fontFamily": T["font_mono"],
-                                    "fontSize": "8px",
-                                    "letterSpacing": "2px",
-                                    "color": T["text_muted"],
-                                },
-                            ),
-                            html.Span(
-                                data_freshness,
-                                style={
-                                    "fontFamily": T["font_mono"],
-                                    "fontSize": "10px",
-                                    "color": T["amber"],
-                                },
-                            ),
-                        ],
+                        id="data-freshness-info",
                     ),
                 ],
             ),
             html.Main(
+                id="main-content",
                 style={
                     "padding": "32px 40px",
                     "maxWidth": "1400px",
@@ -1044,34 +1121,10 @@ def serve_layout(base_dir: Path) -> html.Div:
                 },
                 children=[
                     dcc.Store(id="selected-service", data=None),
-                    data_warning,
-                    html.Div(
-                        id="overview-page",
-                        children=_overview_layout(rank_df, summary, base_dir),
-                    ),
-                    html.Div(
-                        id="detail-page",
-                        style={"display": "none"},
-                        children=[
-                            html.Div(
-                                style={
-                                    "display": "flex",
-                                    "alignItems": "center",
-                                    "justifyContent": "space-between",
-                                    "marginBottom": "28px",
-                                },
-                                children=[
-                                    html.Div(id="detail-title"),
-                                    html.Button(
-                                        "← Overview",
-                                        id="back-button",
-                                        n_clicks=0,
-                                        className="back-btn",
-                                    ),
-                                ],
-                            ),
-                            html.Div(id="detail-content"),
-                        ],
+                    dcc.Loading(
+                        id="loading-content",
+                        type="circle",
+                        children=html.Div(id="page-content"),
                     ),
                 ],
             ),

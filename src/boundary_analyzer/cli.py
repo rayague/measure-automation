@@ -27,6 +27,7 @@ logging.basicConfig(
     level=logging.WARNING,
     format="[%(levelname)s] %(message)s",
     stream=sys.stderr,
+    force=True,
 )
 logger = logging.getLogger("boundary_analyzer")
 
@@ -176,6 +177,87 @@ def _add_dash_args(parser: argparse.ArgumentParser, group_name: str = "Dashboard
     )
 
 
+def _cmd_runs_compare(args: argparse.Namespace) -> int:
+    """Compare SCOM scores across runs."""
+    from boundary_analyzer.auto.run_registry import list_runs, load_run_meta
+
+    all_runs = list_runs()
+    run_ids = args.run_ids or []
+
+    if not run_ids:
+        if len(all_runs) < 2:
+            _console.print("  [yellow]Need at least 2 runs to compare.[/]")
+            return 1
+        run_ids = [all_runs[0]["id"], all_runs[1]["id"]]
+
+    metas = []
+    for rid in run_ids:
+        m = load_run_meta(rid)
+        if m is None:
+            _console.print(f"  [red]Run not found: {rid}[/]")
+            return 1
+        metas.append(m)
+
+    # Build service × run SCOM matrix
+    svc_scoms: dict[str, dict[str, float]] = {}
+    all_svcs: set[str] = set()
+    for meta in metas:
+        for s in meta.get("scom_results", []):
+            name = s.get("Service") or s.get("service") or "?"
+            scom_val = float(s.get("SCOM") or s.get("scom") or 0.0)
+            svc_scoms.setdefault(name, {})[meta["id"]] = scom_val
+            all_svcs.add(name)
+
+    if not all_svcs:
+        _console.print("  [yellow]No SCOM data in the selected runs.[/]")
+        return 1
+
+    sorted_svcs = sorted(all_svcs)
+
+    if args.json:
+        out = []
+        for svc in sorted_svcs:
+            entry = {"service": svc}
+            for meta in metas:
+                entry[meta["id"]] = svc_scoms.get(svc, {}).get(meta["id"], None)
+            out.append(entry)
+        _console.print(json.dumps(out, indent=2, default=str))
+        return 0
+
+    from rich.table import Table
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Service", style="cyan")
+    labels = []
+    for meta in metas:
+        ts = meta.get("timestamp", "?")[:10]
+        label = f"{ts}\n{meta['id'][:15]}..."
+        labels.append(label)
+        table.add_column(label, justify="right")
+
+    if len(metas) >= 2:
+        table.add_column("Δ", justify="right", style="yellow")
+
+    for svc in sorted_svcs:
+        scores = [svc_scoms.get(svc, {}).get(m["id"]) for m in metas]
+        row = [svc] + [f"{s:.4f}" if s is not None else "—" for s in scores]
+        if len(scores) >= 2:
+            a, b = scores[0], scores[1]
+            if a is not None and b is not None:
+                delta = b - a
+                sign = "+" if delta > 0 else ""
+                row.append(f"{sign}{delta:.4f}")
+            else:
+                row.append("—")
+        table.add_row(*row)
+
+    _console.print()
+    _console.print("  [bold]SCOM Comparison[/]")
+    _console.print(table)
+    _console.print(f"\n  [dim]Runs compared:[/] {'  |  '.join(m.get('id', '?') for m in metas)}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Entry point for the ``mba`` CLI. Parses args, dispatches to subcommands."""
     try:
@@ -297,8 +379,13 @@ def _main(argv: list[str] | None = None) -> int:
     dash_parser = subparsers.add_parser(
         "dashboard",
         help="Open the web dashboard to see SCOM results",
-        description=("Open the web dashboard to explore SCOM results.\nThe dashboard shows scores, rankings, and service details."),
+        description=("Open the web dashboard to explore SCOM results.\nThe dashboard shows scores, rankings, and service details.\n\nUse --run to view a specific historical run."),
         formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    dash_parser.add_argument(
+        "--run",
+        default="",
+        help="Run ID to display (default: most recent run). Use 'mba runs list' to see available runs.",
     )
     _add_dash_args(dash_parser)
 
@@ -405,6 +492,97 @@ def _main(argv: list[str] | None = None) -> int:
     teastore_docker.add_argument("--no-cleanup", action="store_false", dest="cleanup", help="Keep Docker containers running after finish.")
     teastore_docker.add_argument("--jaeger-ui", action="store_true", help="Open Jaeger web UI. Keeps containers running.")
 
+    # ── analyze subcommand ───────────────────────────────────────────
+    analyze_parser = subparsers.add_parser(
+        "analyze",
+        help="Run SCOM analysis on an existing traces file (skip collection/deployment)",
+        description=(
+            "Analyze existing traces from a file and run the SCOM pipeline.\n"
+            "\n"
+            "This command skips the trace collection and deployment steps.\n"
+            "It reads traces from a file, then runs:\n"
+            "  1. Read and parse all traces\n"
+            "  2. Find HTTP endpoints\n"
+            "  3. Find database tables in traces\n"
+            "  4. Build endpoint -> table mapping\n"
+            "  5. Compute SCOM score for each service\n"
+            "  6. Rank services and flag suspicious ones\n"
+            "  7. Generate a report"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    analyze_parser.add_argument(
+        "traffic_file",
+        help="Path to a JSON traces file (Jaeger export format).",
+    )
+    analyze_out = analyze_parser.add_argument_group("Output options")
+    analyze_out.add_argument(
+        "--output-dir",
+        default="data/analysis",
+        help="Save pipeline results to this folder (default: data/analysis).",
+    )
+    analyze_out.add_argument(
+        "--dashboard",
+        action="store_true",
+        help="Open the web dashboard after analysis finishes.",
+    )
+    _add_dash_args(analyze_parser, group_name="Dashboard options")
+
+    analyze_settings = analyze_parser.add_argument_group("Settings")
+    analyze_settings.add_argument(
+        "--threshold",
+        type=_validate_threshold,
+        default=0.5,
+        help="SCOM threshold for suspicious flag (default: 0.5).",
+    )
+    analyze_settings.add_argument(
+        "--skip-no-db-services",
+        action="store_true",
+        help="Skip services that have no database tables.",
+    )
+    analyze_settings.add_argument(
+        "--language",
+        default="",
+        help="Force language for trace parsing (python, java, node, etc.). Auto-detected if omitted.",
+    )
+    analyze_settings.add_argument(
+        "--llm",
+        action="store_true",
+        help="Use AI to write the report. Needs OPENROUTER_API_KEY in your environment.",
+    )
+
+    # ── runs subcommand ──────────────────────────────────────────────
+    runs_parser = subparsers.add_parser(
+        "runs",
+        help="Manage saved analysis runs",
+        description=(
+            "List, show, or manage historical analysis runs.\n"
+            "\n"
+            "Each run is saved to data/runs/ with a timestamp and project name.\n"
+            "You can view past SCOM results without re-running the analysis."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    runs_sub = runs_parser.add_subparsers(dest="runs_command", required=True)
+
+    runs_list = runs_sub.add_parser("list", help="List all saved runs")
+    runs_list.add_argument(
+        "--json", action="store_true", help="Output as JSON lines.",
+    )
+
+    runs_show = runs_sub.add_parser("show", help="Show details for a specific run")
+    runs_show.add_argument("run_id", help="Run ID (prefix also works)")
+    runs_show.add_argument(
+        "--json", action="store_true", help="Output as JSON.",
+    )
+
+    runs_compare = runs_sub.add_parser("compare", help="Compare SCOM scores across runs")
+    runs_compare.add_argument("run_ids", nargs="*", help="Run IDs to compare (default: last 2 runs)")
+    runs_compare.add_argument("--json", action="store_true", help="Output as JSON.")
+
+    runs_delete = runs_sub.add_parser("delete", help="Delete a specific run")
+    runs_delete.add_argument("run_id", help="Run ID to delete")
+
     # ── full subcommand ─────────────────────────────────────────────
     full_parser = subparsers.add_parser(
         "full",
@@ -458,6 +636,11 @@ def _main(argv: list[str] | None = None) -> int:
 
     full_settings = full_parser.add_argument_group("Settings")
     full_settings.add_argument(
+        "--language",
+        default="",
+        help="Force project language (python, java, node, etc.). Auto-detected if omitted.",
+    )
+    full_settings.add_argument(
         "--no-clean",
         action="store_true",
         help="Keep services and Jaeger running after analysis.",
@@ -478,6 +661,17 @@ def _main(argv: list[str] | None = None) -> int:
         nargs="*",
         default=None,
         help="Service names to exclude from analysis (e.g. gateway).",
+    )
+    full_settings.add_argument(
+        "--lookback",
+        type=int,
+        default=10,
+        help="Jaeger trace lookback in minutes (default: 10).",
+    )
+    full_settings.add_argument(
+        "--reset-jaeger",
+        action="store_true",
+        help="Stop and remove existing Jaeger container before starting fresh (avoids trace pollution from previous runs).",
     )
 
     args = parser.parse_args(argv)
@@ -552,8 +746,20 @@ def _main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "dashboard":
+        dashboard_data_dir = Path(str(args.data_dir))
+
+        run_id = str(args.run).strip() if str(args.run).strip() else ""
+        if run_id:
+            from boundary_analyzer.auto.run_registry import get_run_path
+            run_path = get_run_path(run_id)
+            if run_path:
+                dashboard_data_dir = run_path
+                _console.print(f"  [dim]Showing run:[/] [cyan]{run_id}[/]")
+            else:
+                _console.print(f"  [yellow]Run '{run_id}' not found — using {dashboard_data_dir}[/]")
+
         return _run_dashboard(
-            data_dir=Path(str(args.data_dir)),
+            data_dir=dashboard_data_dir,
             host=str(args.dash_host),
             port=int(args.dash_port),
         )
@@ -602,9 +808,199 @@ def _main(argv: list[str] | None = None) -> int:
             _cmd += ["--download-only"]
         return subprocess.call(_cmd)
 
+    if args.command == "analyze":
+        traffic_path = Path(str(args.traffic_file))
+        if not traffic_path.exists():
+            parser.error(f"Traffic file not found: {traffic_path}")
+
+        output_dir = Path(str(args.output_dir))
+
+        if bool(args.llm):
+            os.environ["BOUNDARY_ANALYZER_LLM_ENABLED"] = "1"
+        if bool(args.skip_no_db_services):
+            os.environ["BOUNDARY_ANALYZER_SKIP_NO_DB_SERVICES"] = "1"
+        if str(args.language).strip():
+            os.environ["BOUNDARY_ANALYZER_LANGUAGE"] = str(args.language).strip()
+
+        from boundary_analyzer.auto.run_registry import save_run
+        from boundary_analyzer.auto.models import (
+            AnalysisReport,
+            ProjectInfo,
+            ServiceInfo,
+            StepResult,
+        )
+        from boundary_analyzer.pipeline.run_pipeline import run_pipeline
+
+        rc = run_pipeline(
+            traces=traffic_path,
+            output_dir=output_dir,
+            scom_method="weighted",
+            threshold_method="fixed",
+            fixed_threshold=float(args.threshold),
+            exclude_health_routes=True,
+            exclude_http_client_spans=True,
+            exclude_unknown_endpoint=True,
+            skip_no_db_services=bool(args.skip_no_db_services),
+        )
+        if rc != 0:
+            return rc
+
+        _console.print(f"  Results saved to: [cyan]{output_dir.resolve()}[/]")
+
+        # Build a lightweight AnalysisReport for the run registry
+        try:
+            project_dir = Path.cwd()
+            project = ProjectInfo(services=[], root_dir=project_dir)
+            report = AnalysisReport(project=project)
+            report.total_duration_seconds = 0.0
+            report.report_path = output_dir / "report.md"
+            report.steps["analyze"] = StepResult(
+                success=True,
+                step_name="analyze",
+                message="SCOM pipeline complete",
+            )
+
+            scom_csv = output_dir / "processed" / "service_scom.csv"
+            rank_csv = output_dir / "processed" / "service_rank.csv"
+            sus_csv = output_dir / "processed" / "suspicious_services.csv"
+
+            if scom_csv.exists():
+                import pandas as pd
+                scom_df = pd.read_csv(scom_csv)
+                report.scom_results["scom_df"] = scom_df
+                # Populate services from SCOM CSV so meta.json is meaningful
+                services = []
+                for _, row in scom_df.iterrows():
+                    svc_name = str(row.get("service_name", ""))
+                    if svc_name:
+                        services.append(ServiceInfo(
+                            name=svc_name, language="", framework="",
+                            entry_points=[], deployment="analyze",
+                        ))
+                if services:
+                    report.project.services = services
+            if rank_csv.exists():
+                import pandas as pd
+                report.scom_results["rank_df"] = pd.read_csv(rank_csv)
+            if sus_csv.exists():
+                import pandas as pd
+                report.scom_results["suspicious_df"] = pd.read_csv(sus_csv)
+
+            saved_run = save_run(report)
+            saved_run_id = saved_run.id
+        except Exception as e:
+            saved_run_id = None
+            logger.warning("Failed to save run: %s", e)
+
+        if args.dashboard:
+            return _run_dashboard(
+                data_dir=output_dir,
+                host=str(args.dash_host),
+                port=int(args.dash_port),
+            )
+
+        if saved_run_id:
+            _console.print(f"  [dim]View with:[/] [cyan]mba dashboard --run {saved_run_id}[/]")
+
+        return 0
+
+    if args.command == "runs":
+        from boundary_analyzer.auto.run_registry import (
+            delete_run,
+            list_runs,
+            load_run_meta,
+        )
+
+        if args.runs_command == "list":
+            runs = list_runs()
+            if not runs:
+                _console.print("  [yellow]No saved runs found.[/]")
+                return 0
+            if args.json:
+                for r in runs:
+                    _console.print(json.dumps(r, default=str))
+                return 0
+            _console.print(f"  [bold]Saved runs[/] [dim]({len(runs)} total)[/]\n")
+            for i, r in enumerate(runs, 1):
+                label = "  [bold cyan]last →[/]" if i == 1 else "    "
+                ts = r.get("timestamp", "?")[:19].replace("T", " ")
+                proj = r.get("project_name", "?")
+                svcs = len(r.get("services", []))
+                ok = "✔" if r.get("all_success") else "⚠"
+                _console.print(f"{label} [dim]{ts}[/] [cyan]{r['id']}[/] {ok} [white]{proj}[/] ([dim]{svcs} services[/])")
+            _console.print("\n  [dim]Use[/] [cyan]mba runs show <id>[/] [dim]for details.[/]")
+            return 0
+
+        if args.runs_command == "show":
+            meta = load_run_meta(args.run_id)
+            if not meta:
+                _console.print(f"  [red]Run not found: {args.run_id}[/]")
+                return 1
+            if args.json:
+                _console.print(json.dumps(meta, default=str, indent=2))
+                return 0
+            ts = meta.get("timestamp", "?")[:19].replace("T", " ")
+            proj = meta.get("project_name", "?")
+            lang = meta.get("language", "?")
+            dur = meta.get("duration_seconds", 0)
+            svcs = meta.get("services", [])
+            scoms = meta.get("scom_results", [])
+            endpoints = meta.get("endpoints_total", 0)
+            tables = meta.get("tables_total", 0)
+            traffic_req = meta.get("traffic_requests", 0)
+            traffic_ok = meta.get("traffic_ok", 0)
+            status = "✔ Success" if meta.get("all_success") else "⚠ Issues"
+
+            _console.print(f"  [bold]Run:[/] [cyan]{meta['id']}[/]")
+            _console.print(f"  [bold]Date:[/] {ts}  [bold]Project:[/] {proj}  [bold]Language:[/] {lang}")
+            _console.print(f"  [bold]Duration:[/] {dur:.1f}s  [bold]Status:[/] {status}")
+            _console.print(f"  [bold]Endpoints:[/] {endpoints}  [bold]Tables:[/] {tables}")
+            _console.print(f"  [bold]Traffic:[/] {traffic_req} req ({traffic_ok} ok, {traffic_req - traffic_ok} failed)")
+            _console.print(f"  [bold]Services:[/] {len(svcs)}\n")
+
+            if scoms:
+                from rich.table import Table
+
+                table = Table(show_header=True, header_style="bold cyan")
+                table.add_column("Service")
+                table.add_column("Endpoints")
+                table.add_column("Tables")
+                table.add_column("SCOM")
+                table.add_column("Status")
+                for s in scoms:
+                    name = s.get("Service") or s.get("service") or "?"
+                    ep = s.get("Endpoints") or s.get("endpoints") or "?"
+                    tbl = s.get("Tables") or s.get("tables") or s.get("Tables/Collections") or "?"
+                    scom_val = s.get("SCOM") or s.get("scom") or "?"
+                    susp = s.get("is_suspicious") or s.get("Suspicious") or ""
+                    label = "⚠" if susp else "✔"
+                    table.add_row(str(name), str(ep), str(tbl), str(scom_val), label)
+                _console.print(table)
+
+            report_path = meta.get("report_path", "")
+            if report_path and Path(report_path).exists():
+                _console.print(f"\n  [dim]Report:[/] {report_path}")
+            return 0
+
+        if args.runs_command == "compare":
+            return _cmd_runs_compare(args)
+
+        if args.runs_command == "delete":
+            if delete_run(args.run_id):
+                _console.print(f"  [red]Deleted run: {args.run_id}[/]")
+                return 0
+            _console.print(f"  [red]Run not found: {args.run_id}[/]")
+            return 1
+
+        return 0
+
     if args.command == "full":
         from boundary_analyzer.auto import run_full_analysis
         from boundary_analyzer.auto.orchestrator import FullConfig
+        from boundary_analyzer.auto.run_registry import save_run
+
+        if str(args.language).strip():
+            os.environ["BOUNDARY_ANALYZER_LANGUAGE"] = str(args.language).strip()
 
         config = FullConfig(
             project_dir=Path(str(args.project_dir)),
@@ -616,12 +1012,21 @@ def _main(argv: list[str] | None = None) -> int:
             llm=bool(args.llm),
             verbose=bool(args.verbose),
             exclude_services=args.exclude_services,
+            lookback_minutes=int(args.lookback),
+            reset_jaeger=bool(args.reset_jaeger),
         )
         try:
             report = run_full_analysis(config)
         except KeyboardInterrupt:
-            print("\n  ✘ Interrupted by user")
+            _console.print("\n  [red]✘ Interrupted by user[/]")
             return 130
+
+        try:
+            meta = save_run(report)
+            _console.print(f"  Saved run: [cyan]mba runs show {meta.id}[/]")
+        except Exception as e:
+            logger.warning("Failed to save run: %s", e)
+
         return 0 if report.all_success else 1
 
     parser.error(f"Unknown command: {args.command}")

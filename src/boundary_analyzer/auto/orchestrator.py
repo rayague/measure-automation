@@ -3,8 +3,11 @@ from __future__ import annotations
 import concurrent.futures
 import json
 import logging
+import shutil
 import tempfile
 import time
+
+import pandas as pd
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -77,6 +80,8 @@ class FullConfig:
     verbose: bool = False
     skip_no_db: bool = True
     exclude_services: list[str] | None = None
+    lookback_minutes: int = 10
+    reset_jaeger: bool = False
 
 
 def _uses_docker_compose(project: ProjectInfo) -> bool:
@@ -88,6 +93,7 @@ def _export_jaeger_traces(
     service_filter: list[str] | None = None,
     jaeger_port: int = 16686,
     max_traces: int = 100,
+    lookback_minutes: int = 10,
 ) -> int:
     base_url = f"http://127.0.0.1:{jaeger_port}"
     services_url = f"{base_url}/api/services"
@@ -103,6 +109,7 @@ def _export_jaeger_traces(
             recoverable=True,
         )
 
+    all_jaeger_services = list(services)
     if service_filter:
         service_filter_lower = {s.lower() for s in service_filter}
         matched = []
@@ -125,7 +132,7 @@ def _export_jaeger_traces(
         raise AnalysisError(
             code=ErrorCode.NO_TRACES,
             _override_detail=f"No services found in Jaeger matching {service_filter}. "
-            f"Available in Jaeger: {services}. "
+            f"Available in Jaeger: {all_jaeger_services}. "
             "Check OTEL_SERVICE_NAME env var matches docker-compose service names.",
             recoverable=True,
         )
@@ -134,7 +141,7 @@ def _export_jaeger_traces(
     total_traces = 0
 
     for svc in services:
-        params = {"service": svc, "limit": str(max_traces), "lookback": "10m"}
+        params = {"service": svc, "limit": str(max_traces), "lookback": f"{lookback_minutes}m"}
         try:
             resp = requests.get(f"{base_url}/api/traces", params=params, timeout=30)
             resp.raise_for_status()
@@ -236,8 +243,6 @@ def _generate_traffic_for_all(
 def _build_scom_table(scom_df: Any) -> Table | None:
     if scom_df is None or (hasattr(scom_df, "empty") and scom_df.empty):
         return None
-
-    import pandas as pd
 
     table = Table(show_header=True, header_style="bold cyan", box=None, padding=(0, 1))
     table.add_column("Service", width=20)
@@ -441,10 +446,18 @@ def _llm_instrument_services(project: ProjectInfo, config: FullConfig) -> list[M
             _print_step("!", f"Entry point not found: {entry_path}")
             continue
 
+        import shutil
         backup_path = entry_path.with_suffix(entry_path.suffix + ".mba_bak")
-        if not backup_path.exists():
-            import shutil
-            shutil.copy2(entry_path, backup_path)
+        if backup_path.exists():
+            # Create numbered backup to avoid overwriting previous backup
+            counter = 1
+            while True:
+                numbered = entry_path.with_suffix(entry_path.suffix + f".mba_bak.{counter}")
+                if not numbered.exists():
+                    backup_path = numbered
+                    break
+                counter += 1
+        shutil.copy2(entry_path, backup_path)
 
         entry_path.write_text(code, encoding="utf-8")
         _print_step("v", f"{svc.name} → instrumented via LLM")
@@ -483,6 +496,45 @@ def _ensure_docker() -> None:
         code=ErrorCode.DOCKER_DAEMON_DOWN,
         _override_detail=f"Docker daemon not ready after ~{attempts * 5}s.",
         recoverable=True,
+    )
+
+
+def _wait_for_jaeger_traces(
+    jaeger_port: int = 16686,
+    service_names: list[str] | None = None,
+    poll_interval: int = 2,
+    timeout: int = 30,
+) -> None:
+    """Wait for Jaeger to have traces for at least one service, with timeout.
+
+    Replaces a hardcoded ``time.sleep(5)`` with an adaptive poll so that
+    fast services aren't delayed unnecessarily while slow ones still get
+    enough time to flush.
+    """
+    import requests as _requests
+
+    deadline = time.time() + timeout
+    waited = 0
+    while time.time() < deadline:
+        for svc in (service_names or []):
+            try:
+                resp = _requests.get(
+                    f"http://127.0.0.1:{jaeger_port}/api/traces",
+                    params={"service": svc, "limit": "1", "lookback": "5m"},
+                    timeout=5,
+                )
+                if resp.status_code == 200:
+                    traces = resp.json().get("data", [])
+                    if traces:
+                        _print_step("v", f"Traces available for {svc} after ~{waited}s")
+                        return
+            except _requests.RequestException:
+                pass
+        time.sleep(poll_interval)
+        waited += poll_interval
+    logger.warning(
+        "No Jaeger traces found after %ds — proceeding anyway. "
+        "Increase --lookback or verify OTEL export.", timeout,
     )
 
 
@@ -551,6 +603,8 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
         _ensure_docker()
         _print_step("*", "Cleaning up previous Docker Compose project...")
         cleanup_docker_compose(project)
+        if config.reset_jaeger:
+            _reset_jaeger_container(config.jaeger_port)
         try:
             _print_step("*", "Deploying via Docker Compose...")
             deployment = deploy_docker_compose(
@@ -731,6 +785,13 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
         return report
 
     try:
+        # Wait for Jaeger to flush pending spans — poll until traces appear or timeout
+        _wait_for_jaeger_traces(
+            config.jaeger_port,
+            service_names=[s.name for s in project.services],
+            poll_interval=2,
+            timeout=30,
+        )
         _print_step("*", "Collecting traces from Jaeger...")
         traces_dir = Path(tempfile.mkdtemp(prefix="mba_traces_"))
         service_names = [s.name for s in project.services]
@@ -738,6 +799,7 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
             traces_dir,
             service_filter=service_names,
             jaeger_port=config.jaeger_port,
+            lookback_minutes=config.lookback_minutes,
         )
         if trace_count == 0:
             raise AnalysisError(
@@ -789,8 +851,6 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
         rank_csv = output_dir / "processed" / "service_rank.csv"
         report_path = output_dir / "report.md"
 
-        import pandas as pd
-
         scom_df = pd.read_csv(scom_csv) if scom_csv.exists() else pd.DataFrame()
         rank_df = pd.read_csv(rank_csv) if rank_csv.exists() else pd.DataFrame()
 
@@ -813,6 +873,14 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
             message="Pipeline failed",
             errors=[unexpected("analyze", e)],
         )
+    finally:
+        # Clean up temp directories created during collect + analyze
+        for tmp in (traces_dir, output_dir):
+            if tmp and tmp.exists():
+                try:
+                    shutil.rmtree(tmp)
+                except OSError as rm_err:
+                    logger.warning("Failed to clean up temp dir %s: %s", tmp, rm_err)
 
     if config.no_clean and deployment:
         report.steps.setdefault(
@@ -884,3 +952,23 @@ def _try_cleanup(report: AnalysisReport, project: ProjectInfo, deployment: Deplo
         errors=errors,
     )
     report.steps["cleanup"] = cleanup_step
+
+
+def _reset_jaeger_container(jaeger_port: int = 16686) -> None:
+    """Stop and remove the existing Jaeger container, then start a fresh one.
+
+    Ensures no old traces from previous runs pollute the current analysis.
+    """
+    import subprocess
+    from boundary_analyzer.auto.deploy import start_jaeger
+
+    container_name = "mba-jaeger"
+    _print_step("*", f"Resetting Jaeger container ({container_name})...")
+    try:
+        subprocess.run(
+            ["docker", "rm", "-f", container_name],
+            capture_output=True, timeout=10,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    start_jaeger(port=jaeger_port)

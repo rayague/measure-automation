@@ -33,7 +33,7 @@ class Settings(BaseModel):
     threshold_method: str = "percentile"
     threshold_percentile: float = 25.0
     threshold_zscore: float = -1.5
-    output_dir: str = "data/raw/traces"
+    output_dir: str = str(Path("data") / "raw" / "traces")
     llm: LlmSettings = LlmSettings()
 
 
@@ -85,7 +85,7 @@ def get_traces_dir(settings: Settings | None = None) -> Path:
     if settings is not None and settings.output_dir:
         return Path(settings.output_dir)
 
-    return Path("data/raw/traces")
+    return get_data_dir() / "raw" / "traces"
 
 
 def clean_data_dirs(
@@ -98,7 +98,8 @@ def clean_data_dirs(
     deleted: dict[str, int] = {"traces": 0, "interim": 0, "processed": 0}
 
     if clean_traces:
-        traces_dir = get_traces_dir()
+        # When a data_dir is explicitly provided, use it; otherwise fall back to the env-configured path
+        traces_dir = (base / "raw" / "traces") if data_dir is not None else get_traces_dir()
         if traces_dir.exists() and traces_dir.is_dir():
             for p in traces_dir.glob("*.json"):
                 try:

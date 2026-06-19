@@ -4,8 +4,9 @@ import collections
 import json
 import logging
 import os
+import re
 import shlex
-import signal
+import shutil
 import socket
 import subprocess
 import sys
@@ -103,7 +104,7 @@ def _wait_for_health(url: str, timeout: int = 30, interval: float = 1.0) -> bool
     while time.time() < deadline:
         try:
             resp = requests.get(url, timeout=5)
-            if resp.status_code < 500:
+            if resp.status_code < 400:
                 return True
         except (requests.RequestException, ConnectionError):
             pass
@@ -266,16 +267,71 @@ def _parse_docker_error(captured_lines: list[str]) -> tuple[str, str | None, boo
     )
 
 
+def _resolve_external_jaeger_host(jaeger_port: int = 16686) -> tuple[str, str | None]:
+    """Resolve the reachable hostname/IP for an externally-running Jaeger instance.
+
+    Returns ``(otel_host, jaeger_container_name)`` where:
+    - *otel_host* is the host or IP to use in the OTLP endpoint URL
+    - *jaeger_container_name* is the name of a running Jaeger container
+      (or *None* if no container was found)
+
+    Priority:
+    1. If Jaeger is in a Docker container, return its name + container name
+       (we will connect it to the compose network later)
+    2. Fall back to ``host.docker.internal`` w/ container_name = None
+    """
+    if not _docker_installed() or not _docker_daemon_ready():
+        return "host.docker.internal", None
+
+    # Try to find any Jaeger container currently running
+    try:
+        ps = subprocess.run(
+            ["docker", "ps", "--filter", "publish=16686", "--format", "{{.Names}}"],
+            capture_output=True, text=True, timeout=10,
+        )
+        container_names = [n.strip() for n in ps.stdout.splitlines() if n.strip()]
+        if not container_names:
+            ps = subprocess.run(
+                ["docker", "ps", "--filter", "name=jaeger", "--format", "{{.Names}}"],
+                capture_output=True, text=True, timeout=10,
+            )
+            container_names = [n.strip() for n in ps.stdout.splitlines() if n.strip()]
+
+        if container_names:
+            jc = container_names[0]
+            logger.info("External Jaeger container found: %s — will connect to compose network", jc)
+            return jc, jc
+
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    # Fallback: Docker gateway IP — works on Linux natively (not just Docker Desktop)
+    try:
+        gw = subprocess.run(
+            ["docker", "inspect", "bridge", "--format", "{{(index .IPAM.Config 0).Gateway}}"],
+            capture_output=True, text=True, timeout=10,
+        )
+        if gw.returncode == 0 and gw.stdout.strip():
+            gw_ip = gw.stdout.strip()
+            logger.info("Falling back to Docker gateway IP %s for external Jaeger", gw_ip)
+            return gw_ip, None
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    # Last resort: Docker Desktop only (macOS/Windows)
+    return "host.docker.internal", None
+
+
 def _resolve_compose_jaeger(
     jaeger_port: int = 16686,
     otlp_port: int = 4318,
     container_name: str = "mba-jaeger",
-) -> tuple[bool, str]:
+) -> tuple[bool, str, str | None]:
     """Decide whether to add Jaeger to the compose override or reuse a running instance.
 
-    Returns ``(include_jaeger_service, otel_endpoint_host)``.
-    When Jaeger is already healthy on the host (e.g. manually started via
-    ``docker run --name jaeger``), services reach it through ``host.docker.internal``.
+    Returns ``(include_jaeger_service, otel_endpoint_host, jaeger_container_name)``.
+    When an existing Jaeger is healthy, the third element is the Docker container name
+    (or *None* if Jaeger is not containerised).
     """
     if _jaeger_alive(jaeger_port):
         logger.info("Reusing existing Jaeger on port %s", jaeger_port)
@@ -283,10 +339,11 @@ def _resolve_compose_jaeger(
             f"  ✔ Jaeger already running on port {jaeger_port} — reusing it\n"
         )
         sys.stderr.flush()
-        return False, "host.docker.internal"
+        otel_host, jc = _resolve_external_jaeger_host(jaeger_port)
+        return False, otel_host, jc
 
     _ensure_jaeger_ports_free(jaeger_port, otlp_port, container_name)
-    return True, container_name
+    return True, container_name, None
 
 
 def _ensure_jaeger_ports_free(
@@ -441,20 +498,23 @@ def start_jaeger(
             recoverable=True,
         )
 
-    time.sleep(3)
+    # Poll Jaeger API until it responds (replaces hardcoded time.sleep(3))
+    _jaeger_deadline = time.time() + 10
+    _jaeger_ready = False
+    while time.time() < _jaeger_deadline:
+        try:
+            r = requests.get(f"http://127.0.0.1:{jaeger_port}/api/services", timeout=5)
+            if r.status_code == 200:
+                _jaeger_ready = True
+                break
+        except requests.RequestException:
+            pass
+        time.sleep(0.5)
 
-    try:
-        r = requests.get(f"http://127.0.0.1:{jaeger_port}/api/services", timeout=10)
-        if r.status_code != 200:
-            raise AnalysisError(
-                code=ErrorCode.JAEGER_NOT_READY,
-                _override_detail=f"Jaeger API returned status {r.status_code}.",
-                recoverable=True,
-            )
-    except requests.RequestException as e:
+    if not _jaeger_ready:
         raise AnalysisError(
             code=ErrorCode.JAEGER_NOT_READY,
-            _override_detail=str(e),
+            _override_detail="Jaeger API did not become ready within 10s after port check.",
             recoverable=True,
         )
 
@@ -525,6 +585,21 @@ def _install_deps(service: ServiceInfo, plugin: Any) -> None:
         )
 
 
+def _kill_process_tree(proc: subprocess.Popen) -> None:
+    """Kill a process and all its children (cross-platform)."""
+    try:
+        if os.name == "nt":
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                capture_output=True, timeout=5,
+            )
+        else:
+            proc.kill()
+        proc.wait(timeout=5)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        logger.warning("Failed to kill process tree PID %s: %s", proc.pid, e)
+
+
 def deploy_services(
     project: ProjectInfo,
     otlp_endpoint: str = "http://localhost:4318",
@@ -541,6 +616,13 @@ def deploy_services(
     result = DeploymentResult()
 
     for service in project.services:
+        if not service.entry_points:
+            logger.warning("Skipping service %s — no entry points found", service.name)
+            sys.stderr.write(f"  ! Skipping {service.name} (no entry points)\n")
+            sys.stderr.flush()
+            deployed = DeployedService(service=service, ready=False)
+            result.services.append(deployed)
+            continue
         entry = service.entry_points[0]
 
         try:
@@ -585,11 +667,7 @@ def deploy_services(
 
         ready = _wait_for_port("127.0.0.1", port, timeout=30)
         if not ready:
-            try:
-                process.kill()
-                process.wait(timeout=5)
-            except (OSError, subprocess.TimeoutExpired) as e:
-                logger.warning("Failed to kill process on port %s: %s", port, e)
+            _kill_process_tree(process)
             raise AnalysisError(
                 code=ErrorCode.HEALTH_TIMEOUT,
                 scope=f"{service.name} on :{port}",
@@ -760,6 +838,21 @@ def _get_build_info(
     }
 
 
+def _is_alpine_image(df_path: Path) -> bool:
+    """Check if the Dockerfile uses an Alpine-based base image."""
+    try:
+        for line in df_path.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            up = stripped.upper()
+            if up.startswith("FROM ") and ("ALPINE" in up or up.rstrip().endswith("-ALPINE")):
+                return True
+            if up.startswith("FROM "):
+                return False
+        return False
+    except OSError:
+        return False
+
+
 def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[str, Any] | None, list[str] | None]:
     """Generate a modified Dockerfile with OTel packages pre-installed.
 
@@ -839,6 +932,13 @@ def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[st
     if db_pkgs:
         otel_pkgs += f" {db_pkgs}"
     otel_run = f"RUN pip install --no-cache-dir {otel_pkgs}"
+
+    # If base image is Alpine, install build deps before pip install
+    if _is_alpine_image(df_path):
+        apk_run = "RUN apk add --no-cache gcc musl-dev linux-headers"
+        lines.insert(insert_pos, apk_run)
+        insert_pos += 1
+
     lines.insert(insert_pos, otel_run)
 
     # Inject ENTRYPOINT directly into the Dockerfile so Docker uses it
@@ -856,7 +956,8 @@ def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[st
 
     modified_content = "\n".join(lines)
 
-    otel_df = build_info["build_context"] / ".mba-Dockerfile"
+    safe_name = svc.compose_service_name.replace("/", "_").replace("\\", "_")
+    otel_df = build_info["build_context"] / f".mba-Dockerfile-{safe_name}"
     try:
         otel_df.write_text(modified_content, encoding="utf-8")
     except OSError as e:
@@ -866,11 +967,11 @@ def _generate_otel_dockerfile(root_dir: Path, svc: ServiceInfo) -> tuple[dict[st
     if isinstance(build_info["build_val"], str):
         build_config: dict[str, Any] = {
             "context": build_info["orig_build"]["context"],
-            "dockerfile": ".mba-Dockerfile",
+            "dockerfile": f".mba-Dockerfile-{safe_name}",
         }
     else:
         build_config = dict(build_info["orig_build"])
-        build_config["dockerfile"] = ".mba-Dockerfile"
+        build_config["dockerfile"] = f".mba-Dockerfile-{safe_name}"
 
     return build_config, None
 
@@ -906,9 +1007,9 @@ def find_otel_dockerfiles(project_root: Path) -> list[Path]:
         else:
             continue
 
-        otel_df = build_context / ".mba-Dockerfile"
-        if otel_df.exists():
-            results.append(otel_df)
+        for f in build_context.glob(".mba-Dockerfile*"):
+            if f.is_file():
+                results.append(f)
 
     return results
 
@@ -974,7 +1075,7 @@ def _build_compose_override(
                 env.append("OTEL_METRICS_EXPORTER=none")
                 env.append("OTEL_LOGS_EXPORTER=none")
                 svc_config["volumes"] = [
-                    f"{agent_host}:/mba-agent:ro",
+                    f'"{agent_host}:/mba-agent:ro"',
                 ]
 
         elif svc.language == "node":
@@ -1017,6 +1118,232 @@ def _build_compose_override(
     return yaml.dump(override, default_flow_style=False, sort_keys=False)
 
 
+def _get_container_id_for_compose_service(
+    compose_file: Path, override_file: Path | None, service_name: str,
+) -> str | None:
+    """Resolve the Docker container name/ID for a Docker Compose service.
+
+    ``docker inspect <compose_service_name>`` does **not** work because Compose
+    creates containers named ``<project>_<service>_<index>`` (e.g. ``scenario1_setup_1``).
+    This helper uses ``docker compose ps -q`` to get the real container ID.
+    """
+    cmd = ["docker", "compose", "-f", str(compose_file)]
+    if override_file and override_file.exists():
+        cmd.extend(["-f", str(override_file)])
+    cmd.extend(["ps", "-q", service_name])
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        cid = result.stdout.strip()
+        return cid if cid else None
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return None
+
+
+def _get_container_networks(container_identifier: str) -> list[str]:
+    """Return the list of Docker networks a container is connected to."""
+    try:
+        result = subprocess.run(
+            [
+            "docker", "inspect", container_identifier,
+            "--format", "{{range $netName, $netConfig := .NetworkSettings.Networks}}{{$netName}}{{\"\\n\"}}{{end}}",
+            ],
+            capture_output=True, text=True, timeout=10,
+        )
+        if result.returncode != 0:
+            return []
+        return [n.strip() for n in result.stdout.splitlines() if n.strip()]
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return []
+
+
+def _get_compose_project_name(compose_file: Path) -> str:
+    """Infer the Docker Compose project name from the compose file path.
+
+    Docker Compose uses the directory name (lowercased, non-alphanumeric → ``_``)
+    as the default project name.
+    """
+    name = compose_file.parent.name.lower()
+    safe = "".join(c if c.isalnum() else "_" for c in name)
+    return safe.strip("_") or "default"
+
+
+def _connect_with_network_name(
+    jaeger_container: str, network_name: str,
+) -> bool:
+    """Connect *jaeger_container* to *network_name*, handling 'already connected'."""
+    try:
+        jaeger_nets = _get_container_networks(jaeger_container)
+        if network_name in jaeger_nets:
+            logger.info("Jaeger already connected to network %s", network_name)
+            return True
+
+        sys.stderr.write(f"  ● Connecting {jaeger_container} to {network_name}...\n")
+        sys.stderr.flush()
+        connect = subprocess.run(
+            ["docker", "network", "connect", network_name, jaeger_container],
+            capture_output=True, text=True, timeout=15,
+        )
+        if connect.returncode == 0:
+            sys.stderr.write(f"  ✔ {jaeger_container} connected to {network_name}\n")
+            sys.stderr.flush()
+            logger.info("Connected Jaeger container %s to network %s", jaeger_container, network_name)
+            return True
+
+        stderr = connect.stderr.strip()
+        if "already exists" in stderr.lower():
+            logger.info("Jaeger already connected to network %s", network_name)
+            return True
+
+        logger.warning("Failed to connect Jaeger to %s: %s", network_name, stderr)
+        return False
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        logger.warning("Network connect failed: %s", e)
+        return False
+
+
+def _poll_compose_network_and_connect_jaeger(
+    compose_file: Path,
+    jaeger_container: str,
+    poll_timeout: int = 60,
+) -> bool:
+    """Wait for the Docker Compose network to be created, then connect Jaeger.
+
+    This is called **immediately** after ``docker compose up`` starts, before
+    services finish building, so that by the time application code runs Jaeger
+    is already reachable via Docker DNS (``<container_name>``).
+
+    Returns True if the connection was made.
+    """
+    project_name = _get_compose_project_name(compose_file)
+    deadline = time.time() + poll_timeout
+    polled = 0
+
+    while time.time() < deadline:
+        try:
+            result = subprocess.run(
+                [
+                    "docker", "network", "ls",
+                    "--filter", f"label=com.docker.compose.project={project_name}",
+                    "--format", "{{.Name}}",
+                ],
+                capture_output=True, text=True, timeout=10,
+            )
+            networks = [n.strip() for n in result.stdout.splitlines() if n.strip()]
+            if networks:
+                all_ok = True
+                for net in networks:
+                    if not _connect_with_network_name(jaeger_container, net):
+                        all_ok = False
+                return all_ok
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+        time.sleep(1)
+        polled += 1
+
+    logger.warning(
+        "Compose network for project '%s' not found after %d polls — "
+        "trying fallback via service inspection",
+        project_name, polled,
+    )
+    return False
+
+
+def _connect_jaeger_to_compose_network(
+    compose_file: Path,
+    override_file: Path | None,
+    jaeger_container: str,
+    project: ProjectInfo,
+) -> bool:
+    """Connect the external Jaeger container to the Docker Compose project network.
+
+    This is the **fallback** path used after containers are up.  Prefer
+    ``_poll_compose_network_and_connect_jaeger`` (called right after compose
+    starts) so that Jaeger is already on the network when application code runs.
+
+    Returns True if the connection was made (or Jaeger was already on the network).
+    """
+    if not _docker_installed() or not _docker_daemon_ready():
+        return False
+
+    # Collect ALL unique compose networks across all service containers
+    all_nets: set[str] = set()
+    for svc in project.services:
+        if not svc.compose_service_name:
+            continue
+        cid = _get_container_id_for_compose_service(compose_file, override_file, svc.compose_service_name)
+        if not cid:
+            continue
+        nets = _get_container_networks(cid)
+        all_nets.update(nets)
+
+    if not all_nets:
+        logger.warning("Could not determine any compose network — cannot connect Jaeger")
+        return False
+
+    all_ok = True
+    for net in sorted(all_nets):
+        if not _connect_with_network_name(jaeger_container, net):
+            all_ok = False
+    return all_ok
+
+
+def _check_container_alive(
+    compose_service_name: str,
+    compose_file: Path | None = None,
+    override_file: Path | None = None,
+) -> tuple[bool, str]:
+    """Check if a Docker Compose container is still running.
+
+    Uses ``docker compose ps -q`` to resolve the real container name/ID
+    (Docker Compose names containers ``<project>_<service>_<index>``).
+
+    Args:
+        compose_service_name: Service name in docker-compose.yml (e.g. ``setup``).
+        compose_file: Path to the compose file.  If *None*, tries to auto-detect
+            from ``CWD``.
+        override_file: Optional compose override file.
+
+    Returns (alive, log_snippet) where log_snippet is the tail of container
+    logs (up to 20 lines) if the container has exited.
+    """
+    if not _docker_installed() or not _docker_daemon_ready():
+        return True, ""  # can't check, assume alive
+
+    if compose_file is None:
+        from pathlib import Path
+        compose_file = _find_compose_file(Path.cwd()) or Path()
+
+    # Resolve the actual container ID via compose ps -q
+    cid = _get_container_id_for_compose_service(
+        compose_file, override_file, compose_service_name,
+    )
+    if not cid:
+        logger.warning("Could not resolve container ID for %s — assuming not alive", compose_service_name)
+        return False, ""
+
+    try:
+        inspect = subprocess.run(
+            ["docker", "inspect", "--format", "{{.State.Status}}", cid],
+            capture_output=True, text=True, timeout=10,
+        )
+        if inspect.returncode != 0:
+            return True, ""
+        status = inspect.stdout.strip()
+        if status == "running":
+            return True, ""
+        if status in ("exited", "dead", "paused"):
+            logs = subprocess.run(
+                ["docker", "logs", "--tail", "20", cid],
+                capture_output=True, text=True, timeout=10,
+            )
+            snippet = logs.stdout.strip() or logs.stderr.strip() or "(no logs)"
+            return False, snippet
+        return True, ""
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return True, ""
+
+
 def deploy_docker_compose(
     project: ProjectInfo,
     jaeger_port: int = 16686,
@@ -1045,7 +1372,7 @@ def deploy_docker_compose(
             recoverable=True,
         )
 
-    include_jaeger, otel_host = _resolve_compose_jaeger(
+    include_jaeger, otel_host, jaeger_container_name = _resolve_compose_jaeger(
         jaeger_port, otlp_port, container_name,
     )
 
@@ -1104,7 +1431,8 @@ def deploy_docker_compose(
     captured_lines: collections.deque[str] = collections.deque(maxlen=60)
 
     def _reader(p: subprocess.Popen, buf: collections.deque) -> None:
-        assert p.stdout is not None
+        if p.stdout is None:
+            raise AnalysisError(code=ErrorCode.SUBPROCESS_FAILED, _override_detail="No stdout from compose build")
         try:
             for line in p.stdout:
                 sys.stderr.write(line)
@@ -1116,10 +1444,20 @@ def deploy_docker_compose(
     reader = threading.Thread(target=_reader, args=(proc, captured_lines), daemon=True)
     reader.start()
 
+    # If using external Jaeger, connect it to the compose network as soon as
+    # the network exists — BEFORE services finish building/starting — so that
+    # application code can resolve the Jaeger container via Docker DNS.
+    if jaeger_container_name and include_jaeger is False:
+        _poll_compose_network_and_connect_jaeger(
+            compose_file, jaeger_container_name,
+        )
+    # (When include_jaeger is True, Jaeger is part of the compose override and
+    #  is automatically on the compose network — no action needed.)
+
     try:
         retcode = proc.wait(timeout=300)
     except subprocess.TimeoutExpired:
-        proc.kill()
+        _kill_process_tree(proc)
         if proc.stdout:
             proc.stdout.close()
         reader.join(timeout=5)
@@ -1158,9 +1496,28 @@ def deploy_docker_compose(
             deployed = DeployedService(service=svc, ready=False)
             result.services.append(deployed)
             continue
-        ready = _wait_for_port("127.0.0.1", port, timeout=timeout)
+
+        # Check if the container is still running (it may have exited/crashed)
+        container_ok, container_logs = _check_container_alive(
+            svc.compose_service_name,
+            compose_file=compose_file,
+            override_file=override_file,
+        )
+        if not container_ok and container_logs:
+            logger.warning(
+                "Container %s exited before port check — logs:\n%s",
+                svc.compose_service_name, container_logs,
+            )
+            sys.stderr.write(
+                f"  ✘ Container {svc.compose_service_name} exited. "
+                f"Logs:\n{container_logs}\n"
+            )
+            sys.stderr.flush()
+
+        ready = _wait_for_port("127.0.0.1", port, timeout=timeout) if container_ok else False
         if ready:
-            health_url = f"http://127.0.0.1:{port}{svc.health_endpoint}"
+            health_path = svc.health_endpoint or "/"
+            health_url = f"http://127.0.0.1:{port}{health_path}"
             _wait_for_health(health_url, timeout=15)
 
         deployed = DeployedService(
@@ -1181,9 +1538,24 @@ def deploy_docker_compose(
     try:
         r = requests.get(f"http://127.0.0.1:{jaeger_port}/api/services", timeout=10)
         if r.status_code != 200:
-            logger.warning("Jaeger API returned status %s", r.status_code)
+            raise AnalysisError(
+                code=ErrorCode.JAEGER_NOT_READY,
+                _override_detail=f"Jaeger API returned status {r.status_code}",
+                recoverable=True,
+            )
     except requests.RequestException as e:
-        logger.warning("Jaeger health check failed: %s", e)
+        raise AnalysisError(
+            code=ErrorCode.JAEGER_NOT_READY,
+            _override_detail=f"Jaeger health check failed: {e}",
+            recoverable=True,
+        )
+
+    # Fallback: ensure Jaeger is on the compose network (in case the early
+    # poll missed it, or the project uses a custom network name).
+    if jaeger_container_name and include_jaeger is False:
+        _connect_jaeger_to_compose_network(
+            compose_file, override_file, jaeger_container_name, project,
+        )
 
     return result
 
@@ -1219,7 +1591,7 @@ def cleanup_docker_compose(
             cmd.extend(["-f", str(override_file)])
         cmd.extend(["down", "--remove-orphans"])
 
-        subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15)
+        subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
     except subprocess.TimeoutExpired:
         logger.warning("Docker compose down timed out — skipping")
     except FileNotFoundError:
@@ -1245,34 +1617,6 @@ def cleanup_services(deployment: DeploymentResult) -> list[AnalysisError]:
 
     for svc in deployment.services:
         if svc.process and svc.pid:
-            try:
-                if os.name == "nt":
-                    svc.process.terminate()
-                else:
-                    os.kill(svc.pid, signal.SIGTERM)
-
-                svc.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                try:
-                    svc.process.kill()
-                    svc.process.wait(timeout=3)
-                except (OSError, subprocess.TimeoutExpired) as e:
-                    logger.warning("Failed to kill service %s: %s", svc.service.name, e)
-                    errors.append(
-                        AnalysisError(
-                            code=ErrorCode.PROCESS_KILL_FAILED,
-                            scope=svc.service.name,
-                            original=str(e),
-                        )
-                    )
-            except OSError as e:
-                logger.warning("Failed to wait for service %s: %s", svc.service.name, e)
-                errors.append(
-                    AnalysisError(
-                        code=ErrorCode.PROCESS_KILL_FAILED,
-                        scope=svc.service.name,
-                        original=str(e),
-                    )
-                )
+            _kill_process_tree(svc.process)
 
     return errors

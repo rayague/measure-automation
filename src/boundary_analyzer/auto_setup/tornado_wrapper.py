@@ -9,6 +9,8 @@ Add at the top of your main file (before IOLoop starts):
     init_tracing()
 """
 
+from __future__ import annotations
+
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.tornado import TornadoInstrumentor

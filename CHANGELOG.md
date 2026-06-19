@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.7.2 (2026-06-19)
+
+### Traffic gen for POST endpoints, Jaeger isolation, endpoint count display
+
+- **traffic.py**: POST/PUT/PATCH without OpenAPI schema now guesses a JSON body from the endpoint path (e.g. `/employees/insert` → `{"name":"...", ...}`, `/delete` → `{"id":1}`). Falls back through multiple body shapes on 4xx.
+- **orchestrator.py**: New `_reset_jaeger_container()` — stops/removes existing Jaeger and starts fresh, activated by `--reset-jaeger` CLI flag.
+- **cli.py**: Added `--reset-jaeger` flag to `mba full`.
+- **run_registry.py**: `_build_run_meta` falls back to SCOM CSV endpoint count when `project.services` have empty endpoints (fixes `Endpoints: 0` in `mba runs show`).
+
+## v0.7.1 (2026-06-19)
+
+### Hotfix — missing `import socket` in deploy.py
+
+- **deploy.py**: `_is_port_in_use()` used `socket` without importing it, crashing the pipeline before any deploy could start. Added `import socket`.
+
 ## v0.7.0 (2026-06-19)
 
 ### Full audit — 71 bugs fixed (11 P0, 17 P1, 43 P2)

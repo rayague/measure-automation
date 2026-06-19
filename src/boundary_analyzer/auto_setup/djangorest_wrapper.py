@@ -10,6 +10,8 @@ Add these 2 lines BEFORE django.setup():
     init_tracing()
 """
 
+from __future__ import annotations
+
 # Django REST Framework uses the same Django instrumentation
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter

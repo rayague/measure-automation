@@ -6,26 +6,6 @@ defined in dashboard.py (JetBrains Mono + Syne, #06080f background,
 #00e5ff cyan accent, #ff1744 red alert, #ff9800 amber threshold).
 
 CHART CATALOGUE
-───────────────
-  create_animated_bar_chart   Cinematic horizontal bar race with custom
-                              hover cards, rank badges, and threshold band.
-
-  create_scom_distribution    KDE + rug + histogram hybrid with dual-zone
-                              colouring, percentile annotations, and a
-                              threshold marker.
-
-  create_cohesion_gauge       Bullet / gauge chart per service: shows SCOM
-                              value against healthy/warning/critical bands.
-
-  create_endpoint_scatter     Bubble scatter: endpoints (x) × tables (y) ×
-                              SCOM (size) × health (colour) with quadrant
-                              lines and rich hover.
-
-  create_summary_cards        Pure Python dict – no visual change needed,
-                              but extended with extra stats for the header.
-
-  _LAYOUT                     Shared Plotly layout dict – single source of
-                              truth for fonts, colours, and grid style.
 """
 
 from __future__ import annotations

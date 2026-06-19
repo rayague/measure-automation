@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 
 def _with_alpha(color: str, alpha: float) -> str:
     c = str(color).strip()
