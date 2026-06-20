@@ -238,6 +238,7 @@ def _generate_traffic_for_all(
     endpoint_map: dict[str, tuple[list[Endpoint], str]],
     config: FullConfig,
 ) -> dict[str, TrafficResult]:
+    """Legacy fallback: random traffic without live UI (used by mba run)."""
     results: dict[str, TrafficResult] = {}
 
     for ds in deployment.ready_services:
@@ -255,6 +256,162 @@ def _generate_traffic_for_all(
                 total_requests=0,
                 errors=[e],
             )
+
+    return results
+
+
+def _generate_traffic_with_live_ui(
+    deployment: DeploymentResult,
+    endpoint_map: dict[str, tuple[list[Endpoint], str]],
+    config: FullConfig,
+    project_name: str,
+    pipeline_steps_done: list[str] | None = None,
+) -> dict[str, TrafficResult]:
+    """Ordered phased traffic generation with a real-time Rich terminal dashboard.
+
+    Replaces :func:`_generate_traffic_for_all` when ``mba full`` is used.
+    Uses :class:`~boundary_analyzer.auto.traffic_engine.OrderedTrafficEngine`
+    to execute traffic in PROBE → SEED → READ → MUTATE → STRESS → CLEANUP
+    order, and :class:`~boundary_analyzer.auto.live_ui.MBALiveUI` to render a
+    live-updating terminal dashboard during execution.
+
+    Args:
+        deployment:          Ready services from the deploy step.
+        endpoint_map:        Discovered endpoints per service.
+        config:              FullConfig from the CLI.
+        project_name:        Human-readable project name for the UI header.
+        pipeline_steps_done: Steps already completed (shown as ✔ in the UI).
+
+    Returns:
+        ``dict[service_name, TrafficResult]`` compatible with the existing
+        orchestrator pipeline (same structure as
+        :func:`_generate_traffic_for_all`).
+    """
+    from boundary_analyzer.auto.live_ui import MBALiveUI
+    from boundary_analyzer.auto.traffic_engine import EndpointStatus, OrderedTrafficEngine
+
+    service_list = [ds.service for ds in deployment.ready_services]
+    engine_endpoint_map: dict[str, list[Endpoint]] = {svc.name: endpoint_map.get(svc.name, ([], "none"))[0] for svc in service_list}
+    service_names = [s.name for s in service_list]
+    total_endpoints = sum(len(eps) for eps, _ in endpoint_map.values())
+
+    traffic_cfg = TrafficConfig(
+        duration=config.duration,
+        workers=config.workers,
+    )
+
+    # Phase duration estimates (used only for the UI progress bar)
+    _phase_budget_ratios = {
+        "PROBE": 0.05,
+        "SEED": 0.20,
+        "READ": 0.30,
+        "MUTATE": 0.15,
+        "STRESS": 0.25,
+        "CLEANUP": 0.05,
+    }
+
+    with MBALiveUI(
+        project_name=project_name,
+        services=service_names,
+        total_duration=config.duration,
+        workers=config.workers,
+    ) as ui:
+        # Reflect already-completed steps in the pipeline bar
+        for done_step in pipeline_steps_done or []:
+            ui.set_pipeline_step(done_step, "success")
+        ui.set_pipeline_step("traffic", "running")
+
+        # ── Callback: endpoint status update ───────────────────────────────
+        def on_endpoint_update(status: EndpointStatus) -> None:
+            ui.update_endpoint(
+                service_name=status.service_name,
+                method=status.method,
+                path=status.path,
+                status=status.phase,
+                http_code=status.http_status,
+                response_ms=status.response_ms,
+                db_ops=status.db_ops_triggered,
+            )
+            # Live stat refresh (approximate — DB ops not yet known)
+            with_db = sum(1 for ep_key, ep_st in engine._statuses.items() if ep_st.db_ops_triggered > 0) if hasattr(engine, "_statuses") else 0
+            total_ok = sum(s.successes for s in engine._statuses.values()) if hasattr(engine, "_statuses") else 0
+            total_att = sum(s.attempts for s in engine._statuses.values()) if hasattr(engine, "_statuses") else 0
+            ui.update_stats(
+                requests_sent=total_att,
+                requests_ok=total_ok,
+                requests_failed=max(0, total_att - total_ok),
+                endpoints_tested=sum(1 for s in engine._statuses.values() if s.attempts > 0) if hasattr(engine, "_statuses") else 0,
+                endpoints_ok=sum(1 for s in engine._statuses.values() if s.successes > 0) if hasattr(engine, "_statuses") else 0,
+                endpoints_with_db=with_db,
+                total_endpoints=total_endpoints,
+            )
+
+        # ── Callback: phase transition ─────────────────────────────────────
+        def on_phase_change(phase_name: str, phase_num: int, total_phases: int) -> None:
+            phase_dur = _phase_budget_ratios.get(phase_name, 0.10) * config.duration
+            ui.set_phase(phase_name, phase_num, total_phases, phase_dur)
+            ui.add_log(
+                f"Phase {phase_num}/{total_phases}: {phase_name} started",
+                level="phase",
+            )
+
+        # ── Callback: log message ──────────────────────────────────────────
+        def on_log(message: str, level: str = "info") -> None:
+            ui.add_log(message, level=level)
+
+        # ── Build and run the ordered engine ───────────────────────────────
+        engine = OrderedTrafficEngine(
+            services=service_list,
+            endpoint_map=engine_endpoint_map,
+            config=traffic_cfg,
+            on_endpoint_update=on_endpoint_update,
+            on_phase_change=on_phase_change,
+            on_log=on_log,
+        )
+
+        engine_result = engine.run()
+
+        # Final stats update with accurate numbers
+        ui.update_stats(
+            requests_sent=engine_result.total_requests,
+            requests_ok=engine_result.successful_requests,
+            requests_failed=engine_result.failed_requests,
+            endpoints_tested=engine_result.endpoints_tested,
+            endpoints_ok=engine_result.endpoints_ok,
+            endpoints_with_db=0,  # will be computed post-pipeline
+            total_endpoints=total_endpoints,
+        )
+        final_status = "success" if engine_result.success_rate > 0 else "failed"
+        ui.set_pipeline_step("traffic", final_status)
+        ui.add_log(
+            f"Traffic complete — {engine_result.successful_requests}/{engine_result.total_requests} OK"
+            f" · {engine_result.endpoints_ok}/{engine_result.endpoints_tested} endpoints reached",
+            level="success" if engine_result.success_rate > 0 else "warning",
+        )
+
+    # ── Convert EngineResult → dict[str, TrafficResult] ───────────────────────
+    results: dict[str, TrafficResult] = {}
+    for ds in deployment.ready_services:
+        svc_name = ds.service.name
+        prefix = f"{svc_name}::"
+        svc_statuses = [s for k, s in engine_result.endpoint_statuses.items() if k.startswith(prefix)]
+
+        svc_ok = sum(s.successes for s in svc_statuses)
+        svc_total = sum(s.attempts for s in svc_statuses)
+        svc_fail = max(0, svc_total - svc_ok)
+        svc_eps_ok = sum(1 for s in svc_statuses if s.successes > 0)
+        svc_eps_tested = sum(1 for s in svc_statuses if s.attempts > 0)
+        eps_discovered = len(endpoint_map.get(svc_name, ([], ""))[0])
+
+        results[svc_name] = TrafficResult(
+            total_requests=svc_total,
+            successful_requests=svc_ok,
+            failed_requests=svc_fail,
+            endpoints_discovered=eps_discovered,
+            endpoints_tested=svc_eps_tested,
+            endpoints_ok=svc_eps_ok,
+            duration_seconds=engine_result.duration_seconds,
+        )
 
     return results
 
@@ -763,7 +920,13 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
 
     try:
         _print_step("*", "Generating traffic...")
-        traffic_results = _generate_traffic_for_all(deployment, endpoint_map, config)
+        traffic_results = _generate_traffic_with_live_ui(
+            deployment,
+            endpoint_map,
+            config,
+            project_name=project.root_dir.name,
+            pipeline_steps_done=["discover", "deploy"],
+        )
 
         total_req = sum(r.total_requests for r in traffic_results.values())
         total_ok = sum(r.successful_requests for r in traffic_results.values())
