@@ -72,14 +72,15 @@ def _get_endpoint_frequencies_by_service(
             if total > 0:
                 svc_key = str(service_name) if service_name and str(service_name).strip() else "unknown_service"
                 frequencies[svc_key] = (counts / total).to_dict()
-    elif not mapping_df.empty and "endpoint_key" in mapping_df.columns:
-        # Fallback: use the number of DISTINCT mapping rows per endpoint as a proxy
-        # for invocation frequency.  Summing the 'count' column would over-weight
-        # endpoints that happen to access many tables (count = sum of table accesses,
-        # not invocation count).  Using nunique rows per endpoint is still imperfect
-        # but avoids the semantic bias introduced by the table-access sum.
+    elif not mapping_df.empty and "endpoint_key" in mapping_df.columns and "count" in mapping_df.columns:
+        # Fallback when endpoints_df is unavailable: use aggregated table-access counts
+        # as a proxy for endpoint invocation frequency.
+        # Limitation: endpoints that access more tables per call will appear slightly
+        # over-weighted, but this is the best available signal without raw invocation
+        # spans.  In normal pipeline operation endpoints_df is always provided, so
+        # this path is rarely triggered.
         for service_name, group in mapping_df.groupby("service_name"):
-            counts = group.groupby("endpoint_key").size()
+            counts = group.groupby("endpoint_key")["count"].sum()
             total = float(counts.sum())
             if total > 0:
                 svc_key = str(service_name) if service_name and str(service_name).strip() else "unknown_service"
