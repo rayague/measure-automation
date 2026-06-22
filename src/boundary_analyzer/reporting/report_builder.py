@@ -1,13 +1,26 @@
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from pandas.errors import EmptyDataError
 
 logger = logging.getLogger(__name__)
+
+_FORMAT_LABELS: dict[str, str] = {
+    "jaeger": "Jaeger JSON",
+    "zipkin": "Zipkin JSON",
+    "otlp": "OpenTelemetry OTLP JSON",
+    "locust": "Locust CSV (load-test statistics)",
+    "nginx": "nginx / Apache access log",
+    "w3c": "W3C Extended Log Format",
+    "generic_sql": "Application log with HTTP + SQL patterns",
+    "json_lines": "JSON Lines (structured log)",
+}
 
 
 def _generate_markdown_report(
@@ -104,11 +117,69 @@ def _generate_markdown_report(
     return "".join(report)
 
 
+def _ingestion_section(summary_path: Path) -> str:
+    """Build the ## Data Sources Markdown section from an ingestion summary JSON."""
+    try:
+        summary: dict[str, Any] = json.loads(summary_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ""
+
+    totals: dict[str, Any] = summary.get("totals", {})
+    sources: list[dict[str, Any]] = summary.get("sources", [])
+    errors: list[dict[str, Any]] = summary.get("errors", [])
+
+    lines: list[str] = []
+    lines.append("## Data Sources\n")
+    lines.append(f"- **Files parsed:** {totals.get('files_parsed', '?')} / {totals.get('files_seen', '?')}\n")
+    lines.append(f"- **Total spans:** {totals.get('total_spans', '?')}\n")
+    lines.append(f"- **HTTP spans:** {totals.get('http_spans', '?')}\n")
+    lines.append(f"- **DB spans:** {totals.get('db_spans', '?')}\n")
+
+    corr = totals.get("correlated_db_spans", 0)
+    db = totals.get("db_spans", 0)
+    if db:
+        pct = f"{corr / db * 100:.0f}%" if db else "0%"
+        lines.append(f"- **DB spans with HTTP parent (correlated):** {corr} / {db} ({pct})\n")
+    else:
+        lines.append("- **DB spans:** none — SCOM uses heuristic path-based table inference\n")
+
+    services = totals.get("services", [])
+    if services:
+        lines.append(f"- **Services detected:** {', '.join(services)}\n")
+    lines.append("\n")
+
+    if sources:
+        lines.append("### Per-file breakdown\n")
+        lines.append("| File | Format | Confidence | DB info | Correlated |\n")
+        lines.append("|------|--------|------------|---------|------------|\n")
+        for src in sources:
+            fname = Path(str(src.get("source", ""))).name
+            fmt = _FORMAT_LABELS.get(str(src.get("format", "")), str(src.get("format", "?")))
+            conf = f"{float(src.get('confidence', 0)) * 100:.0f}%"
+            has_db = "✔" if src.get("has_db_info") else "✗"
+            has_corr = "✔" if src.get("has_trace_correlation") else "✗"
+            lines.append(f"| `{fname}` | {fmt} | {conf} | {has_db} | {has_corr} |\n")
+        lines.append("\n")
+
+        for src in sources:
+            for w in src.get("warnings", []):
+                lines.append(f"> ⚠ `{Path(str(src.get('source', ''))).name}`: {w}\n")
+
+    if errors:
+        lines.append("### Parse errors\n")
+        for err in errors:
+            lines.append(f"- `{Path(str(err.get('source', ''))).name}`: {err.get('error', '?')}\n")
+        lines.append("\n")
+
+    return "".join(lines)
+
+
 def generate_report(
     rank_path: Path,
     suspicious_path: Path,
     output_path: Path,
     threshold: float = 0.5,
+    ingestion_summary_path: Path | None = None,
 ) -> None:
     """Generate and save the Markdown report."""
 
@@ -125,6 +196,10 @@ def generate_report(
             suspicious_df = pd.DataFrame()
 
     report_content = _generate_markdown_report(rank_df, suspicious_df, threshold)
+
+    # Append data-source provenance section when ingestion metadata is available
+    if ingestion_summary_path and ingestion_summary_path.exists():
+        report_content += "\n" + _ingestion_section(ingestion_summary_path)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8") as f:

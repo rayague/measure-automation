@@ -379,7 +379,9 @@ def _main(argv: list[str] | None = None) -> int:
     dash_parser = subparsers.add_parser(
         "dashboard",
         help="Open the web dashboard to see SCOM results",
-        description=("Open the web dashboard to explore SCOM results.\nThe dashboard shows scores, rankings, and service details.\n\nUse --run to view a specific historical run."),
+        description=(
+            "Open the web dashboard to explore SCOM results.\nThe dashboard shows scores, rankings, and service details.\n\nUse --run to view a specific historical run."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     dash_parser.add_argument(
@@ -567,13 +569,17 @@ def _main(argv: list[str] | None = None) -> int:
 
     runs_list = runs_sub.add_parser("list", help="List all saved runs")
     runs_list.add_argument(
-        "--json", action="store_true", help="Output as JSON lines.",
+        "--json",
+        action="store_true",
+        help="Output as JSON lines.",
     )
 
     runs_show = runs_sub.add_parser("show", help="Show details for a specific run")
     runs_show.add_argument("run_id", help="Run ID (prefix also works)")
     runs_show.add_argument(
-        "--json", action="store_true", help="Output as JSON.",
+        "--json",
+        action="store_true",
+        help="Output as JSON.",
     )
 
     runs_compare = runs_sub.add_parser("compare", help="Compare SCOM scores across runs")
@@ -582,6 +588,84 @@ def _main(argv: list[str] | None = None) -> int:
 
     runs_delete = runs_sub.add_parser("delete", help="Delete a specific run")
     runs_delete.add_argument("run_id", help="Run ID to delete")
+
+    # ── ingest subcommand ─────────────────────────────────────────────
+    ingest_parser = subparsers.add_parser(
+        "ingest",
+        help="Analyze any log file (Jaeger, Zipkin, OTLP, nginx, Locust, app logs…)",
+        description=(
+            "Universal log file ingestion.\n\n"
+            "Accepts any log format and runs the full SCOM pipeline:\n"
+            "  jaeger      Jaeger JSON export (default for .json files)\n"
+            "  zipkin      Zipkin v2 JSON\n"
+            "  otlp        OpenTelemetry OTLP JSON\n"
+            "  locust      Locust CSV request statistics\n"
+            "  nginx       nginx / Apache combined access log\n"
+            "  w3c         W3C Extended Log Format (IIS)\n"
+            "  generic_sql Application logs with HTTP + SQL (Django, SQLAlchemy, etc.)\n"
+            "  json_lines  JSON Lines (one structured record per line)\n"
+            "\n"
+            "The format is auto-detected from file content. Use --format to override."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    ingest_parser.add_argument("log_file", help="Path to the log / trace file to analyze")
+    ingest_opts = ingest_parser.add_argument_group("Ingestion options")
+    ingest_opts.add_argument(
+        "--format",
+        default="",
+        dest="log_format",
+        choices=["auto", "jaeger", "zipkin", "otlp", "locust", "nginx", "w3c", "generic_sql", "json_lines"],
+        help="Force a specific format (default: auto-detect).",
+    )
+    ingest_opts.add_argument(
+        "--service-name",
+        default="",
+        help="Override the service name embedded in the log file.",
+    )
+    ingest_opts.add_argument(
+        "--encoding",
+        default="utf-8",
+        help="Text encoding of the log file (default: utf-8).",
+    )
+    ingest_out = ingest_parser.add_argument_group("Output options")
+    ingest_out.add_argument("--output-dir", default="data/ingest", help="Output directory (default: data/ingest).")
+    ingest_out.add_argument("--threshold", type=_validate_threshold, default=0.5, help="SCOM threshold (default: 0.5).")
+    ingest_out.add_argument("--dashboard", action="store_true", help="Open the dashboard after analysis.")
+    _add_dash_args(ingest_parser)
+
+    # ── benchmark subcommand ──────────────────────────────────────────
+    bench_parser = subparsers.add_parser(
+        "benchmark",
+        help="Run SCOM analysis on a known microservice benchmark",
+        description=(
+            "Run SCOM analysis on a well-known microservice benchmark application.\n\n"
+            "Available benchmarks:\n"
+            "  teastore   TeaStore (6 Java services, e-commerce)\n"
+            "  hotel      DeathStarBench — Hotel Reservation (5 services, Go/Python)\n"
+            "  boutique   Google Online Boutique (11 polyglot microservices)\n"
+            "  sockshop   Weaveworks Sock Shop (8 services)\n"
+            "\n"
+            "Run without a name to list all benchmarks with setup instructions."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    bench_parser.add_argument(
+        "benchmark_name",
+        nargs="?",
+        default="",
+        choices=["", "teastore", "hotel", "boutique", "sockshop"],
+        help="Benchmark to run (omit to list all).",
+    )
+    bench_run = bench_parser.add_argument_group("Run options")
+    bench_run.add_argument("--output", default="data/benchmark", help="Output directory.")
+    bench_run.add_argument("--duration", type=_validate_duration, default=60, help="Traffic duration in seconds (default: 60).")
+    bench_run.add_argument("--workers", type=_validate_positive_int, default=5, help="Traffic workers (default: 5).")
+    bench_run.add_argument("--no-cleanup", action="store_false", dest="cleanup", help="Keep containers running after analysis.")
+    bench_run.add_argument("--jaeger-ui", action="store_true", help="Open Jaeger UI after run.")
+    bench_run.add_argument("--dashboard", action="store_true", help="Open MBA dashboard after run.")
+    bench_run.add_argument("--wait", type=_validate_positive_int, default=300, help="Max seconds to wait for services to start.")
+    bench_run.add_argument("--threshold", type=_validate_threshold, default=0.5, help="SCOM threshold.")
 
     # ── full subcommand ─────────────────────────────────────────────
     full_parser = subparsers.add_parser(
@@ -751,6 +835,7 @@ def _main(argv: list[str] | None = None) -> int:
         run_id = str(args.run).strip() if str(args.run).strip() else ""
         if run_id:
             from boundary_analyzer.auto.run_registry import get_run_path
+
             run_path = get_run_path(run_id)
             if run_path:
                 dashboard_data_dir = run_path
@@ -822,13 +907,13 @@ def _main(argv: list[str] | None = None) -> int:
         if str(args.language).strip():
             os.environ["BOUNDARY_ANALYZER_LANGUAGE"] = str(args.language).strip()
 
-        from boundary_analyzer.auto.run_registry import save_run
         from boundary_analyzer.auto.models import (
             AnalysisReport,
             ProjectInfo,
             ServiceInfo,
             StepResult,
         )
+        from boundary_analyzer.auto.run_registry import save_run
         from boundary_analyzer.pipeline.run_pipeline import run_pipeline
 
         rc = run_pipeline(
@@ -866,6 +951,7 @@ def _main(argv: list[str] | None = None) -> int:
 
             if scom_csv.exists():
                 import pandas as pd
+
                 scom_df = pd.read_csv(scom_csv)
                 report.scom_results["scom_df"] = scom_df
                 # Populate services from SCOM CSV so meta.json is meaningful
@@ -873,22 +959,30 @@ def _main(argv: list[str] | None = None) -> int:
                 for _, row in scom_df.iterrows():
                     svc_name = str(row.get("service_name", ""))
                     if svc_name:
-                        services.append(ServiceInfo(
-                            name=svc_name, language="", framework="",
-                            entry_points=[], deployment="analyze",
-                        ))
+                        services.append(
+                            ServiceInfo(
+                                name=svc_name,
+                                language="",
+                                framework="",
+                                entry_points=[],
+                                deployment="analyze",
+                            )
+                        )
                 if services:
                     report.project.services = services
             if rank_csv.exists():
                 import pandas as pd
+
                 report.scom_results["rank_df"] = pd.read_csv(rank_csv)
             if sus_csv.exists():
                 import pandas as pd
+
                 report.scom_results["suspicious_df"] = pd.read_csv(sus_csv)
 
             mapping_csv = output_dir / "interim" / "endpoint_table_map.csv"
             if mapping_csv.exists():
                 import pandas as pd
+
                 report.scom_results["mapping_df"] = pd.read_csv(mapping_csv)
 
             saved_run = save_run(report)
@@ -964,8 +1058,9 @@ def _main(argv: list[str] | None = None) -> int:
             _console.print(f"  [bold]Services:[/] {len(svcs)}\n")
 
             if scoms:
-                from boundary_analyzer._utils import classify_scom
                 from rich.table import Table
+
+                from boundary_analyzer._utils import classify_scom
 
                 table = Table(show_header=True, header_style="bold cyan")
                 table.add_column("Service")
@@ -1037,6 +1132,7 @@ def _main(argv: list[str] | None = None) -> int:
                 if "mba_scom_" in report.report_path.parent.name:
                     try:
                         import shutil
+
                         shutil.rmtree(report.report_path.parent)
                     except OSError as e:
                         logger.warning("Failed to clean up temp report dir: %s", e)
@@ -1045,7 +1141,319 @@ def _main(argv: list[str] | None = None) -> int:
 
         return 0 if report.all_success else 1
 
+    if args.command == "ingest":
+        return _cmd_ingest(args)
+
+    if args.command == "benchmark":
+        return _cmd_benchmark(args)
+
     parser.error(f"Unknown command: {args.command}")
+
+
+# ───────────────────────────────────────────────────────────────────────────────
+# mba ingest handler
+# ───────────────────────────────────────────────────────────────────────────────
+
+
+def _cmd_ingest(args: argparse.Namespace) -> int:
+    """Handler for ``mba ingest <log_file>``.
+
+    Auto-detects the log format, runs the SCOM pipeline, and optionally
+    opens the dashboard.
+    """
+    import os
+
+    import pandas as pd
+    from rich.table import Table
+
+    from boundary_analyzer.auto.models import (
+        AnalysisReport,
+        ProjectInfo,
+        ServiceInfo,
+        StepResult,
+    )
+    from boundary_analyzer.auto.run_registry import save_run
+    from boundary_analyzer.parsing.log_ingestion import detect_format, ingest_log_file
+    from boundary_analyzer.pipeline.run_pipeline import run_pipeline
+
+    log_path = Path(str(args.log_file))
+    if not log_path.exists():
+        _console.print(f"  [red]✗ File not found:[/] {log_path}")
+        return 1
+
+    output_dir = Path(str(args.output_dir))
+    format_hint = str(getattr(args, "log_format", "") or "").strip()
+    if format_hint == "auto":
+        format_hint = ""
+    svc_name = str(getattr(args, "service_name", "") or "").strip()
+    encoding = str(getattr(args, "encoding", "utf-8") or "utf-8").strip()
+
+    # ── Format detection + quick preview ───────────────────────────────
+    fmt_id, conf = detect_format(log_path, encoding=encoding)
+    effective_fmt = format_hint or fmt_id
+    _console.print(f"  [dim]File:[/]    [cyan]{log_path}[/]")
+    _console.print(f"  [dim]Format:[/]  [cyan]{effective_fmt}[/]  [dim](confidence {conf:.0%})[/]")
+
+    # ── Ingest ─────────────────────────────────────────────────────────────
+    try:
+        result = ingest_log_file(log_path, service_name=svc_name, format_hint=effective_fmt, encoding=encoding)
+    except Exception as exc:
+        _console.print(f"  [red]✗ Ingestion failed:[/] {exc}")
+        return 1
+
+    for w in result.warnings:
+        _console.print(f"  [yellow]⚠[/] {w}")
+
+    # ── Ingestion stats table ────────────────────────────────────────────
+    st = result.stats
+    tbl = Table(show_header=True, header_style="bold cyan", box=None)
+    tbl.add_column("Metric", style="dim")
+    tbl.add_column("Value", style="cyan")
+    tbl.add_row("Total spans", str(st.get("total_spans", 0)))
+    tbl.add_row("HTTP spans", str(st.get("http_spans", 0)))
+    tbl.add_row("DB spans", str(st.get("db_spans", 0)))
+    tbl.add_row("Services", ", ".join(st.get("services", [])) or "?")
+    tbl.add_row("Unique traces", str(st.get("unique_traces", 0)))
+    tbl.add_row("DB info", "✔ yes" if result.has_db_info else "✗ no (heuristic mode)")
+    tbl.add_row("Correlated", "✔ yes" if result.has_trace_correlation else "✗ no")
+    _console.print(tbl)
+    _console.print()
+
+    if not result.has_db_info:
+        _console.print("  [yellow]⚠[/]  No DB operations found — SCOM will use path-based table heuristics. Results will be labelled as estimated.")
+
+    if result.spans_df.empty:
+        _console.print("  [red]✗ No spans extracted — cannot run SCOM pipeline.[/]")
+        return 1
+
+    # ── Run pipeline ─────────────────────────────────────────────────────────
+    _console.print(f"  [●] Running SCOM pipeline → [cyan]{output_dir}[/]")
+    try:
+        rc = run_pipeline(
+            traces=log_path,
+            output_dir=output_dir,
+            scom_method="weighted",
+            threshold_method="fixed",
+            fixed_threshold=float(args.threshold),
+            exclude_health_routes=True,
+            exclude_http_client_spans=True,
+            exclude_unknown_endpoint=True,
+            service_name=result.service_name_used or svc_name,
+            format_hint=effective_fmt,
+            encoding=encoding,
+        )
+    except Exception as exc:
+        _console.print(f"  [red]✗ Pipeline error:[/] {exc}")
+        return 1
+
+    if rc != 0:
+        return rc
+
+    # ── Show SCOM results ───────────────────────────────────────────────────
+    rank_csv = output_dir / "processed" / "service_rank.csv"
+    if rank_csv.exists():
+        from boundary_analyzer._utils import classify_scom
+
+        rank_df = pd.read_csv(rank_csv)
+        rtbl = Table(show_header=True, header_style="bold cyan", box=None)
+        rtbl.add_column("#", style="dim")
+        rtbl.add_column("Service")
+        rtbl.add_column("SCOM")
+        rtbl.add_column("Cohesion")
+        rtbl.add_column("Endpoints")
+        rtbl.add_column("Tables")
+        rtbl.add_column("Status")
+        for _, row in rank_df.iterrows():
+            is_susp = bool(row.get("is_suspicious", False))
+            status_str = "[red]⚠ suspect[/]" if is_susp else "[green]✔ healthy[/]"
+            scom_val = float(row.get("scom_score", 0))
+            rtbl.add_row(
+                str(int(row.get("rank", 0))),
+                str(row.get("service_name", "?")),
+                f"[cyan]{scom_val:.4f}[/]",
+                classify_scom(scom_val),
+                str(row.get("endpoints_count", "?")),
+                str(row.get("tables_count", "?")),
+                status_str,
+            )
+        _console.print()
+        _console.print(rtbl)
+        _console.print()
+
+    # ── Save run registry ─────────────────────────────────────────────────
+    saved_run_id = None
+    try:
+        project = ProjectInfo(services=[], root_dir=log_path.parent)
+        report = AnalysisReport(project=project)
+        report.total_duration_seconds = 0.0
+        report.report_path = output_dir / "report.md"
+        report.steps["analyze"] = StepResult(success=True, step_name="analyze", message="SCOM pipeline complete (ingest mode)")
+        scom_csv = output_dir / "processed" / "service_scom.csv"
+        if scom_csv.exists():
+            scom_df = pd.read_csv(scom_csv)
+            report.scom_results["scom_df"] = scom_df
+            svcs = []
+            for _, row in scom_df.iterrows():
+                nm = str(row.get("service_name", ""))
+                if nm:
+                    svcs.append(ServiceInfo(name=nm, language="", framework="", entry_points=[], deployment="ingest"))
+            report.project.services = svcs
+        if rank_csv.exists():
+            report.scom_results["rank_df"] = pd.read_csv(rank_csv)
+        mapping_csv = output_dir / "interim" / "endpoint_table_map.csv"
+        if mapping_csv.exists():
+            report.scom_results["mapping_df"] = pd.read_csv(mapping_csv)
+        saved_meta = save_run(report)
+        saved_run_id = saved_meta.id
+    except Exception as e:
+        logger.warning("Failed to save run: %s", e)
+
+    _console.print(f"  [✔] Results saved to [cyan]{output_dir.resolve()}[/]")
+    if saved_run_id:
+        _console.print(f"  [dim]View with:[/] [cyan]mba dashboard --run {saved_run_id}[/]")
+
+    if getattr(args, "dashboard", False):
+        return _run_dashboard(
+            data_dir=output_dir,
+            host=str(args.dash_host),
+            port=int(args.dash_port),
+        )
+
+    return 0
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+# mba benchmark handler
+# ────────────────────────────────────────────────────────────────────────────────
+
+_BENCHMARKS: dict[str, dict] = {
+    "teastore": {
+        "label": "TeaStore",
+        "services": 6,
+        "language": "Java",
+        "description": "E-commerce microservices benchmark (6 Java services, shared PostgreSQL).",
+        "source": "https://github.com/DescartesResearch/TeaStore",
+        "native": True,
+        "setup": ["Run: mba teastore --duration 120"],
+    },
+    "hotel": {
+        "label": "Hotel Reservation (DeathStarBench)",
+        "services": 5,
+        "language": "Go / Python",
+        "description": "Hotel booking system from CMU DeathStarBench (5 Go services + MongoDB).",
+        "source": "https://github.com/delimitrou/DeathStarBench",
+        "native": False,
+        "setup": [
+            "git clone https://github.com/delimitrou/DeathStarBench.git",
+            "cd DeathStarBench/hotelReservation",
+            "docker compose up -d",
+            "# Generate traffic (e.g. with wrk or locust), then export Jaeger traces",
+            "mba ingest ./traces.json  (or mba full . if OTel is already configured)",
+        ],
+    },
+    "boutique": {
+        "label": "Online Boutique (Google)",
+        "services": 11,
+        "language": "Go / Python / Node / Java / C# / Ruby",
+        "description": "Google's polyglot microservices demo (11 services, gRPC + Redis + PostgreSQL).",
+        "source": "https://github.com/GoogleCloudPlatform/microservices-demo",
+        "native": False,
+        "setup": [
+            "git clone https://github.com/GoogleCloudPlatform/microservices-demo.git",
+            "cd microservices-demo",
+            "# Docker Compose path: see docs/development-guide.md",
+            "docker compose up -d",
+            "mba full .  (or mba ingest <traces.json> after exporting from Jaeger)",
+        ],
+    },
+    "sockshop": {
+        "label": "Sock Shop (Weaveworks)",
+        "services": 8,
+        "language": "Go / Node / Java / Python",
+        "description": "Classic Weaveworks microservices demo (8 services, MongoDB + MySQL).",
+        "source": "https://github.com/microservices-demo/microservices-demo",
+        "native": False,
+        "setup": [
+            "git clone https://github.com/microservices-demo/microservices-demo.git",
+            "cd microservices-demo/deploy/docker-compose",
+            "docker compose up -d",
+            "mba full .  (or mba ingest <traces.json>)",
+        ],
+    },
+}
+
+
+def _cmd_benchmark(args: argparse.Namespace) -> int:
+    """Handler for ``mba benchmark [name]``."""
+    import subprocess
+    import sys
+
+    from rich.table import Table
+
+    name = str(getattr(args, "benchmark_name", "") or "").strip()
+
+    if not name:
+        # List all benchmarks
+        _console.print()
+        _console.print("  [bold cyan]Available benchmarks[/]\n")
+        tbl = Table(show_header=True, header_style="bold cyan", box=None)
+        tbl.add_column("Name", style="cyan")
+        tbl.add_column("Label")
+        tbl.add_column("Services")
+        tbl.add_column("Language")
+        tbl.add_column("Built-in")
+        for key, meta in _BENCHMARKS.items():
+            tbl.add_row(
+                key,
+                meta["label"],
+                str(meta["services"]),
+                meta["language"],
+                "[green]✔ mba benchmark " + key + "[/]" if meta["native"] else "[dim]manual setup[/]",
+            )
+        _console.print(tbl)
+        _console.print()
+        _console.print("  Run [cyan]mba benchmark <name>[/] for setup instructions.")
+        _console.print("  Run [cyan]mba benchmark teastore[/] to start the built-in TeaStore analysis.")
+        return 0
+
+    meta = _BENCHMARKS.get(name, {})
+    if not meta:
+        _console.print(f"  [red]✗ Unknown benchmark:[/] {name!r}")
+        return 1
+
+    _console.print()
+    _console.print(f"  [bold]{meta['label']}[/]  —  {meta['description']}")
+    _console.print(f"  [dim]Source:[/] {meta['source']}")
+    _console.print()
+
+    if meta.get("native") and name == "teastore":
+        # Delegate to the existing teastore command
+        from pathlib import Path as _Path
+
+        _script = _Path(__file__).resolve().parents[2] / "scripts" / "teastore" / "deploy_and_trace.py"
+        _cmd = [sys.executable, str(_script)]
+        _cmd += ["--output", str(args.output)]
+        _cmd += ["--duration", str(args.duration)]
+        _cmd += ["--wait", str(args.wait)]
+        _cmd += ["--threshold", str(args.threshold)]
+        if not args.cleanup:
+            _cmd += ["--no-cleanup"]
+        if args.jaeger_ui:
+            _cmd += ["--jaeger-ui"]
+        return subprocess.call(_cmd)
+
+    # Not natively automated — print step-by-step setup guide
+    _console.print(f"  [yellow]⚠[/]  [bold]{name}[/] requires manual setup steps:\n")
+    for i, step in enumerate(meta.get("setup", []), 1):
+        if step.startswith("#"):
+            _console.print(f"     [dim]{step}[/]")
+        elif step.startswith("mba "):
+            _console.print(f"  {i}. [cyan]{step}[/]")
+        else:
+            _console.print(f"  {i}. [dim]$[/] [white]{step}[/]")
+    _console.print()
+    _console.print(f"  [dim]After generating traffic, run[/] [cyan]mba ingest <traces.json>[/] [dim]to compute SCOM.[/]")
+    return 0
 
 
 if __name__ == "__main__":

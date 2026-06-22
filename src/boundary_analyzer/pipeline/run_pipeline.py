@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import logging
 import shutil
 from pathlib import Path
 from typing import Any
@@ -13,30 +15,138 @@ from boundary_analyzer.detection.endpoint_extractor import extract_endpoints
 from boundary_analyzer.detection.mapping_builder import build_endpoint_table_mapping
 from boundary_analyzer.metrics.scom import compute_scom
 from boundary_analyzer.metrics.threshold_ultimate import apply_threshold
-from boundary_analyzer.parsing.trace_reader import read_all_traces, save_spans_csv
+from boundary_analyzer.parsing.log_ingestion import SPANS_COLUMNS, ingest_log_file
+from boundary_analyzer.parsing.trace_reader import save_spans_csv
 from boundary_analyzer.reporting.report_builder import generate_report
 
+logger = logging.getLogger(__name__)
 
-def _prepare_traces(input_path: Path, traces_dir: Path) -> None:
+
+def _iter_input_files(input_path: Path) -> list[Path]:
+    """Return direct input files in deterministic order."""
+    if input_path.is_file():
+        return [input_path]
+    if input_path.is_dir():
+        return sorted(p for p in input_path.iterdir() if p.is_file())
+    raise FileNotFoundError(str(input_path))
+
+
+def _prepare_traces(input_path: Path, traces_dir: Path) -> list[Path]:
     traces_dir.mkdir(parents=True, exist_ok=True)
 
-    # If input IS traces_dir, files are already in place — skip copy
+    # If input IS traces_dir, files are already in place; skip copy.
     if input_path.resolve() == traces_dir.resolve():
-        return
+        return _iter_input_files(traces_dir)
 
     if input_path.is_file():
-        if input_path.suffix.lower() != ".json":
-            raise ValueError(f"Unsupported traces file: {input_path}")
-        shutil.copy2(input_path, traces_dir / input_path.name)
-        return
+        dest = traces_dir / input_path.name
+        shutil.copy2(input_path, dest)
+        return [dest]
 
     if input_path.is_dir():
-        for p in input_path.glob("*.json"):
-            shutil.copy2(p, traces_dir / p.name)
-        return
+        copied: list[Path] = []
+        for p in _iter_input_files(input_path):
+            dest = traces_dir / p.name
+            shutil.copy2(p, dest)
+            copied.append(dest)
+        return copied
 
     raise FileNotFoundError(str(input_path))
 
+
+def _empty_spans_df() -> pd.DataFrame:
+    return pd.DataFrame(columns=SPANS_COLUMNS)
+
+
+def _write_ingestion_summary(summary_path: Path, summary: dict[str, Any]) -> None:
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def _read_universal_logs(
+    input_files: list[Path],
+    summary_path: Path,
+    service_name: str = "",
+    format_hint: str = "",
+    encoding: str = "utf-8",
+) -> pd.DataFrame:
+    """Parse prepared trace/log files into the canonical spans DataFrame."""
+    frames: list[pd.DataFrame] = []
+    sources: list[dict[str, Any]] = []
+    errors: list[dict[str, str]] = []
+
+    for file_path in input_files:
+        try:
+            result = ingest_log_file(
+                file_path,
+                service_name=service_name,
+                format_hint=format_hint,
+                encoding=encoding,
+            )
+        except Exception as exc:
+            errors.append({"source": str(file_path), "error": str(exc)})
+            logger.warning("Skipping unparsable log input %s: %s", file_path, exc)
+            continue
+
+        frames.append(result.spans_df)
+        sources.append(
+            {
+                "source": str(file_path),
+                "format": result.format_detected,
+                "confidence": result.format_confidence,
+                "service_name": result.service_name_used,
+                "has_db_info": result.has_db_info,
+                "has_trace_correlation": result.has_trace_correlation,
+                "stats": result.stats,
+                "warnings": result.warnings,
+            }
+        )
+
+    if frames:
+        spans_df = pd.concat(frames, ignore_index=True)
+        spans_df = spans_df[SPANS_COLUMNS].copy()
+    else:
+        spans_df = _empty_spans_df()
+
+    if spans_df.empty:
+        total_spans = 0
+        http_spans = 0
+        db_spans = 0
+        services: list[str] = []
+        unique_traces = 0
+        correlated_db_spans = 0
+    else:
+        tags_series = spans_df["tags"].fillna("").astype(str)
+        total_spans = int(len(spans_df))
+        http_spans = int(tags_series.str.contains("http.method", na=False, regex=False).sum())
+        db_mask = tags_series.str.contains("db.system", na=False, regex=False) | tags_series.str.contains("db.statement", na=False, regex=False)
+        db_spans = int(db_mask.sum())
+        services = sorted(spans_df["service_name"].dropna().astype(str).unique().tolist())
+        unique_traces = int(spans_df["trace_id"].nunique())
+        correlated_db_spans = int(spans_df.loc[db_mask, "parent_span_id"].notna().sum()) if db_spans else 0
+
+    summary = {
+        "totals": {
+            "files_seen": len(input_files),
+            "files_parsed": len(sources),
+            "files_failed": len(errors),
+            "total_spans": total_spans,
+            "http_spans": http_spans,
+            "db_spans": db_spans,
+            "correlated_db_spans": correlated_db_spans,
+            "services": services,
+            "unique_traces": unique_traces,
+        },
+        "sources": sources,
+        "errors": errors,
+    }
+    _write_ingestion_summary(summary_path, summary)
+
+    if not frames and input_files:
+        tried = ", ".join(str(p) for p in input_files)
+        raise ValueError(f"No supported log/traces data could be parsed from: {tried}")
+
+    return spans_df
 
 def run_pipeline(
     traces: Path,
@@ -53,14 +163,24 @@ def run_pipeline(
     exclude_http_client_spans: bool = True,
     exclude_unknown_endpoint: bool = True,
     skip_no_db_services: bool = False,
+    service_name: str = "",
+    format_hint: str = "",
+    encoding: str = "utf-8",
 ) -> int:
     raw_traces_dir = output_dir / "raw" / "traces"
     interim_dir = output_dir / "interim"
     processed_dir = output_dir / "processed"
 
-    _prepare_traces(traces, raw_traces_dir)
+    input_files = _prepare_traces(traces, raw_traces_dir)
 
-    spans_df = read_all_traces(raw_traces_dir)
+    ingestion_summary_path = interim_dir / "ingestion_summary.json"
+    spans_df = _read_universal_logs(
+        input_files,
+        ingestion_summary_path,
+        service_name=service_name,
+        format_hint=format_hint,
+        encoding=encoding,
+    )
     spans_csv = interim_dir / "spans.csv"
     save_spans_csv(spans_df, spans_csv)
 
@@ -128,16 +248,18 @@ def run_pipeline(
     save_csv(suspicious_df, suspicious_csv)
 
     report_path = output_dir / "report.md"
-    generate_report(service_rank_csv, suspicious_csv, report_path, fixed_threshold)
+    generate_report(service_rank_csv, suspicious_csv, report_path, fixed_threshold, ingestion_summary_path=ingestion_summary_path)
 
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Run Boundary Analyzer pipeline on a traces file/folder")
-    ap.add_argument("--traces", required=True, help="Path to a .json traces file or a folder containing JSON files")
-    ap.add_argument("--service", default="", help="Service name (reserved, kept for compatibility)")
+    ap.add_argument("--traces", required=True, help="Path to a traces/log file or a folder containing trace/log files")
+    ap.add_argument("--service", default="", help="Override service name for logs that do not contain one")
     ap.add_argument("--output", required=True, help="Output folder")
+    ap.add_argument("--format", default="", help="Optional input format hint: jaeger, zipkin, otlp, locust, nginx, w3c, generic_sql, json_lines")
+    ap.add_argument("--encoding", default="utf-8", help="Preferred text encoding for log files (default: utf-8)")
 
     ap.add_argument("--scom-method", default="weighted", choices=["paper", "weighted", "simple"])
     ap.add_argument("--table-weighting", action="store_true", default=True)
@@ -196,6 +318,9 @@ def main(argv: list[str] | None = None) -> int:
         exclude_http_client_spans=bool(args.exclude_http_client_spans),
         exclude_unknown_endpoint=bool(args.exclude_unknown_endpoint),
         skip_no_db_services=bool(args.skip_no_db_services),
+        service_name=str(args.service),
+        format_hint=str(args.format),
+        encoding=str(args.encoding),
     )
 
 
