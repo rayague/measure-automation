@@ -95,13 +95,29 @@ def _generate_markdown_report(
     report.append("## Full Service Ranking\n")
     report.append("Services ranked by SCOM score (lowest first).\n")
     report.append("\n")
-    report.append("| Rank | Service | SCOM | Endpoints | Tables | Suspicious |\n")
-    report.append("|------|---------|------|-----------|--------|------------|\n")
-    for _, row in rank_df.iterrows():
-        suspicious_mark = "Yes" if row["is_suspicious"] else "No"
-        report.append(
-            f"| {row['rank']} | {row['service_name']} | {row['scom_score']:.4f} | {row['endpoints_count']} | {row['tables_count']} | {suspicious_mark} |\n"
-        )
+
+    has_weighted_col = "scom_score_weighted" in rank_df.columns
+    if has_weighted_col:
+        # Reproduce Table I / Table II format from the ICSA26 paper:
+        # both unweighted (primary, Section III-C formula) and weighted (Section IV-B extension)
+        report.append("| Rank | Service | SCOM (unweighted) | SCOM (weighted) | Endpoints | Tables | Suspicious |\n")
+        report.append("|------|---------|-------------------|-----------------|-----------|--------|------------|\n")
+        for _, row in rank_df.iterrows():
+            suspicious_mark = "Yes" if row["is_suspicious"] else "No"
+            w_val = row["scom_score_weighted"]
+            w_str = f"{float(w_val):.4f}" if str(w_val) not in ("", "nan", "None") else "/"
+            report.append(
+                f"| {row['rank']} | {row['service_name']} | {row['scom_score']:.4f} "
+                f"| {w_str} | {row['endpoints_count']} | {row['tables_count']} | {suspicious_mark} |\n"
+            )
+    else:
+        report.append("| Rank | Service | SCOM | Endpoints | Tables | Suspicious |\n")
+        report.append("|------|---------|------|-----------|--------|------------|\n")
+        for _, row in rank_df.iterrows():
+            suspicious_mark = "Yes" if row["is_suspicious"] else "No"
+            report.append(
+                f"| {row['rank']} | {row['service_name']} | {row['scom_score']:.4f} | {row['endpoints_count']} | {row['tables_count']} | {suspicious_mark} |\n"
+            )
     report.append("\n")
 
     # Notes

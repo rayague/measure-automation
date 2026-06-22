@@ -148,6 +148,7 @@ def _read_universal_logs(
 
     return spans_df
 
+
 def run_pipeline(
     traces: Path,
     output_dir: Path,
@@ -205,13 +206,38 @@ def run_pipeline(
         "exclude_unknown_endpoint": exclude_unknown_endpoint,
         "skip_no_db_services": skip_no_db_services,
     }
+    # "paper" reproduces the exact formula from Section III-C of the ICSA26 paper:
+    # SCOM = sum_{i<j} CI(e_i,e_j) / (N * CI_max)
+    # which is UNWEIGHTED (w_ij = 1 for all pairs).
+    # The weighted variant (w_ij = freq(e_i) * freq(e_j)) is a pragmatic extension
+    # described in Section IV-B and is the default of "weighted" / "mba full".
     if scom_method == "paper":
-        scom_kwargs["use_endpoint_weighting"] = True
+        scom_kwargs["use_endpoint_weighting"] = False  # exact paper formula (unweighted)
     elif scom_method == "weighted":
         scom_kwargs["use_endpoint_weighting"] = endpoint_weighting
     else:
         scom_kwargs["use_endpoint_weighting"] = False
+
     scom_df = compute_scom(mapping_df, endpoints_df=endpoints_df, **scom_kwargs)
+
+    # When using the paper method, also compute the weighted variant and store it
+    # as an extra column so the report can reproduce Table I of the paper (both columns).
+    if scom_method == "paper" and not scom_df.empty:
+        weighted_df = compute_scom(
+            mapping_df,
+            endpoints_df=endpoints_df,
+            use_endpoint_weighting=True,
+            exclude_services=exclude_services,
+            exclude_unknown_endpoint=exclude_unknown_endpoint,
+            skip_no_db_services=skip_no_db_services,
+        )
+        if not weighted_df.empty:
+            merge_cols = ["service_name", "scom_score"]
+            scom_df = scom_df.merge(
+                weighted_df[["service_name", "scom_score"]].rename(columns={"scom_score": "scom_score_weighted"}),
+                on="service_name",
+                how="left",
+            )
     service_scom_csv = processed_dir / "service_scom.csv"
     save_csv(scom_df, service_scom_csv)
 
