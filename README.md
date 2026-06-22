@@ -6,7 +6,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.7.8-cyan)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.8.0-cyan)](CHANGELOG.md)
 [![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-ready-orange?logo=opentelemetry)](https://opentelemetry.io)
 [![Jaeger](https://img.shields.io/badge/Jaeger-integrated-blue)](https://jaegertracing.io)
 
@@ -27,12 +27,17 @@
   - [mba full — Fully Automatic Analysis](#mba-full--fully-automatic-analysis)
   - [mba run — Pipeline on Existing Traces](#mba-run--pipeline-on-existing-traces)
   - [mba analyze — Analyze a Traces File](#mba-analyze--analyze-a-traces-file)
+  - [mba ingest — Universal Log File Analysis](#mba-ingest--universal-log-file-analysis)
+  - [mba benchmark — Known Microservice Benchmarks](#mba-benchmark--known-microservice-benchmarks)
   - [mba dashboard — Interactive Web UI](#mba-dashboard--interactive-web-ui)
   - [mba setup — Add OpenTelemetry to Your App](#mba-setup--add-opentelemetry-to-your-app)
   - [mba runs — Manage Historical Runs](#mba-runs--manage-historical-runs)
   - [mba teastore — TeaStore Benchmark](#mba-teastore--teastore-benchmark)
 - [The Analysis Pipeline — 8 Steps Explained](#the-analysis-pipeline--8-steps-explained)
-- [The Interactive Dashboard](#the-interactive-dashboard)
+- [Phased Traffic Engine — How mba full Generates Traffic](#phased-traffic-engine--how-mba-full-generates-traffic)
+- [Real-Time Terminal Dashboard — MBA Live UI](#real-time-terminal-dashboard--mba-live-ui)
+- [Universal Log Ingestion — Supported Formats](#universal-log-ingestion--supported-formats)
+- [The Interactive Web Dashboard](#the-interactive-dashboard)
 - [LLM-Assisted Features](#llm-assisted-features)
 - [Supported Languages and Frameworks](#supported-languages-and-frameworks)
 - [Output Files and Artifacts](#output-files-and-artifacts)
@@ -264,14 +269,17 @@ mba full . --llm --reset-jaeger
 mba dashboard --run <run-id-shown-in-output>
 ```
 
-### Scenario B — Analyze a pre-existing Jaeger traces file
+### Scenario B — Analyze any existing log file
 
 ```bash
-# You already exported traces from Jaeger as a JSON file
-mba analyze ./traces/my_traces.json --output-dir ./results
+# Jaeger JSON, Zipkin, OTLP, nginx log, Django log, Locust CSV — MBA auto-detects the format
+mba ingest ./traces/my_traces.json
+mba ingest ./logs/nginx-access.log
+mba ingest ./logs/django.log --format generic_sql
+mba ingest ./locust_requests.csv --format locust
 
-# Open dashboard
-mba dashboard --data-dir ./results
+# Open dashboard after analysis
+mba ingest ./traces/my_traces.json --dashboard
 ```
 
 ### Scenario C — TeaStore benchmark (no project needed)
@@ -429,6 +437,117 @@ mba analyze ./traces/export_2026.json \
   --output-dir ./results/run-42 \
   --threshold 0.3 \
   --dashboard
+```
+
+---
+
+### `mba ingest` — Universal Log File Analysis
+
+Analyze **any log file** — Jaeger, Zipkin, OTLP, nginx, Django/Flask/SQLAlchemy app logs, Locust CSV, W3C/IIS, JSON Lines. The format is auto-detected from file content. No deployment or trace collection needed.
+
+```bash
+mba ingest <LOG_FILE> [OPTIONS]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|---|---|
+| `LOG_FILE` | Path to any log/trace file (see supported formats below) |
+
+**Ingestion options:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--format <name>` | auto | Force a format: `jaeger`, `zipkin`, `otlp`, `locust`, `nginx`, `w3c`, `generic_sql`, `json_lines` |
+| `--service-name <name>` | from file | Override the service name in the log |
+| `--encoding <enc>` | `utf-8` | Text encoding of the file |
+
+**Output options:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--output-dir <path>` | `data/ingest` | Where to save pipeline results |
+| `--threshold <value>` | `0.5` | Fixed SCOM threshold for suspicious classification |
+| `--dashboard` | off | Open the interactive dashboard after analysis |
+
+**Examples:**
+
+```bash
+# Jaeger JSON export — auto-detected
+mba ingest ./traces.json
+
+# nginx access log
+mba ingest /var/log/nginx/access.log --service-name my-api
+
+# Django development server log (HTTP + SQL auto-correlated)
+mba ingest ./django.log --format generic_sql --dashboard
+
+# Locust CSV request statistics
+mba ingest ./locust_requests.csv
+
+# Zipkin or OTLP traces
+mba ingest ./zipkin-export.json
+mba ingest ./otlp-export.json
+```
+
+**What `mba ingest` does:**
+
+1. Auto-detects the file format with a confidence score
+2. Parses the file into the internal spans schema (endpoint + DB operation extraction)
+3. For formats with HTTP→SQL correlation (e.g. Django logs), links DB spans to their parent HTTP spans
+4. Runs the full 8-step SCOM pipeline
+5. Prints an ingestion stats table (spans, HTTP spans, DB spans, correlation quality)
+6. Prints the per-service SCOM ranking table
+7. Saves to the run registry and optionally opens the dashboard
+
+> **Note on DB info**: Formats like nginx and Locust CSV contain HTTP traffic but no database operations. For these, `mba ingest` computes SCOM using path-based table heuristics and clearly labels the results as estimated.
+
+---
+
+### `mba benchmark` — Known Microservice Benchmarks
+
+Run SCOM analysis on well-known microservice benchmark applications, or get step-by-step setup instructions for ones requiring manual deployment.
+
+```bash
+mba benchmark [NAME] [OPTIONS]
+```
+
+**Available benchmarks:**
+
+| Name | Application | Services | Language | Automated |
+|---|---|---|---|---|
+| `teastore` | TeaStore (e-commerce) | 6 | Java | ✅ Fully automated |
+| `hotel` | DeathStarBench Hotel Reservation | 5 | Go / Python | Manual setup guide |
+| `boutique` | Google Online Boutique | 11 | Polyglot | Manual setup guide |
+| `sockshop` | Weaveworks Sock Shop | 8 | Polyglot | Manual setup guide |
+
+**Options:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--output <path>` | `data/benchmark` | Output directory |
+| `--duration <seconds>` | `60` | Traffic generation duration |
+| `--workers <n>` | `5` | Traffic workers |
+| `--threshold <value>` | `0.5` | SCOM threshold |
+| `--no-cleanup` | off | Keep containers running after analysis |
+| `--jaeger-ui` | off | Open Jaeger UI after the run |
+| `--dashboard` | off | Open MBA dashboard after the run |
+
+**Examples:**
+
+```bash
+# List all benchmarks
+mba benchmark
+
+# Run TeaStore (fully automated — downloads, deploys, generates traffic, computes SCOM)
+mba benchmark teastore --duration 120 --dashboard
+
+# Get setup instructions for Hotel Reservation
+mba benchmark hotel
+
+# Get setup instructions for Google Online Boutique
+mba benchmark boutique
 ```
 
 ---
@@ -748,7 +867,99 @@ Generates a structured Markdown report summarizing:
 - Suspected Wrong Cuts with per-service explanation
 - Endpoint → table breakdown for each service
 - SCOM methodology reference
+- **Data Sources section** — when ingesting external logs, shows per-file parsing stats (format detected, confidence, DB info availability, correlation quality)
+- **Dual-column SCOM table** — when using `--scom-method paper`, shows both unweighted (Section III-C formula) and weighted (Section IV-B extension) scores, matching Table I of the ICSA26 paper
 - (With `--llm`) An AI-powered narrative analysis interpreting the results in business terms
+
+---
+
+## Phased Traffic Engine — How mba full Generates Traffic
+
+When you run `mba full`, the traffic generation is not random. It executes in **6 deterministic phases** that guarantee database operations are triggered in the correct order:
+
+| Phase | What happens | Why this order |
+|---|---|---|
+| **PROBE** | One GET per endpoint — liveness check | Detect dead endpoints before heavy traffic |
+| **SEED** | All POST endpoints first, with coherent payloads | Create data in the database **before** reading it |
+| **READ** | All GET endpoints | Trigger SELECT operations on newly created data |
+| **MUTATE** | All PUT/PATCH endpoints, with real IDs from SEED | UPDATE operations on rows that actually exist |
+| **STRESS** | All endpoints concurrently (GET 60%, POST 25%, PUT 10%, DELETE 5%) | Realistic load, sufficient trace volume |
+| **CLEANUP** | DELETE endpoints last | Never destroy data before reads can happen |
+
+**Phase time budget** (as fraction of `--duration`):
+PROBE 5% → SEED 20% → READ 30% → MUTATE 15% → STRESS 25% → CLEANUP 5%
+
+**Smart payload generation**: POST endpoints receive semantically coherent payloads based on path keywords. A path containing `user` gets `{username, email, password}`. A path containing `order` gets `{quantity, status, total}`. The SEED phase harvests real entity IDs from POST responses and injects them into path parameters for the MUTATE and CLEANUP phases.
+
+Only the STRESS phase uses concurrent workers. All other phases execute sequentially to preserve ordering guarantees.
+
+---
+
+## Real-Time Terminal Dashboard — MBA Live UI
+
+During `mba full`, a **Rich live terminal dashboard** displays in real time as traffic is generated. You do not need to run any extra command — it activates automatically.
+
+```
+╔══ MBA — Microservice Boundary Analyzer ═══════════════════════════════════════════════╗
+║  ◈ MBA — Microservice Boundary Analyzer           v0.8.0         ║
+║  Project: scenario3  ·  Services: 2  ·  Duration: 60s  ·  Workers: 5  ║
+╠═══════════════════════════════════════════════════════════════╝
+  ✔ DISCOVER  ✔ DEPLOY  ● TRAFFIC  ○ COLLECT  ○ ANALYZE  ○ CLEANUP
+  PHASE 2/6 — READ  ████████░░░░  58%  14s / 18s
+╔═════════════════════╗ COVERAGE ═══════════════════════════════════╗
+  Svc    Method  Path    Status    Requests sent      234
+  scen3  GET     /ord..  ✔ 200   Succeeded          231  (98.7%)
+  scen3  POST    /ins..  ✔ 201   Endpoints w/ DB    3/5  ▪▪▪▫▫
+  scen3  DELETE  /del..  ⊗ skip  DB ops triggered   12
+╠═══════════════════════════════════════════════════════════════╝
+  14:23:02  [READ]   GET  /orders → 200 OK  8ms
+  14:23:03  [READ]   GET  /employees → 200 OK  11ms
+```
+
+**What the Live UI shows:**
+- **Pipeline bar**: `✔ DISCOVER ✔ DEPLOY ● TRAFFIC ○ COLLECT ○ ANALYZE ○ CLEANUP` — updates in real time
+- **Phase progress bar**: current phase name, phase number (e.g. `2/6`), elapsed/remaining time
+- **Endpoint table**: every endpoint with method (color-coded), path, live status (⏳/✔/✗/⊗), HTTP status code, response time, DB dot indicators (`▪▪▪` = DB ops triggered)
+- **Coverage panel**: requests sent/succeeded/failed, endpoints reached, DB ops count
+- **Log stream**: last 5 log entries with timestamp and phase label
+
+---
+
+## Universal Log Ingestion — Supported Formats
+
+MBA can accept log files from virtually any source and convert them into the internal span format for SCOM analysis. The format is detected automatically.
+
+| Format ID | File types | What is extracted | SCOM quality |
+|---|---|---|---|
+| `jaeger` | `.json` | Endpoints + DB ops + parent-child links | ✅ Exact |
+| `zipkin` | `.json` | Endpoints + DB ops + parent-child links | ✅ Exact |
+| `otlp` | `.json` | Endpoints + DB ops + parent-child links | ✅ Exact |
+| `generic_sql` | `.log`, `.txt` | HTTP lines + SQL queries — **auto-correlated** | ✅ Good (Django, Flask, SQLAlchemy, Spring) |
+| `json_lines` | `.log`, `.jsonl` | HTTP/DB/event records per line | ✅ Good |
+| `locust` | `.csv` | Endpoint stats (call count, response time) | ⚠ Heuristic (no DB) |
+| `nginx` | `.log`, `.txt` | HTTP access log | ⚠ Heuristic (no DB) |
+| `w3c` | `.log`, `.txt` | IIS Extended Log Format | ⚠ Heuristic (no DB) |
+
+### HTTP→SQL correlation for application logs
+
+For `generic_sql` format (Django, SQLAlchemy, Flask logs), MBA automatically correlates SQL queries to their parent HTTP request:
+
+```
+2026-06-19 15:23:01 INFO django.request: GET /orders/ 200 45ms    ← HTTP span (root)
+2026-06-19 15:23:01 DEBUG django.db.backends: SELECT ... FROM orders  ← DB child span
+2026-06-19 15:23:01 DEBUG django.db.backends: SELECT ... FROM users   ← DB child span
+2026-06-19 15:23:02 INFO django.request: POST /orders/ 201 120ms   ← new HTTP span
+2026-06-19 15:23:02 DEBUG django.db.backends: INSERT INTO orders ...  ← DB child span
+```
+
+SQL lines that appear after an HTTP line and before the next HTTP line are automatically assigned as child spans of that HTTP endpoint. This enables proper endpoint→table mapping and accurate SCOM computation from plain log files, without any instrumentation changes.
+
+### When DB info is missing
+
+For `nginx`, `locust`, and `w3c` formats, no database information is available. MBA will:
+- Warn you clearly: `⚠ No DB operations found — SCOM will use path-based table heuristics`
+- Compute an estimated SCOM based on URL path structure
+- Label the results as estimated in the report
 
 ---
 
@@ -1021,9 +1232,12 @@ limit_traces: 500                   # Max traces to collect per run
 output_dir: "data/raw/traces"       # Where to save raw trace JSON files
 
 # SCOM computation
-scom_method: "weighted"             # "weighted" (default), "paper" (unweighted per paper), "simple"
+scom_method: "weighted"             # "weighted" (default) | "paper" | "simple"
+                                    #   weighted  — w_ij = freq(e_i) × freq(e_j)  [production default]
+                                    #   paper     — exact ICSA26 formula, unweighted + also reports weighted
+                                    #   simple    — unweighted only, quick sanity check
 table_weighting: true               # Weight tables by access count (for future extensions)
-endpoint_weighting: true            # Weight endpoint pairs by invocation frequency
+endpoint_weighting: true            # Weight endpoint pairs by invocation frequency (used by 'weighted')  
 
 # Threshold for suspicious classification
 threshold_method: "percentile"      # "percentile" | "zscore" | "fixed"
@@ -1034,11 +1248,13 @@ scom_threshold: 0.5                 # Used when threshold_method = "fixed"
 
 ### SCOM method comparison
 
-| Method | Weighting | Best for |
-|---|---|---|
-| `weighted` | Endpoint invocation frequency from traces | Most accurate for production systems with uneven traffic |
-| `paper` | Uniform (matches the original research paper) | Academic comparison and reproducibility |
-| `simple` | Uniform, no normalization | Quick sanity checks |
+| Method | Formula | Report output | Best for |
+|---|---|---|---|
+| `weighted` | `SCOM = Σ wᵢⱼ·CI / (Σ wᵢⱼ × CI_max)` where `wᵢⱼ = freq(eᵢ)×freq(eⱼ)` | Single SCOM score | Production systems with uneven traffic |
+| `paper` | Exact Section III-C formula: `SCOM = Σ CI / (N × CI_max)` (unweighted) **+** also computes weighted for comparison | **Two columns** — matching Table I/II of the ICSA26 paper | Academic reproducibility |
+| `simple` | Same as `paper` but does not compute the weighted variant | Single SCOM score | Quick sanity checks |
+
+> **Why does `paper` produce two columns?** The ICSA26 paper (Section IV-B) reports both unweighted and weighted SCOM for each service. Using `--scom-method paper` reproduces this exact output in `service_scom.csv` and in the Markdown report.
 
 ### Threshold method guide
 
