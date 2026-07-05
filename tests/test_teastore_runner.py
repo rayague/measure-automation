@@ -22,6 +22,7 @@ from boundary_analyzer.auto.teastore_runner import (
     _build_traffic_paths,
     _discover_category_ids,
     _discover_product_ids,
+    _docker_cleanup_teastore,
 )
 
 _INDEX_HTML = """
@@ -116,6 +117,57 @@ class BuildTrafficPathsTest(unittest.TestCase):
         self.assertIn("/tools.descartes.teastore.webui/cart", paths)
         self.assertFalse(any("category?" in p for p in paths))
         self.assertFalse(any("product?" in p for p in paths))
+
+
+class DockerCleanupTest(unittest.TestCase):
+    """Regression guard for a cleanup bug found live: leftover containers from
+    a failed run were never removed by the next run's pre-flight cleanup,
+    because (a) `docker compose down` was targeting the wrong compose file
+    (and therefore the wrong Compose project name) and (b) `docker container
+    prune --filter name=...` is not a valid filter for that command at all
+    (the daemon rejects it with "invalid filter 'name'"), so it silently did
+    nothing. Together this let a stale, port-bound container survive across
+    runs and break every subsequent `mba teastore` invocation."""
+
+    @patch("boundary_analyzer.auto.teastore_runner.subprocess.run")
+    def test_uses_patched_compose_file_when_present(self, mock_run):
+        from boundary_analyzer.auto import teastore_runner as mod
+
+        mock_run.return_value = MagicMock(stdout="", returncode=0)
+        mod._PATCHED_COMPOSE.parent.mkdir(parents=True, exist_ok=True)
+        mod._PATCHED_COMPOSE.write_text("placeholder", encoding="utf-8")
+        self.addCleanup(lambda: mod._PATCHED_COMPOSE.unlink(missing_ok=True))
+
+        _docker_cleanup_teastore()
+
+        down_call = mock_run.call_args_list[0]
+        cmd = down_call.args[0]
+        self.assertIn(str(mod._PATCHED_COMPOSE), cmd)
+        self.assertNotIn(str(mod._COMPOSE_SRC), cmd)
+
+    @patch("boundary_analyzer.auto.teastore_runner.subprocess.run")
+    def test_never_passes_invalid_name_filter_to_prune(self, mock_run):
+        mock_run.return_value = MagicMock(stdout="", returncode=0)
+        _docker_cleanup_teastore()
+
+        for call in mock_run.call_args_list:
+            cmd = call.args[0]
+            self.assertNotIn("prune", cmd, f"docker container/network prune does not support --filter name=...: {cmd}")
+
+    @patch("boundary_analyzer.auto.teastore_runner.subprocess.run")
+    def test_lists_then_force_removes_containers_by_name(self, mock_run):
+        def fake_run(cmd, **kwargs):
+            if cmd[:2] == ["docker", "ps"]:
+                return MagicMock(stdout="abc123\ndef456\n", returncode=0)
+            return MagicMock(stdout="", returncode=0)
+
+        mock_run.side_effect = fake_run
+        _docker_cleanup_teastore()
+
+        rm_calls = [c.args[0] for c in mock_run.call_args_list if c.args[0][:2] == ["docker", "rm"]]
+        self.assertEqual(len(rm_calls), 1)
+        self.assertIn("abc123", rm_calls[0])
+        self.assertIn("def456", rm_calls[0])
 
 
 if __name__ == "__main__":

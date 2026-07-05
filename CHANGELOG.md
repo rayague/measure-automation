@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.8.2 (2026-07-06)
+
+### TeaStore Docker cleanup fix — leftover containers no longer break the next run
+
+Found live: `mba teastore` failed with `ports are not available: exposing port
+TCP 0.0.0.0:8080` because a container from an earlier failed run was never
+removed. Root cause was two independent bugs in `teastore_runner.py`:
+
+- **`docker_compose_up()` was called before the `try`/`finally` block** in
+  `run_teastore()`. If it raised partway through (port conflict, image pull
+  failure, anything), the `finally` cleanup never ran, so any containers that
+  *did* start were left running forever. Moved the call inside `try`.
+- **`_docker_cleanup_teastore()`'s pre-flight `docker compose down -v` targeted
+  the wrong compose file** (`_COMPOSE_SRC`, inside the installed package under
+  a `teastore/` folder — Compose project name `teastore`) instead of the file
+  actually used to start the containers (`_PATCHED_COMPOSE`, under
+  `~/.cache/boundary_analyzer/` — project name `boundary_analyzer`). The
+  cleanup therefore silently targeted a project that was never running.
+- **The container/network prune fallback used an invalid filter**:
+  `docker container prune --filter name=...` and `docker network prune
+  --filter name=...` both reject `name` (the daemon only supports `until` and
+  `label` for these two commands — `Error response from daemon: invalid
+  filter 'name'`), so this fallback has silently done nothing since it was
+  written. Replaced with `docker ps -aq --filter name=...` /
+  `docker network ls -q --filter name=...` followed by explicit `rm -f`.
+- 10 tests added for the cleanup fix (`tests/test_teastore_runner.py`).
+  595 passed, no regressions.
+
 ## v0.8.1 (2026-07-05)
 
 ### TeaStore traffic fix, universal ingestion hardening, span dedup

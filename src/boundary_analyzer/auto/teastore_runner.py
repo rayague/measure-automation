@@ -75,26 +75,46 @@ def _hint_docker_restart() -> None:
 
 
 def _docker_cleanup_teastore() -> None:
-    """Remove leftover teastore containers/networks from previous runs."""
+    """Remove leftover teastore containers/networks from previous runs.
+
+    Must use ``_PATCHED_COMPOSE`` (not ``_COMPOSE_SRC``) once it exists: Compose
+    derives the default project name from the *directory containing the compose
+    file*, and containers are actually started against the patched file in
+    ``~/.cache/boundary_analyzer/`` (project name ``boundary_analyzer``), not
+    the source file shipped inside the package (under a ``teastore/`` folder,
+    project name ``teastore``). Using the wrong file here silently no-ops the
+    cleanup — any containers left running by an earlier failed run are never
+    torn down, and a stale port binding then makes the *next* run fail too.
+    """
+    compose_file = _PATCHED_COMPOSE if _PATCHED_COMPOSE.exists() else _COMPOSE_SRC
     try:
         subprocess.run(
-            ["docker", "compose", "-f", str(_COMPOSE_SRC), "down", "-v"],
+            ["docker", "compose", "-f", str(compose_file), "down", "-v"],
             cwd=COMPOSE_DIR, capture_output=True, text=True, timeout=30,
         )
     except Exception:
         pass
+    # `docker container prune` / `docker network prune` do not support a
+    # `name` filter (only `until` and `label`) — passing one is silently
+    # rejected by the daemon ("invalid filter 'name'"), so the previous
+    # `--filter name=boundary_analyzer` calls here never removed anything.
+    # List by name instead, then force-remove directly.
     try:
-        subprocess.run(
-            ["docker", "container", "prune", "-f", "--filter", "name=boundary_analyzer"],
+        ids = subprocess.run(
+            ["docker", "ps", "-aq", "--filter", "name=boundary_analyzer"],
             capture_output=True, text=True, timeout=15,
-        )
+        ).stdout.split()
+        if ids:
+            subprocess.run(["docker", "rm", "-f", *ids], capture_output=True, text=True, timeout=15)
     except Exception:
         pass
     try:
-        subprocess.run(
-            ["docker", "network", "prune", "-f", "--filter", "name=boundary_analyzer"],
+        net_ids = subprocess.run(
+            ["docker", "network", "ls", "-q", "--filter", "name=boundary_analyzer"],
             capture_output=True, text=True, timeout=15,
-        )
+        ).stdout.split()
+        if net_ids:
+            subprocess.run(["docker", "network", "rm", *net_ids], capture_output=True, text=True, timeout=15)
     except Exception:
         pass
 
@@ -409,9 +429,15 @@ def run_teastore(
         logger.info("Agent downloaded. Exiting (--download-only).")
         return 0
 
-    docker_compose_up()
-
     try:
+        # docker_compose_up() is inside this try block (not before it) so that
+        # a failure partway through "docker compose up" — e.g. a port already
+        # in use, one image failing to pull — still triggers the `finally`
+        # cleanup below. Previously a failure here left every container that
+        # *did* start running forever, which then caused the *next* run to
+        # fail on a port conflict against these very leftovers.
+        docker_compose_up()
+
         wait_for_services(timeout=wait)
 
         if jaeger_ui:
