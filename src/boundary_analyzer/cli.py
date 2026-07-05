@@ -414,7 +414,10 @@ def _main(argv: list[str] | None = None) -> int:
     setup_proj.add_argument(
         "--framework",
         default="",
-        help="Force a framework (default: auto-detect). Choices: fastapi, flask, django.",
+        help=(
+            "Force a framework (default: auto-detect). Choices: flask, fastapi, django, "
+            "djangorest, starlette, tornado, laravel, express, nextjs, nestjs."
+        ),
     )
     setup_proj.add_argument(
         "--service-name",

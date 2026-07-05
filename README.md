@@ -6,7 +6,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.8.0-cyan)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.8.1-cyan)](CHANGELOG.md)
 [![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-ready-orange?logo=opentelemetry)](https://opentelemetry.io)
 [![Jaeger](https://img.shields.io/badge/Jaeger-integrated-blue)](https://jaegertracing.io)
 
@@ -247,7 +247,7 @@ pip install .
 
 ```bash
 mba --version
-# MBA v0.7.8 - Microservice Boundary Analyzer
+# MBA v0.8.1 - Microservice Boundary Analyzer
 ```
 
 Both `mba` and `boundary-analyzer` are registered as entry points and work identically.
@@ -459,7 +459,7 @@ mba ingest <LOG_FILE> [OPTIONS]
 
 | Flag | Default | Description |
 |---|---|---|
-| `--format <name>` | auto | Force a format: `jaeger`, `zipkin`, `otlp`, `locust`, `nginx`, `w3c`, `generic_sql`, `json_lines` |
+| `--format <name>` | auto | Force a format: `jaeger`, `zipkin`, `otlp`, `locust`, `nginx`, `w3c`, `generic_sql`, `json_lines`, `raw_text` |
 | `--service-name <name>` | from file | Override the service name in the log |
 | `--encoding <enc>` | `utf-8` | Text encoding of the file |
 
@@ -601,7 +601,7 @@ mba setup --project-path <PATH> [OPTIONS]
 | Flag | Required | Description |
 |---|---|---|
 | `--project-path <path>` | **yes** | Path to the microservice project folder |
-| `--framework <name>` | no | Force a framework: `fastapi`, `flask`, `django`, `starlette`, `tornado`. Default: auto-detect |
+| `--framework <name>` | no | Force a framework: `flask`, `fastapi`, `django`, `djangorest`, `starlette`, `tornado`, `laravel`, `express`, `nextjs`, `nestjs`. Default: auto-detect |
 | `--service-name <name>` | no | Service name to use in Jaeger (default: folder name) |
 | `--traces-output <path>` | no | Where to save collected traces |
 | `--trace-limit <n>` | `500` | Max number of traces to collect |
@@ -621,13 +621,20 @@ mba setup --project-path <PATH> [OPTIONS]
 | `--dashboard` | Open the dashboard when the analysis is complete |
 | `--llm` | Use LLM to generate the instrumentation code |
 
-**Supported frameworks:**
+**Supported frameworks (10):**
 
-- FastAPI
 - Flask
+- FastAPI
 - Django
+- Django REST Framework
 - Starlette
 - Tornado
+- Laravel (PHP)
+- Express.js (Node.js)
+- Next.js (Node.js)
+- Nest.js (Node.js)
+
+> Each of these gets full code-level OpenTelemetry instrumentation via `mba setup` (a generated bootstrap file). Java and .NET services are not covered by `mba setup`, but are auto-instrumented through OpenTelemetry agent injection (no source code changes) when deployed via `mba full`.
 
 **Example:**
 
@@ -732,7 +739,7 @@ Deploy and analyze the [TeaStore](https://github.com/DescartesResearch/TeaStore)
 mba teastore [OPTIONS]
 ```
 
-TeaStore consists of **6 Java microservices** connected via REST and a shared database. It is the standard benchmark used in the original SCOM paper.
+TeaStore consists of **6 Java microservices** connected via REST and a shared MySQL database. It is a widely used microservices research benchmark (Kounev et al., ICPE 2018) — not to be confused with the original SCOM metric paper (Counsell et al., 2006), which predates TeaStore and is about object-oriented class cohesion, not microservices.
 
 **Run options:**
 
@@ -740,7 +747,7 @@ TeaStore consists of **6 Java microservices** connected via REST and a shared da
 |---|---|---|
 | `--output <path>` | `data/teastore_run` | Save folder for traces and results |
 | `--duration <seconds>` | `60` | Traffic generation duration |
-| `--wait <seconds>` | `300` | Max time to wait for TeaStore services to start |
+| `--wait <seconds>` | `900` | Max time to wait for TeaStore services to start (TeaStore's 6 JVMs are slow to warm up) |
 | `--download-only` | off | Only download the OpenTelemetry Java agent, do not start anything |
 
 **SCOM options:**
@@ -815,7 +822,6 @@ Extracts **all spans that represent a database operation** and identifies the ta
 |---|---|
 | PostgreSQL / MySQL | Parses `db.statement` tag (SQL `FROM`, `INSERT INTO`, `UPDATE`, `JOIN` clauses) |
 | MongoDB | Extracts collection name from `db.mongodb.collection` or the operation command |
-| Redis | Uses key prefix patterns to infer a logical "table" |
 | Generic SQL | Regex-based SQL statement parser covering all common DML/DDL patterns |
 
 ### Step 5 — Build Endpoint → Table Mapping
@@ -901,7 +907,7 @@ During `mba full`, a **Rich live terminal dashboard** displays in real time as t
 
 ```
 ╔══ MBA — Microservice Boundary Analyzer ═══════════════════════════════════════════════╗
-║  ◈ MBA — Microservice Boundary Analyzer           v0.8.0         ║
+║  ◈ MBA — Microservice Boundary Analyzer           v0.8.1         ║
 ║  Project: scenario3  ·  Services: 2  ·  Duration: 60s  ·  Workers: 5  ║
 ╠═══════════════════════════════════════════════════════════════╝
   ✔ DISCOVER  ✔ DEPLOY  ● TRAFFIC  ○ COLLECT  ○ ANALYZE  ○ CLEANUP
@@ -939,6 +945,7 @@ MBA can accept log files from virtually any source and convert them into the int
 | `locust` | `.csv` | Endpoint stats (call count, response time) | ⚠ Heuristic (no DB) |
 | `nginx` | `.log`, `.txt` | HTTP access log | ⚠ Heuristic (no DB) |
 | `w3c` | `.log`, `.txt` | IIS Extended Log Format | ⚠ Heuristic (no DB) |
+| `raw_text` | any | Guaranteed fallback — one event span per line, with best-effort inline HTTP/SQL recognition | ⚠ Limited (only if none of the 8 formats above match) |
 
 ### HTTP→SQL correlation for application logs
 
@@ -960,6 +967,10 @@ For `nginx`, `locust`, and `w3c` formats, no database information is available. 
 - Warn you clearly: `⚠ No DB operations found — SCOM will use path-based table heuristics`
 - Compute an estimated SCOM based on URL path structure
 - Label the results as estimated in the report
+
+### The `raw_text` guarantee
+
+If a file matches none of the 8 structured formats above, MBA never rejects it outright. Every non-empty line becomes a standalone event span (with a best-effort attempt to still recognize inline HTTP requests or SQL statements), so even a fully proprietary, unstructured application log always produces a result — just with a low confidence score and a report warning explaining that HTTP↔DB correlation could not be established.
 
 ---
 
@@ -1297,6 +1308,20 @@ The **Avg SCOM (all)** card shows the arithmetic mean of SCOM scores across **al
 ---
 
 ## Troubleshooting
+
+### `mba` command runs the wrong tool after installing something else
+
+There is an unrelated package on PyPI also named `mba` (a "Market Basket Analysis" tool, no relation to this project). If you `pip install`/`pip install --upgrade` that package on the same machine, it registers its own `mba` console script and can silently overwrite this project's `mba` command, since script names only need to be unique per-machine, not per-package.
+
+**Symptom**: `mba --help` shows a different tool, or errors about unrelated dependencies (`mlxtend`, `pymysql`, `Sphinx`, `tox`...).
+
+**Fix**:
+```bash
+pip uninstall -y mba
+pip install --user -e .   # from this repository's root — regenerates the correct mba script
+```
+
+Never run `pip install --upgrade mba` expecting it to update *this* tool — that always fetches from PyPI, never from your local checkout. To update after pulling new code or making local changes, use `pip install --user -e .` from the repository root.
 
 ### Docker not found
 
