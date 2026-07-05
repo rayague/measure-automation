@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -203,8 +204,8 @@ def _cmd_runs_compare(args: argparse.Namespace) -> int:
     all_svcs: set[str] = set()
     for meta in metas:
         for s in meta.get("scom_results", []):
-            name = s.get("Service") or s.get("service") or "?"
-            scom_val = float(s.get("SCOM") or s.get("scom") or 0.0)
+            name = s.get("Service") if s.get("Service") is not None else s.get("service", "?")
+            scom_val = float(s.get("SCOM") if s.get("SCOM") is not None else s.get("scom", 0.0))
             svc_scoms.setdefault(name, {})[meta["id"]] = scom_val
             all_svcs.add(name)
 
@@ -480,8 +481,8 @@ def _main(argv: list[str] | None = None) -> int:
     teastore_run.add_argument(
         "--wait",
         type=_validate_positive_int,
-        default=300,
-        help="Max seconds to wait for TeaStore to start (default: 300).",
+        default=900,
+        help="Max seconds to wait for TeaStore to start (default: 900).",
     )
     teastore_run.add_argument("--download-only", action="store_true", help="Only download the OTel agent. Do not start anything.")
 
@@ -493,6 +494,7 @@ def _main(argv: list[str] | None = None) -> int:
     teastore_docker = teastore_parser.add_argument_group("Docker")
     teastore_docker.add_argument("--no-cleanup", action="store_false", dest="cleanup", help="Keep Docker containers running after finish.")
     teastore_docker.add_argument("--jaeger-ui", action="store_true", help="Open Jaeger web UI. Keeps containers running.")
+    teastore_docker.add_argument("--prune", action="store_true", help="Remove leftover teastore containers/networks before starting.")
 
     # ── analyze subcommand ───────────────────────────────────────────
     analyze_parser = subparsers.add_parser(
@@ -587,7 +589,9 @@ def _main(argv: list[str] | None = None) -> int:
     runs_compare.add_argument("--json", action="store_true", help="Output as JSON.")
 
     runs_delete = runs_sub.add_parser("delete", help="Delete a specific run")
-    runs_delete.add_argument("run_id", help="Run ID to delete")
+    runs_delete.add_argument("run_id", nargs="?", help="Run ID to delete")
+    runs_delete.add_argument("--all", action="store_true", help="Delete ALL runs")
+    runs_delete.add_argument("--yes", "-y", action="store_true", help="Skip confirmation prompt")
 
     # ── ingest subcommand ─────────────────────────────────────────────
     ingest_parser = subparsers.add_parser(
@@ -604,8 +608,11 @@ def _main(argv: list[str] | None = None) -> int:
             "  w3c         W3C Extended Log Format (IIS)\n"
             "  generic_sql Application logs with HTTP + SQL (Django, SQLAlchemy, etc.)\n"
             "  json_lines  JSON Lines (one structured record per line)\n"
+            "  raw_text    Guaranteed fallback for any other text file — never fails\n"
             "\n"
-            "The format is auto-detected from file content. Use --format to override."
+            "The format is auto-detected from file content. Use --format to override.\n"
+            "Any non-empty file can be ingested: if no structured format matches, the\n"
+            "raw_text fallback still turns every line into an analyzable span."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -615,8 +622,8 @@ def _main(argv: list[str] | None = None) -> int:
         "--format",
         default="",
         dest="log_format",
-        choices=["auto", "jaeger", "zipkin", "otlp", "locust", "nginx", "w3c", "generic_sql", "json_lines"],
-        help="Force a specific format (default: auto-detect).",
+        choices=["auto", "jaeger", "zipkin", "otlp", "locust", "nginx", "w3c", "generic_sql", "json_lines", "raw_text"],
+        help="Force a specific format (default: auto-detect). 'raw_text' forces the unstructured-text fallback.",
     )
     ingest_opts.add_argument(
         "--service-name",
@@ -664,7 +671,7 @@ def _main(argv: list[str] | None = None) -> int:
     bench_run.add_argument("--no-cleanup", action="store_false", dest="cleanup", help="Keep containers running after analysis.")
     bench_run.add_argument("--jaeger-ui", action="store_true", help="Open Jaeger UI after run.")
     bench_run.add_argument("--dashboard", action="store_true", help="Open MBA dashboard after run.")
-    bench_run.add_argument("--wait", type=_validate_positive_int, default=300, help="Max seconds to wait for services to start.")
+    bench_run.add_argument("--wait", type=_validate_positive_int, default=900, help="Max seconds to wait for services to start (default: 900 — TeaStore's 6 JVMs are slow to warm up).")
     bench_run.add_argument("--threshold", type=_validate_threshold, default=0.5, help="SCOM threshold.")
 
     # ── full subcommand ─────────────────────────────────────────────
@@ -871,27 +878,20 @@ def _main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "teastore":
-        import subprocess
-        import sys
-        from pathlib import Path as _Path
+        from boundary_analyzer.auto.teastore_runner import run_teastore
 
-        _script = _Path(__file__).resolve().parents[2] / "scripts" / "teastore" / "deploy_and_trace.py"
-        _cmd = [sys.executable, str(_script)]
-        _cmd += ["--output", str(args.output)]
-        _cmd += ["--duration", str(args.duration)]
-        _cmd += ["--wait", str(args.wait)]
-        _cmd += ["--threshold", str(args.threshold)]
-        if not args.skip_no_db:
-            _cmd += ["--no-skip-no-db"]
-        if not args.cleanup:
-            _cmd += ["--no-cleanup"]
-        if args.skip_pipeline:
-            _cmd += ["--skip-pipeline"]
-        if args.jaeger_ui:
-            _cmd += ["--jaeger-ui"]
-        if args.download_only:
-            _cmd += ["--download-only"]
-        return subprocess.call(_cmd)
+        return run_teastore(
+            output=args.output,
+            duration=args.duration,
+            wait=args.wait,
+            threshold=args.threshold,
+            skip_no_db=args.skip_no_db,
+            cleanup=args.cleanup,
+            skip_pipeline=args.skip_pipeline,
+            jaeger_ui=args.jaeger_ui,
+            download_only=args.download_only,
+            prune=getattr(args, "prune", False),
+        )
 
     if args.command == "analyze":
         traffic_path = Path(str(args.traffic_file))
@@ -1090,6 +1090,27 @@ def _main(argv: list[str] | None = None) -> int:
             return _cmd_runs_compare(args)
 
         if args.runs_command == "delete":
+            if args.all:
+                from boundary_analyzer.auto.run_registry import list_runs
+                all_runs = list_runs(data_root_guess)
+                if not all_runs:
+                    _console.print("  [yellow]No runs to delete.[/]")
+                    return 0
+                if not args.yes:
+                    _console.print(f"  [red]Are you sure you want to delete ALL {len(all_runs)} runs?[/]")
+                    _console.print("  [dim]Pass --yes to skip confirmation.[/]")
+                    return 1
+                for r in all_runs:
+                    delete_run(r["id"])
+                _console.print(f"  [red]Deleted {len(all_runs)} runs.[/]")
+                return 0
+            if not args.run_id:
+                _console.print("  [red]Specify a run_id or use --all[/]")
+                return 1
+            if not args.yes:
+                _console.print(f"  [red]Are you sure you want to delete run '{args.run_id}'?[/]")
+                _console.print("  [dim]Pass --yes to skip confirmation.[/]")
+                return 1
             if delete_run(args.run_id):
                 _console.print(f"  [red]Deleted run: {args.run_id}[/]")
                 return 0
@@ -1331,7 +1352,7 @@ _BENCHMARKS: dict[str, dict] = {
         "label": "TeaStore",
         "services": 6,
         "language": "Java",
-        "description": "E-commerce microservices benchmark (6 Java services, shared PostgreSQL).",
+        "description": "E-commerce microservices benchmark (6 Java services, shared MySQL).",
         "source": "https://github.com/DescartesResearch/TeaStore",
         "native": True,
         "setup": ["Run: mba teastore --duration 120"],
@@ -1427,20 +1448,20 @@ def _cmd_benchmark(args: argparse.Namespace) -> int:
     _console.print()
 
     if meta.get("native") and name == "teastore":
-        # Delegate to the existing teastore command
-        from pathlib import Path as _Path
+        from boundary_analyzer.auto.teastore_runner import run_teastore
 
-        _script = _Path(__file__).resolve().parents[2] / "scripts" / "teastore" / "deploy_and_trace.py"
-        _cmd = [sys.executable, str(_script)]
-        _cmd += ["--output", str(args.output)]
-        _cmd += ["--duration", str(args.duration)]
-        _cmd += ["--wait", str(args.wait)]
-        _cmd += ["--threshold", str(args.threshold)]
-        if not args.cleanup:
-            _cmd += ["--no-cleanup"]
-        if args.jaeger_ui:
-            _cmd += ["--jaeger-ui"]
-        return subprocess.call(_cmd)
+        return run_teastore(
+            output=args.output,
+            duration=args.duration,
+            wait=args.wait,
+            threshold=args.threshold,
+            skip_no_db=True,
+            cleanup=args.cleanup,
+            skip_pipeline=False,
+            jaeger_ui=args.jaeger_ui,
+            download_only=False,
+            prune=getattr(args, "prune", False),
+        )
 
     # Not natively automated — print step-by-step setup guide
     _console.print(f"  [yellow]⚠[/]  [bold]{name}[/] requires manual setup steps:\n")

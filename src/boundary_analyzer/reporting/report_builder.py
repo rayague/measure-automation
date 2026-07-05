@@ -20,7 +20,11 @@ _FORMAT_LABELS: dict[str, str] = {
     "w3c": "W3C Extended Log Format",
     "generic_sql": "Application log with HTTP + SQL patterns",
     "json_lines": "JSON Lines (structured log)",
+    "raw_text": "Unstructured text (fallback — no known format recognised)",
 }
+
+#: Below this confidence, a source's format detection is flagged as unreliable.
+_LOW_CONFIDENCE_THRESHOLD = 0.5
 
 
 def _generate_markdown_report(
@@ -159,6 +163,13 @@ def _ingestion_section(summary_path: Path) -> str:
     else:
         lines.append("- **DB spans:** none — SCOM uses heuristic path-based table inference\n")
 
+    dupes = totals.get("duplicate_spans_removed", 0)
+    if dupes:
+        lines.append(
+            f"- **Duplicate spans removed:** {dupes} (same trace_id/span_id seen in more than one input "
+            f"file — common when traces are exported per-service and a request touched multiple services)\n"
+        )
+
     services = totals.get("services", [])
     if services:
         lines.append(f"- **Services detected:** {', '.join(services)}\n")
@@ -166,16 +177,33 @@ def _ingestion_section(summary_path: Path) -> str:
 
     if sources:
         lines.append("### Per-file breakdown\n")
-        lines.append("| File | Format | Confidence | DB info | Correlated |\n")
-        lines.append("|------|--------|------------|---------|------------|\n")
+        lines.append("| File | Format | Confidence | Spans | HTTP | DB | Traces | Correlated |\n")
+        lines.append("|------|--------|------------|-------|------|----|--------|------------|\n")
         for src in sources:
             fname = Path(str(src.get("source", ""))).name
-            fmt = _FORMAT_LABELS.get(str(src.get("format", "")), str(src.get("format", "?")))
-            conf = f"{float(src.get('confidence', 0)) * 100:.0f}%"
-            has_db = "✔" if src.get("has_db_info") else "✗"
+            fmt_id = str(src.get("format", ""))
+            fmt = _FORMAT_LABELS.get(fmt_id, fmt_id or "?")
+            confidence_val = float(src.get("confidence", 0))
+            conf = f"{confidence_val * 100:.0f}%"
+            if confidence_val < _LOW_CONFIDENCE_THRESHOLD:
+                conf += " ⚠"
+            src_stats: dict[str, Any] = src.get("stats", {}) or {}
+            n_spans = src_stats.get("total_spans", "?")
+            n_http = src_stats.get("http_spans", "?")
+            n_db = src_stats.get("db_spans", "?")
+            n_traces = src_stats.get("unique_traces", "?")
             has_corr = "✔" if src.get("has_trace_correlation") else "✗"
-            lines.append(f"| `{fname}` | {fmt} | {conf} | {has_db} | {has_corr} |\n")
+            lines.append(f"| `{fname}` | {fmt} | {conf} | {n_spans} | {n_http} | {n_db} | {n_traces} | {has_corr} |\n")
         lines.append("\n")
+
+        low_confidence_sources = [s for s in sources if float(s.get("confidence", 0)) < _LOW_CONFIDENCE_THRESHOLD]
+        if low_confidence_sources:
+            names = ", ".join(f"`{Path(str(s.get('source', ''))).name}`" for s in low_confidence_sources)
+            lines.append(
+                f"> ⚠ **Low-confidence format detection** for: {names}. Results derived from these files "
+                f"(endpoints, tables, SCOM contribution) should be treated as approximate. Re-run with "
+                f"`--format <name>` to force the correct parser if you know the true format.\n"
+            )
 
         for src in sources:
             for w in src.get("warnings", []):

@@ -125,8 +125,8 @@ def _load_trends(base_dir: Path, max_runs: int = 10) -> pd.DataFrame:
             continue
         ts = meta.get("timestamp", "")[:16].replace("T", " ")
         for s in meta.get("scom_results", []):
-            name = s.get("Service") or s.get("service") or "?"
-            scom_val = s.get("SCOM") or s.get("scom") or 0.0
+            name = s.get("Service") if s.get("Service") is not None else s.get("service", "?")
+            scom_val = s.get("SCOM") if s.get("SCOM") is not None else s.get("scom", 0.0)
             try:
                 records.append({"service": name, "run_ts": ts, "scom": float(scom_val)})
             except (ValueError, TypeError):
@@ -206,6 +206,8 @@ def _build_bar_chart(rank_df: pd.DataFrame) -> go.Figure:
         return go.Figure()
 
     df = rank_df.sort_values("scom_score", ascending=True).copy()
+    if "is_suspicious" not in df.columns:
+        df["is_suspicious"] = False
     colors = [T["red"] if s else T["cyan"] for s in df["is_suspicious"]]
     df["status_label"] = df["is_suspicious"].map({True: "suspicious", False: "healthy"})
 
@@ -267,6 +269,9 @@ def _build_distribution(rank_df: pd.DataFrame) -> go.Figure:
     if rank_df.empty:
         return go.Figure()
 
+    if "is_suspicious" not in rank_df.columns:
+        rank_df = rank_df.copy()
+        rank_df["is_suspicious"] = False
     healthy_df = rank_df[~rank_df["is_suspicious"]][["service_name", "scom_score"]]
     suspect_df = rank_df[rank_df["is_suspicious"]][["service_name", "scom_score"]]
 

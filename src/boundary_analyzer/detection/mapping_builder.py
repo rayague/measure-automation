@@ -176,22 +176,8 @@ def build_endpoint_table_mapping(
 
         if not endpoint_key:
             db_spans_no_endpoint += 1
-            # Fallback: try the closest endpoint by start_time in the same trace
-            trace_endpoints = endpoints_df[endpoints_df["trace_id"] == trace_id]
-            if not trace_endpoints.empty and "start_time" in trace_endpoints.columns and "start_time" in db_row.index:
-                db_start = db_row["start_time"]
-                if pd.notna(db_start):
-                    trace_endpoints = trace_endpoints.copy()
-                    trace_endpoints["_time_dist"] = (trace_endpoints["start_time"] - db_start).abs()
-                    best = trace_endpoints.loc[trace_endpoints["_time_dist"].idxmin()]
-                    endpoint_key = best["endpoint_key"]
-                    service_name = best.get("service_name", db_row.get("service_name", "unknown"))
-                else:
-                    endpoint_key = "unknown_endpoint"
-                    service_name = db_row.get("service_name", "unknown")
-            else:
-                endpoint_key = "unknown_endpoint"
-                service_name = db_row.get("service_name", "unknown")
+            endpoint_key = "unknown_endpoint"
+            service_name = db_row.get("service_name", "unknown")
         else:
             db_spans_found += 1
 

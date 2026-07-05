@@ -102,9 +102,30 @@ def _read_universal_logs(
             }
         )
 
+    duplicates_removed = 0
     if frames:
         spans_df = pd.concat(frames, ignore_index=True)
         spans_df = spans_df[SPANS_COLUMNS].copy()
+
+        # Multiple input files can legitimately contain the same span more
+        # than once — e.g. exporting Jaeger traces "per service" returns the
+        # *entire* multi-service trace for every service that participated
+        # in it, so a request touching 3 services is exported 3 times. Left
+        # unchecked this silently inflates endpoint/table frequency counts
+        # and skews the (frequency-weighted) SCOM score. Only dedupe rows
+        # with a real, non-empty (trace_id, span_id) — synthetic IDs from
+        # sources with no native span identity (nginx, w3c, locust, raw_text)
+        # are always freshly generated per row and must never collide.
+        has_real_id = (spans_df["trace_id"].astype(str).str.strip() != "") & (spans_df["span_id"].astype(str).str.strip() != "")
+        identifiable = spans_df[has_real_id]
+        dupe_mask = identifiable.duplicated(subset=["trace_id", "span_id"], keep="first")
+        if dupe_mask.any():
+            duplicates_removed = int(dupe_mask.sum())
+            spans_df = spans_df.drop(index=identifiable.index[dupe_mask])
+            logger.info(
+                "Dropped %d duplicate span(s) (same trace_id/span_id repeated across input files)",
+                duplicates_removed,
+            )
     else:
         spans_df = _empty_spans_df()
 
@@ -136,6 +157,7 @@ def _read_universal_logs(
             "correlated_db_spans": correlated_db_spans,
             "services": services,
             "unique_traces": unique_traces,
+            "duplicate_spans_removed": duplicates_removed,
         },
         "sources": sources,
         "errors": errors,
@@ -284,7 +306,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--traces", required=True, help="Path to a traces/log file or a folder containing trace/log files")
     ap.add_argument("--service", default="", help="Override service name for logs that do not contain one")
     ap.add_argument("--output", required=True, help="Output folder")
-    ap.add_argument("--format", default="", help="Optional input format hint: jaeger, zipkin, otlp, locust, nginx, w3c, generic_sql, json_lines")
+    ap.add_argument("--format", default="", help="Optional input format hint: jaeger, zipkin, otlp, locust, nginx, w3c, generic_sql, json_lines, raw_text")
     ap.add_argument("--encoding", default="utf-8", help="Preferred text encoding for log files (default: utf-8)")
 
     ap.add_argument("--scom-method", default="weighted", choices=["paper", "weighted", "simple"])

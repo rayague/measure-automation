@@ -65,9 +65,15 @@ def _extract_tags_as_json(span: dict[str, Any]) -> str:
 
 def _read_one_trace_file(file_path: Path) -> list[dict[str, Any]]:
     """Read one Jaeger export file and return list of span rows."""
-    with file_path.open("r", encoding="utf-8") as f:
-        data = json.load(f)
+    try:
+        with file_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError) as e:
+        logger.warning("Skipping malformed trace file %s: %s", file_path.name, e)
+        return []
 
+    if isinstance(data, list):
+        data = {"data": data}
     jaeger_response = data.get("jaeger_response", data)
     traces = jaeger_response.get("data", [])
 
@@ -101,8 +107,11 @@ def read_all_traces(traces_dir: Path) -> pd.DataFrame:
     json_files = list(traces_dir.glob("*.json"))
 
     for file_path in json_files:
-        rows = _read_one_trace_file(file_path)
-        all_rows.extend(rows)
+        try:
+            rows = _read_one_trace_file(file_path)
+            all_rows.extend(rows)
+        except Exception as e:
+            logger.warning("Failed to read trace file %s: %s", file_path.name, e)
 
     df = pd.DataFrame(all_rows)
 

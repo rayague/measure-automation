@@ -24,6 +24,14 @@ Supported formats
 +------------------+----------------+---------------------------------------------------+
 | JSON Lines       | ``json_lines`` | One JSON object per log line (structured logging) |
 +------------------+----------------+---------------------------------------------------+
+| Raw text         | ``raw_text``   | Guaranteed last-resort fallback — any text file   |
++------------------+----------------+---------------------------------------------------+
+
+``raw_text`` is never returned by :func:`detect_format` itself; it is only
+ever selected by :func:`ingest_log_file` as the final link of its fallback
+chain, so that **no non-empty file is ever rejected** — even a proprietary,
+unstructured application log with no recognisable HTTP/SQL/JSON structure
+still yields one span per line (see :func:`_parse_raw_text`).
 
 Unified spans.csv schema (8 columns)
 -------------------------------------
@@ -1521,6 +1529,120 @@ def _parse_generic_sql(
 
 
 # ---------------------------------------------------------------------------
+# Parser: raw text (guaranteed last-resort fallback)
+# ---------------------------------------------------------------------------
+
+#: Recognised log-level tokens, used to enrich raw-text spans when present.
+_LOG_LEVEL_RE = re.compile(r"\b(TRACE|DEBUG|INFO|NOTICE|WARN(?:ING)?|ERROR|SEVERE|CRITICAL|FATAL)\b")
+
+
+def _parse_raw_text(
+    content: str,
+    service_name_override: str = "",
+    file_path: Path | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Guaranteed last-resort parser for unstructured / proprietary text logs.
+
+    This parser is only ever reached by :func:`ingest_log_file` after every
+    structured parser (Jaeger, Zipkin, OTLP, Locust, nginx, W3C, generic SQL,
+    JSON Lines) has failed to extract a single row. Its job is to make sure
+    **no log file is ever rejected**: a user handing over years of
+    accumulated, proprietary application logs must always get a result, even
+    if the tool cannot infer HTTP/DB semantics from them.
+
+    Every non-empty line becomes one standalone span (its own trace, no
+    parent). A best-effort attempt is still made per line to recognise an
+    HTTP request line or a SQL statement, so a log that is *mostly* free text
+    but occasionally contains a request or query line still yields usable
+    ``http.route`` / ``db.statement`` tags for those lines. Lines that match
+    neither become plain "log event" spans carrying the raw line text and,
+    when detectable, its log level (``INFO``, ``ERROR``, ...).
+
+    Because there is no cross-line structure to exploit, spans produced by
+    this parser can never be correlated into HTTP→DB parent/child chains, so
+    downstream SCOM analysis is necessarily limited — this is communicated to
+    the caller via the returned warning.
+
+    Args:
+        content:               Raw log file content as a string.
+        service_name_override: Optional service name override.
+        file_path:             Original file path (used to infer service name).
+
+    Returns:
+        A ``(DataFrame, warnings)`` tuple. Only empty if *content* has no
+        non-empty lines at all (callers already reject empty files earlier).
+    """
+    warnings: list[str] = []
+    svc = service_name_override or (_infer_service_from_path(file_path) if file_path else "unknown-service")
+
+    rows: list[dict[str, Any]] = []
+
+    for line in content.splitlines():
+        line_stripped = line.strip()
+        if not line_stripped:
+            continue
+
+        ts_us = _extract_timestamp_from_line(line_stripped)
+        tags: list[dict[str, str]] = [_make_tag("source_format", "raw_text")]
+
+        level_m = _LOG_LEVEL_RE.search(line_stripped)
+        if level_m:
+            tags.append(_make_tag("log.level", level_m.group(1).upper()))
+
+        sql_text = _extract_sql_from_line(line_stripped)
+        http_m = _HTTP_LINE_RE.search(line_stripped) if not sql_text else None
+
+        if sql_text:
+            tables = _extract_tables_from_sql(sql_text)
+            db_system = _detect_db_system_from_context(line_stripped, sql_text)
+            tags.append(_make_tag("db.system", db_system))
+            tags.append(_make_tag("db.statement", sql_text[:500]))
+            tags.append(_make_tag("span.kind", "client"))
+            if tables:
+                tags.append(_make_tag("db.tables", ",".join(tables)))
+            operation_name = sql_text[:120]
+        elif http_m:
+            method = http_m.group("method").upper()
+            path = http_m.group("path")
+            tags.append(_make_tag("http.method", method))
+            tags.append(_make_tag("http.route", path))
+            tags.append(_make_tag("span.kind", "server"))
+            if http_m.group("status"):
+                tags.append(_make_tag("http.status_code", http_m.group("status")))
+            operation_name = f"{method} {path}"
+        else:
+            tags.append(_make_tag("span.kind", "internal"))
+            tags.append(_make_tag("log.raw", line_stripped[:500]))
+            operation_name = line_stripped[:200]
+
+        rows.append(
+            {
+                "trace_id": _new_uuid(),
+                "span_id": _new_uuid(),
+                "parent_span_id": None,
+                "service_name": svc,
+                "operation_name": operation_name,
+                "start_time": ts_us,
+                "duration": 0,
+                "tags": _tags_to_json(tags),
+            }
+        )
+
+    if not rows:
+        warnings.append("raw_text parser found no non-empty lines")
+        return _empty_df(), warnings
+
+    warnings.append(
+        f"File matched no known structured format (Jaeger/Zipkin/OTLP/Locust/nginx/W3C/generic_sql/json_lines). "
+        f"Ingested as unstructured text: {len(rows)} line(s) became standalone event spans with no HTTP↔DB "
+        f"correlation. SCOM analysis on this source will be limited to whatever HTTP/SQL patterns were found "
+        f"inline on individual lines."
+    )
+
+    return pd.DataFrame(rows), warnings
+
+
+# ---------------------------------------------------------------------------
 # Parser: JSON Lines
 # ---------------------------------------------------------------------------
 
@@ -1720,10 +1842,11 @@ _PARSER_MAP: dict[str, Any] = {
     "w3c": _parse_w3c,
     "generic_sql": _parse_generic_sql,
     "json_lines": _parse_json_lines,
+    "raw_text": _parse_raw_text,
 }
 
 #: Parsers that accept a ``file_path`` keyword argument for service name inference.
-_PATH_AWARE_PARSERS: frozenset[str] = frozenset({"locust", "nginx", "w3c", "generic_sql", "json_lines"})
+_PATH_AWARE_PARSERS: frozenset[str] = frozenset({"locust", "nginx", "w3c", "generic_sql", "json_lines", "raw_text"})
 
 
 def _call_parser(
@@ -1785,6 +1908,7 @@ def ingest_log_file(
     ``"w3c"``          — W3C Extended Log Format (IIS)
     ``"generic_sql"``  — Django / Flask / Spring / Rails app log with HTTP + SQL
     ``"json_lines"``   — Structured logging in JSON Lines format
+    ``"raw_text"``     — Guaranteed fallback for any other text file (never fails)
 
     Args:
         file_path:    Path to the log file to ingest.  The file must exist and
@@ -1813,9 +1937,12 @@ def ingest_log_file(
 
     Raises:
         FileNotFoundError: If *file_path* does not exist on disk.
-        ValueError:        If the file is empty, cannot be decoded in any
-                           supported encoding, or cannot be parsed by **any**
-                           available parser.
+        ValueError:        If the file is empty (whitespace-only) or cannot be
+                           decoded in any supported encoding. Non-empty files
+                           are never rejected for lacking a recognisable
+                           structure — the ``raw_text`` fallback guarantees a
+                           result (see ``format_detected="raw_text"`` and the
+                           low ``format_confidence`` in that case).
 
     Examples:
         >>> from pathlib import Path
@@ -1870,27 +1997,49 @@ def ingest_log_file(
     final_fmt = fmt
 
     # Build the order of formats to try: detected format first, then the rest
-    # ordered by decreasing likelihood (structured formats before text heuristics).
-    _fallback_order: list[str] = [fmt] + [f for f in ["jaeger", "zipkin", "otlp", "json_lines", "locust", "w3c", "nginx", "generic_sql"] if f != fmt]
+    # ordered by decreasing likelihood (structured formats before text
+    # heuristics), with "raw_text" always last as the guaranteed catch-all —
+    # unless the user explicitly asked for it via format_hint, in which case
+    # it's already first and no fallback chain is needed.
+    _structured_formats = ["jaeger", "zipkin", "otlp", "json_lines", "locust", "w3c", "nginx", "generic_sql"]
+    _fallback_order: list[str] = [fmt] + [f for f in _structured_formats if f != fmt]
+    if fmt != "raw_text":
+        _fallback_order.append("raw_text")
 
     last_error: Exception | None = None
     parse_succeeded = False
+    rejected_formats: list[str] = []
 
     for attempt_fmt in _fallback_order:
         try:
             df, parser_warnings = _call_parser(attempt_fmt, content, service_name, file_path)
-            all_warnings.extend(parser_warnings)
 
             if not df.empty:
+                # Only the winning parser's own warnings are useful to the
+                # caller — an empty/failed attempt's internal diagnostics
+                # (e.g. "nginx skipped N lines") describe formats the file
+                # is *not*, which is noise once we know what it actually is.
+                all_warnings.extend(parser_warnings)
                 if attempt_fmt != fmt:
-                    all_warnings.append(f"Detected format '{fmt}' produced no spans; successfully parsed as '{attempt_fmt}'")
+                    if attempt_fmt == "raw_text":
+                        all_warnings.append(
+                            f"Detected format '{fmt}' produced no spans, and none of the other structured "
+                            f"parsers tried ({', '.join(rejected_formats)}) matched either — ingested as "
+                            f"unstructured text (see raw_text warning above)."
+                        )
+                        confidence = min(confidence, 0.05)
+                    else:
+                        all_warnings.append(f"Detected format '{fmt}' produced no spans; successfully parsed as '{attempt_fmt}' instead")
+                        confidence = max(0.1, confidence - 0.25)
                     final_fmt = attempt_fmt
-                    confidence = max(0.1, confidence - 0.25)
                 parse_succeeded = True
                 break
 
+            rejected_formats.append(attempt_fmt)
+
         except Exception as exc:
             last_error = exc
+            rejected_formats.append(attempt_fmt)
             logger.debug(
                 "Parser '%s' raised %s: %s",
                 attempt_fmt,
@@ -1900,8 +2049,11 @@ def ingest_log_file(
             continue
 
     if not parse_succeeded:
+        # Should be unreachable: raw_text only fails to produce rows on
+        # whitespace-only content, which is already rejected above. Kept as
+        # a defensive guard so ingestion never silently returns nothing.
         tried_str = ", ".join(f"'{f}'" for f in _fallback_order)
-        raise ValueError(f"Could not parse '{file_path.name}' with any supported format (tried: {tried_str}). Last error: {last_error}")
+        raise ValueError(f"Could not parse '{file_path.name}' with any supported format, including the raw_text fallback (tried: {tried_str}). Last error: {last_error}")
 
     # ── Schema coercion ──
     df = _ensure_schema(df)

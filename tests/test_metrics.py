@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pandas as pd
 
-from boundary_analyzer.metrics.cohesion_rules import get_threshold, is_suspicious
 from boundary_analyzer.metrics.scom import (
     _build_all_endpoints_by_service,
     _build_endpoint_table_sets,
@@ -350,30 +349,35 @@ class ComputeScomTest(unittest.TestCase):
         self.assertTrue(path.exists())
 
 
-class CohesionRulesTest(unittest.TestCase):
-    def test_get_threshold_default(self):
-        self.assertEqual(get_threshold(), 0.5)
+class ApplyThresholdTest(unittest.TestCase):
+    def test_fixed_default_threshold(self):
+        df = pd.DataFrame({"scom_score": [0.3, 0.5, 0.7]})
+        result = apply_threshold(df, threshold_method="fixed")
+        self.assertEqual(result["threshold_value"].iloc[0], 0.5)
+        self.assertIn("is_suspicious", result.columns)
+        self.assertTrue(result.loc[0, "is_suspicious"])
+        self.assertFalse(result.loc[1, "is_suspicious"])
+        self.assertFalse(result.loc[2, "is_suspicious"])
 
-    def test_get_threshold_with_settings(self):
-        self.assertEqual(get_threshold({"scom_threshold": 0.3}), 0.3)
+    def test_fixed_custom_threshold(self):
+        df = pd.DataFrame({"scom_score": [0.3, 0.5, 0.7]})
+        result = apply_threshold(df, threshold_method="fixed", fixed_threshold=0.3)
+        self.assertFalse(result.loc[0, "is_suspicious"])  # 0.3 is NOT < 0.3
+        self.assertFalse(result.loc[1, "is_suspicious"])
+        self.assertFalse(result.loc[2, "is_suspicious"])
 
-    def test_get_threshold_settings_without_key(self):
-        self.assertEqual(get_threshold({"other_key": 1}), 0.5)
+    def test_fixed_zero_score(self):
+        df = pd.DataFrame({"scom_score": [0.0, 0.2]})
+        result = apply_threshold(df, threshold_method="fixed", fixed_threshold=0.1)
+        self.assertTrue(result.loc[0, "is_suspicious"])
+        self.assertFalse(result.loc[1, "is_suspicious"])
 
-    def test_get_threshold_none_settings(self):
-        self.assertEqual(get_threshold(None), 0.5)
-
-    def test_is_suspicious_below_threshold(self):
-        self.assertTrue(is_suspicious(0.3, 0.5))
-
-    def test_is_suspicious_at_threshold(self):
-        self.assertFalse(is_suspicious(0.5, 0.5))
-
-    def test_is_suspicious_above_threshold(self):
-        self.assertFalse(is_suspicious(0.7, 0.5))
-
-    def test_is_suspicious_zero_score(self):
-        self.assertTrue(is_suspicious(0.0, 0.1))
+    def test_empty_df(self):
+        result = apply_threshold(pd.DataFrame({"scom_score": []}))
+        self.assertTrue(result.empty)
+        self.assertIn("threshold_value", result.columns)
+        self.assertIn("threshold_method", result.columns)
+        self.assertIn("is_suspicious", result.columns)
 
 
 class ThresholdUltimateTest(unittest.TestCase):

@@ -1,6 +1,6 @@
 [project]
 name = "boundary-analyzer"
-version = "0.7.8"
+version = "0.7.9"
 description = "SCOM-based microservice boundary analysis from Jaeger traces"
 readme = "CHANGELOG.md"
 license = "MIT"
@@ -28,9 +28,11 @@ mba = "boundary_analyzer.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+packages = {find = {where = ["src"]}}
+include-package-data = true
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools.package-data]
+boundary_analyzer = ["auto/teastore/docker-compose-otel.yaml"]
 
 [project.optional-dependencies]
 dev = [

@@ -143,4 +143,12 @@ def get_llm_enabled(settings: Settings | None = None) -> bool:
         return False
 
     api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
-    return bool(api_key)
+    if api_key:
+        return True
+
+    try:
+        import requests as _requests
+        resp = _requests.get("http://localhost:11434/api/tags", timeout=2)
+        return resp.status_code == 200
+    except Exception:
+        return False

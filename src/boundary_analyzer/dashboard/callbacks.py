@@ -32,8 +32,8 @@ def _resolve_data_dir(url_search: str = "", cli_fallback: str = "") -> Path:
     return get_data_dir()
 
 
-def _make_freshness_label(data_dir: Path) -> html.Div:
-    """Build the 'UPDATED' label for the data source bar."""
+def _make_source_freshness(data_dir: Path) -> tuple[html.Div, html.Div]:
+    """Build data-source-info and data-freshness-info labels."""
     from boundary_analyzer.dashboard.app import _get_data_freshness
 
     freshness = _get_data_freshness(data_dir)
@@ -41,37 +41,34 @@ def _make_freshness_label(data_dir: Path) -> html.Div:
         label = str(data_dir.resolve())
     except OSError:
         label = str(data_dir)
-    return html.Div(
-        style={"display": "flex", "alignItems": "center", "gap": "16px"},
+
+    source_info = html.Div(
+        style={"display": "flex", "alignItems": "center", "gap": "6px"},
         children=[
-            html.Div(
-                style={"display": "flex", "alignItems": "center", "gap": "6px"},
-                children=[
-                    html.Span("PATH", style={
-                        "fontFamily": T["font_mono"], "fontSize": "8px",
-                        "letterSpacing": "2px", "color": T["text_muted"],
-                    }),
-                    html.Span(label, style={
-                        "fontFamily": T["font_mono"], "fontSize": "10px",
-                        "color": T["cyan"],
-                    }),
-                ],
-            ),
-            html.Div(
-                style={"display": "flex", "alignItems": "center", "gap": "6px"},
-                children=[
-                    html.Span("UPDATED", style={
-                        "fontFamily": T["font_mono"], "fontSize": "8px",
-                        "letterSpacing": "2px", "color": T["text_muted"],
-                    }),
-                    html.Span(freshness, style={
-                        "fontFamily": T["font_mono"], "fontSize": "10px",
-                        "color": T["amber"],
-                    }),
-                ],
-            ),
+            html.Span("PATH", style={
+                "fontFamily": T["font_mono"], "fontSize": "8px",
+                "letterSpacing": "2px", "color": T["text_muted"],
+            }),
+            html.Span(label, style={
+                "fontFamily": T["font_mono"], "fontSize": "10px",
+                "color": T["cyan"],
+            }),
         ],
     )
+    freshness_info = html.Div(
+        style={"display": "flex", "alignItems": "center", "gap": "6px"},
+        children=[
+            html.Span("UPDATED", style={
+                "fontFamily": T["font_mono"], "fontSize": "8px",
+                "letterSpacing": "2px", "color": T["text_muted"],
+            }),
+            html.Span(freshness, style={
+                "fontFamily": T["font_mono"], "fontSize": "10px",
+                "color": T["amber"],
+            }),
+        ],
+    )
+    return source_info, freshness_info
 
 
 def register_callbacks(app: dash.Dash) -> None:
@@ -129,8 +126,8 @@ def register_callbacks(app: dash.Dash) -> None:
     def load_page(url_search: str | None, cli_fallback: str) -> tuple:
         data_dir = _resolve_data_dir(url_search or "", cli_fallback or "")
         content = _build_page_content(data_dir)
-        info = _make_freshness_label(data_dir)
-        return content, info, None
+        source_info, freshness_info = _make_source_freshness(data_dir)
+        return content, source_info, freshness_info
 
     # ── Table navigation between overview ↔ detail ───────────────────
     @app.callback(

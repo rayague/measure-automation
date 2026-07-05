@@ -60,7 +60,11 @@ def _is_endpoint_span(
     tags: list[dict[str, Any]] = []
     if tags_str:
         try:
-            tags = json.loads(tags_str)
+            parsed = json.loads(tags_str)
+            if isinstance(parsed, list):
+                tags = parsed
+            elif isinstance(parsed, dict):
+                tags = [{"key": k, "value": v} for k, v in parsed.items()]
         except (json.JSONDecodeError, TypeError):
             pass
 
@@ -140,7 +144,11 @@ def extract_endpoints(
         tags = []
         if tags_str:
             try:
-                tags = json.loads(tags_str)
+                parsed = json.loads(tags_str)
+                if isinstance(parsed, list):
+                    tags = parsed
+                elif isinstance(parsed, dict):
+                    tags = [{"key": k, "value": v} for k, v in parsed.items()]
             except (json.JSONDecodeError, TypeError):
                 tags = []
         return build_endpoint_key(operation_name, tags, normalize=normalize)

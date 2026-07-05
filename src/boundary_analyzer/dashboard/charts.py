@@ -183,7 +183,7 @@ def create_animated_bar_chart(df: pd.DataFrame) -> dcc.Graph:
     elif "threshold" in df_sorted.columns:
         threshold = float(df_sorted["threshold"].iloc[0])
     else:
-        threshold = 0.75
+        threshold = 0.5
 
     fig = go.Figure()
 
@@ -334,7 +334,7 @@ def create_scom_distribution(df: pd.DataFrame) -> dcc.Graph:
     elif "threshold" in df.columns:
         threshold = float(df["threshold"].iloc[0])
     else:
-        threshold = 0.75
+        threshold = 0.5
 
     scores = df["scom_score"].values.astype(float)
     healthy_sc = df.loc[~df["is_suspicious"], "scom_score"].values
@@ -518,7 +518,7 @@ def create_cohesion_gauge(scom_score: float, service_name: str) -> dcc.Graph:
     Used in the service detail page to give an immediate visual verdict.
     """
     score = float(scom_score)
-    is_suspicious = score < 0.75  # default; override if threshold is passed
+    is_suspicious = score < 0.5  # default; override if threshold is passed
 
     # Pick needle colour
     needle_col = _RED if is_suspicious else _CYAN
@@ -528,7 +528,7 @@ def create_cohesion_gauge(scom_score: float, service_name: str) -> dcc.Graph:
             mode="gauge+number+delta",
             value=round(score, 4),
             delta=dict(
-                reference=0.75,
+                reference=0.5,
                 valueformat=".4f",
                 increasing=dict(color=_GREEN),
                 decreasing=dict(color=_RED),
@@ -542,8 +542,8 @@ def create_cohesion_gauge(scom_score: float, service_name: str) -> dcc.Graph:
             gauge=dict(
                 axis=dict(
                     range=[0, 1],
-                    tickvals=[0, 0.2, 0.4, 0.6, 0.75, 0.8, 1.0],
-                    ticktext=["0.0", "0.2", "0.4", "0.6", "0.75", "0.8", "1.0"],
+                    tickvals=[0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0],
+                    ticktext=["0.0", "0.2", "0.4", "0.5", "0.6", "0.8", "1.0"],
                     tickfont=dict(family=_FONT_MONO, size=9, color=_TEXT_S),
                     tickcolor=_TICK_COLOR,
                     tickwidth=1,
@@ -559,16 +559,16 @@ def create_cohesion_gauge(scom_score: float, service_name: str) -> dcc.Graph:
                 bordercolor=_AXIS_LINE,
                 steps=[
                     # Critical zone
-                    dict(range=[0, 0.60], color="rgba(255,23,68,0.12)"),
+                    dict(range=[0, 0.40], color="rgba(255,23,68,0.12)"),
                     # Warning zone
-                    dict(range=[0.60, 0.75], color="rgba(255,152,0,0.12)"),
+                    dict(range=[0.40, 0.5], color="rgba(255,152,0,0.12)"),
                     # Healthy zone
-                    dict(range=[0.75, 1.0], color="rgba(0,229,255,0.08)"),
+                    dict(range=[0.5, 1.0], color="rgba(0,229,255,0.08)"),
                 ],
                 threshold=dict(
                     line=dict(color=_AMBER, width=3),
                     thickness=0.75,
-                    value=0.75,
+                    value=0.5,
                 ),
             ),
             title=dict(
@@ -821,7 +821,7 @@ def create_scom_timeline(df: pd.DataFrame) -> dcc.Graph:
             )
 
     # Threshold reference line
-    threshold = float(df["threshold"].iloc[0]) if "threshold" in df.columns else 0.75
+    threshold = float(df["threshold"].iloc[0]) if "threshold" in df.columns else 0.5
     fig.add_hline(
         y=threshold,
         line=dict(color=_AMBER, width=1.5, dash="dot"),

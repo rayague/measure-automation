@@ -152,6 +152,11 @@ def main() -> int:
     _save_cache(output_dir, cache)
 
     logger.info("Saved %d/%d traces to: %s", len(all_traces), total_traces, out_file)
+
+    if not all_traces:
+        logger.error("No traces collected for service '%s' in the lookback window.", service_name)
+        return 5
+
     return 0
 
 
