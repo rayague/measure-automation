@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.8.0 (2026-07-05)
+
+### Major — TeaStore benchmark automated, CLI overhaul
+
+- **TeaStore real ID discovery**: traffic generator now scrapes the live TeaStore
+  homepage to discover real category/product IDs, fixing broken URLs like
+  `/category/1` (404) → `/category?category=1` (200).
+- **TeaStore runner module** (`auto/teastore_runner.py`): OTel agent management,
+  Docker pre-flight checks, `--prune` flag, user-friendly error hints,
+  parallel container startup, 3x-consecutive-200 health verification.
+- **CLI**: `--wait` default 300→900, `--prune` flag for `mba teastore`,
+  `runs compare` JSON null-safe key lookup.
+- **Dashboard fixes**: `app.py`, `callbacks.py`, `charts.py` — null guards,
+  SCOM display, heatmap fallbacks.
+- **Log ingestion**: `raw_text` format added, `generic_sql` multi-line
+  correlation improved.
+- **Deleted dead code**: `metrics/cohesion_rules.py` removed.
+- **590 tests pass**, 3 skipped (no regressions).
+
 ## v0.7.8 (2026-06-19)
 
 ### Critical fixes — Dashboard heatmap now works end-to-end
