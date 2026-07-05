@@ -30,6 +30,8 @@ from rich.console import Console, Group
 from rich.layout import Layout  # noqa: F401 – part of the specified API surface
 from rich.live import Live
 from rich.panel import Panel
+
+from boundary_analyzer import __version__ as _MBA_VERSION
 from rich.progress import (
     BarColumn,
     Progress,
@@ -204,7 +206,7 @@ class MBALiveUI:
         services: list[str],
         total_duration: int,
         workers: int,
-        version: str = "0.7.8",
+        version: str = _MBA_VERSION,
     ) -> None:
         self._project_name = project_name
         self._services = services

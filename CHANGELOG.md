@@ -1,5 +1,36 @@
 # Changelog
 
+## v0.8.1 (2026-07-05)
+
+### TeaStore traffic fix, universal ingestion hardening, span dedup
+
+- **TeaStore traffic generator fixed**: was requesting `/category/1`, `/product/1`
+  (path segments) which 404 against TeaStore's real routing — verified against
+  TeaStore's own source (`CategoryServlet.java`/`ProductServlet.java`) that IDs are
+  read from query-string params (`?category=1&page=1`, `?id=1`). The generator now
+  discovers real category/product IDs by parsing the live index/category pages
+  instead of guessing IDs, with a static-page fallback if the catalog is empty.
+- **Span deduplication in the ingestion pipeline** (`run_pipeline.py`): traces
+  repeated across multiple input files (e.g. Jaeger's per-service export returning
+  the full multi-service trace once per participating service) are now deduplicated
+  by `(trace_id, span_id)` before analysis, fixing inflated endpoint/table frequency
+  counts that skewed the weighted SCOM score.
+- **Universal log ingestion `raw_text` guaranteed fallback**: any non-empty file
+  that matches none of the 8 structured formats (Jaeger/Zipkin/OTLP/Locust/nginx/
+  W3C/generic_sql/json_lines) is now still ingested — one event span per line,
+  with best-effort inline HTTP/SQL recognition — instead of raising an error.
+  Ingestion report now surfaces per-file span/HTTP/DB counts, low-confidence
+  warnings, and duplicate-span counts.
+- **CLI fixes**: `mba benchmark teastore --wait` default 300→900s (was timing out
+  before TeaStore's 6 JVMs finish starting, inconsistent with `mba teastore`'s
+  own 900s default); TeaStore benchmark description corrected MySQL (was
+  mislabeled PostgreSQL).
+- **Live terminal dashboard version fix** (`auto/live_ui.py`): version string was
+  hardcoded to a stale `"0.7.8"` literal; now reads `boundary_analyzer.__version__`.
+- **Tests**: added `tests/test_log_ingestion.py` (23 tests — the ingestion module
+  had zero prior coverage), `tests/test_pipeline_dedup.py`, `tests/test_teastore_runner.py`
+  (7 tests for the ID-discovery fix). 592 passed, 3 skipped, no regressions.
+
 ## v0.8.0 (2026-07-05)
 
 ### Major — TeaStore benchmark automated, CLI overhaul
