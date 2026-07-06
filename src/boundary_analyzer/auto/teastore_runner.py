@@ -162,12 +162,68 @@ def _prepare_compose_file() -> Path:
     return _PATCHED_COMPOSE
 
 
+#: Host ports the TeaStore compose stack publishes; checked before deploying.
+_REQUIRED_HOST_PORTS: dict[int, str] = {
+    8080: "TeaStore WebUI",
+    16686: "Jaeger UI",
+    4318: "Jaeger OTLP receiver",
+}
+
+
+def _who_holds_port(port: int) -> str:
+    """Best-effort description of what currently holds *port* on the host."""
+    # A Docker container publishing the port is the most common culprit.
+    try:
+        result = subprocess.run(
+            ["docker", "ps", "--format", "{{.Names}}\t{{.Ports}}"],
+            capture_output=True, text=True, timeout=10,
+        )
+        for line in result.stdout.splitlines():
+            if f":{port}->" in line:
+                return f"Docker container '{line.split(chr(9))[0]}'"
+    except Exception:
+        pass
+    return "another process on this machine (or a stale Docker Desktop port binding)"
+
+
+def _check_ports_available() -> None:
+    """Fail fast, with a precise message, if a required host port is taken.
+
+    Without this, the port conflict only surfaces mid-`docker compose up`,
+    after most containers have already been created — a confusing wall of
+    Docker output ending in a raw 'ports are not available' daemon error.
+    """
+    import socket
+
+    blocked: list[str] = []
+    for port, label in _REQUIRED_HOST_PORTS.items():
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            s.bind(("0.0.0.0", port))
+        except OSError:
+            blocked.append(f"  - port {port} ({label}): held by {_who_holds_port(port)}")
+        finally:
+            s.close()
+
+    if blocked:
+        logger.error("Cannot start TeaStore — required port(s) already in use:")
+        for line in blocked:
+            logger.error(line)
+        logger.error("")
+        logger.error("To fix: stop whatever holds the port(s) above, then re-run.")
+        logger.error("If `docker ps` shows nothing using the port, Docker Desktop may be")
+        logger.error("holding a stale binding from a removed container — restart Docker")
+        logger.error("Desktop (or run `wsl --shutdown` and start it again) to release it.")
+        raise RuntimeError(f"Required port(s) in use: {', '.join(str(p) for p in _REQUIRED_HOST_PORTS if any(f'port {p} ' in b for b in blocked))}. Cannot start TeaStore.")
+
+
 def docker_compose_up() -> None:
     if not _check_docker_healthy():
         _hint_docker_restart()
         raise RuntimeError("Docker is not healthy. Cannot start TeaStore.")
 
     _docker_cleanup_teastore()
+    _check_ports_available()
 
     compose_file = _prepare_compose_file()
     logger.info("Starting TeaStore + Jaeger via docker compose...")
@@ -182,6 +238,9 @@ def docker_compose_up() -> None:
             logger.error("Docker Desktop returned an internal error (HTTP 500).")
             logger.error("The Docker daemon may be overloaded or in a broken state.")
             _hint_docker_restart()
+        elif "ports are not available" in stderr or "address already in use" in stderr.lower():
+            logger.error("A required host port was taken between the pre-flight check and deploy.")
+            logger.error("Stop the conflicting process/container and re-run.")
         elif "image" in stderr and "not found" in stderr.lower():
             logger.error("One or more TeaStore Docker images could not be pulled.")
             logger.error("Run: docker compose -f \"{}\" pull".format(str(_COMPOSE_SRC)))
@@ -231,36 +290,49 @@ def wait_for_services(timeout: int = 900, interval: int = 10) -> float:
 #: therefore 404s — no servlet is mapped to that path — and the WebUI never
 #: calls persistence-service to actually browse the catalog. Verified against
 #: DescartesResearch/TeaStore's CategoryServlet.java and ProductServlet.java.
-_CATEGORY_LINK_RE = re.compile(r"category\?category=(\d+)")
-_PRODUCT_LINK_RE = re.compile(r"product\?id=(\d+)")
+#: Links in TeaStore's JSPs are emitted via ``<c:url>``, which appends a
+#: ``;jsessionid=<hex>`` path segment when the client has not yet presented a
+#: session cookie — e.g. ``product;jsessionid=ABC123?id=7``. The optional
+#: group below tolerates that (confirmed live: product discovery found 0
+#: products without it, because every product link on a cookie-less first
+#: request carries the rewritten session id). ``&amp;`` handles HTML-escaped
+#: query separators.
+_CATEGORY_LINK_RE = re.compile(r"category(?:;jsessionid=[^?\"']*)?\?category=(\d+)")
+_PRODUCT_LINK_RE = re.compile(r"product(?:;jsessionid=[^?\"']*)?\?id=(\d+)")
 
 
-def _discover_category_ids(base_url: str, timeout: int = 15) -> list[int]:
+def _discover_category_ids(base_url: str, timeout: int = 15, http: requests.Session | None = None) -> list[int]:
     """Discover real category IDs by parsing the links on the TeaStore index page.
 
     The index page always lists every category in its navigation bar
     (``IndexServlet`` fetches all categories unconditionally), so this works
     regardless of how the database was seeded/sized.
     """
+    client = http or requests
     try:
-        resp = requests.get(f"{base_url}/", timeout=timeout)
+        resp = client.get(f"{base_url}/tools.descartes.teastore.webui/", timeout=timeout)
         resp.raise_for_status()
         return sorted({int(m) for m in _CATEGORY_LINK_RE.findall(resp.text)})
     except (requests.RequestException, OSError):
         return []
 
 
-def _discover_product_ids(base_url: str, category_id: int, timeout: int = 15) -> list[int]:
+def _discover_product_ids(base_url: str, category_id: int, timeout: int = 15, http: requests.Session | None = None) -> list[int]:
     """Discover real product IDs by parsing the product listing of one category page."""
+    client = http or requests
     try:
-        resp = requests.get(f"{base_url}/category", params={"category": category_id, "page": 1}, timeout=timeout)
+        resp = client.get(
+            f"{base_url}/tools.descartes.teastore.webui/category",
+            params={"category": category_id, "page": 1},
+            timeout=timeout,
+        )
         resp.raise_for_status()
         return sorted({int(m) for m in _PRODUCT_LINK_RE.findall(resp.text)})
     except (requests.RequestException, OSError):
         return []
 
 
-def _build_traffic_paths(base_url: str) -> list[str]:
+def _build_traffic_paths(base_url: str, http: requests.Session | None = None) -> list[str]:
     """Build request paths using real category/product IDs discovered from the
     running catalog, instead of guessed path segments the WebUI doesn't route.
 
@@ -268,11 +340,11 @@ def _build_traffic_paths(base_url: str) -> list[str]:
     category could be discovered (e.g. an empty or misconfigured database) —
     still valid traffic, just without category/product coverage.
     """
-    category_ids = _discover_category_ids(base_url)
+    category_ids = _discover_category_ids(base_url, http=http)
 
     product_ids: list[int] = []
     for cid in category_ids[:3]:
-        product_ids.extend(_discover_product_ids(base_url, cid)[:3])
+        product_ids.extend(_discover_product_ids(base_url, cid, http=http)[:3])
 
     paths = ["/tools.descartes.teastore.webui/", "/tools.descartes.teastore.webui/login"]
     for cid in category_ids[:5]:
@@ -293,10 +365,14 @@ def _build_traffic_paths(base_url: str) -> list[str]:
     return paths
 
 
-def generate_traffic(duration_sec: int = 60, interval_sec: float = 2.0, base_url: str = "http://localhost:8080") -> None:
+def generate_traffic(duration_sec: int = 60, interval_sec: float = 0.5, base_url: str = "http://localhost:8080") -> None:
     logger.info(f"Generating traffic for {duration_sec}s (request every {interval_sec}s)...")
 
-    paths = _build_traffic_paths(base_url)
+    # One shared session for discovery + traffic: keeps the JSESSIONID cookie,
+    # so the servlet container stops rewriting every link with ;jsessionid=…
+    # and the traffic behaves like one browsing user instead of N cold clients.
+    http = requests.Session()
+    paths = _build_traffic_paths(base_url, http=http)
 
     start = time.time()
     sent = 0
@@ -305,7 +381,7 @@ def generate_traffic(duration_sec: int = 60, interval_sec: float = 2.0, base_url
         path = paths[sent % len(paths)]
         url = f"{base_url}{path}"
         try:
-            requests.get(url, timeout=15)
+            http.get(url, timeout=15)
             sent += 1
             if sent % 10 == 0:
                 logger.info(f"  ... {sent} requests sent ({failed} failed)")

@@ -109,10 +109,11 @@ def _load_trends(base_dir: Path, max_runs: int = 10) -> pd.DataFrame:
       - columns: run timestamps (YYYY-MM-DD HH:MM)
       - values: SCOM score per service per run
     """
-    from boundary_analyzer.auto.run_registry import list_runs, load_run_meta
+    from boundary_analyzer.auto.run_registry import list_runs, load_run_meta, resolve_data_root
 
-    # Infer data root from base_dir, defaulting to "data"
-    data_root_guess = base_dir.parent.parent if base_dir.parent.name == "runs" else Path("data")
+    # Infer data root from base_dir when it points inside a runs/ tree;
+    # otherwise resolve the registry location centrally (cwd-independent).
+    data_root_guess = base_dir.parent.parent if base_dir.parent.name == "runs" else resolve_data_root()
     all_runs = list_runs(data_root=data_root_guess)[:max_runs]
     if not all_runs:
         return pd.DataFrame()

@@ -22,6 +22,44 @@ RANK_CSV = "service_rank.csv"
 SUSPICIOUS_CSV = "suspicious_services.csv"
 LAST_RUN_FILE = "last_run.txt"
 
+#: Environment variable that pins the registry location explicitly.
+DATA_DIR_ENV_VAR = "MBA_DATA_DIR"
+
+
+def resolve_data_root() -> Path:
+    """Resolve where the run registry lives, independent of the current directory.
+
+    Historically every registry function defaulted to the *relative* path
+    ``data/`` — i.e. relative to whatever directory the user happened to run
+    the command from. Runs saved by ``mba full`` inside project A's folder
+    were then invisible to ``mba dashboard`` or ``mba runs list`` launched
+    from project B or from anywhere else, which made results look like they
+    had silently vanished.
+
+    Resolution order:
+
+    1. ``MBA_DATA_DIR`` environment variable, when set — explicit override.
+    2. ``./data`` when it already contains a registry index
+       (``data/runs/runs.json``) — backwards compatibility: existing local
+       registries keep working when you're inside those directories.
+    3. A per-user central directory otherwise, so that runs land in ONE
+       place no matter where the command is launched from:
+       ``%LOCALAPPDATA%/boundary_analyzer/data`` on Windows,
+       ``~/.local/share/boundary_analyzer/data`` elsewhere.
+    """
+    env_dir = os.environ.get(DATA_DIR_ENV_VAR, "").strip()
+    if env_dir:
+        return Path(env_dir)
+
+    local = Path("data")
+    if (local / RUNS_DIR_NAME / RUNS_INDEX_FILE).exists():
+        return local
+
+    if os.name == "nt":
+        base = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local")))
+        return base / "boundary_analyzer" / "data"
+    return Path.home() / ".local" / "share" / "boundary_analyzer" / "data"
+
 
 @dataclass
 class RunMeta:
@@ -127,40 +165,54 @@ def _build_run_meta(report: Any, run_id: str, report_path: Path, boundaries_dir:
                 d[new_k] = d[old_k]
 
     services_list = []
-    endpoints_total = 0
-    tables_total = 0
     for svc in project.services:
-        svc_info = {
-            "name": svc.name,
-            "language": svc.language,
-            "framework": svc.framework,
-            "endpoints": [e.key() for e in svc.endpoints],
-            "tables": [],
-        }
-        services_list.append(svc_info)
-        endpoints_total += len(svc.endpoints)
+        services_list.append(
+            {
+                "name": svc.name,
+                "language": svc.language,
+                "framework": svc.framework,
+                "endpoints": [e.key() for e in svc.endpoints],
+                "tables": [],
+            }
+        )
 
+    # Header totals must come from the SAME source as the per-service SCOM
+    # table shown by `mba runs show` (the trace-measured counts in scom_list),
+    # otherwise the summary line contradicts the rows right below it. The
+    # previous implementation mixed AST-discovered endpoint counts (a
+    # pre-deployment estimate) with trace counts, and summed per-service
+    # table counts — double-counting every table shared between services.
+    endpoints_total = 0
+    for rec in scom_list:
+        try:
+            endpoints_total += int(rec.get("Endpoints") or rec.get("endpoints") or 0)
+        except (ValueError, TypeError):
+            pass
+    if endpoints_total == 0:
+        # No SCOM rows at all (e.g. failed run) — fall back to AST discovery.
+        endpoints_total = sum(len(svc.endpoints) for svc in project.services)
+
+    # Distinct tables across the whole run, from the endpoint→table mapping
+    # when available (exact); otherwise the max per-service count is the best
+    # non-double-counting lower bound we can report.
+    tables_total = 0
+    mapping_df = scom_results_raw.get("mapping_df")
+    if mapping_df is not None and hasattr(mapping_df, "columns") and "table" in getattr(mapping_df, "columns", []):
+        try:
+            tables_total = int(mapping_df["table"].nunique())
+        except (ValueError, TypeError, KeyError):
+            tables_total = 0
+    if tables_total == 0:
         for rec in scom_list:
-            svc_name_rec = rec.get("Service") or rec.get("service") or ""
-            if svc_name_rec == svc.name:
-                ep_rec = rec.get("Endpoints") or rec.get("endpoints") or 0
-                if endpoints_total > 0:
-                    pass  # already counted from AST
-                else:
-                    try:
-                        endpoints_total += int(ep_rec)
-                    except (ValueError, TypeError):
-                        pass
-                tables_val = rec.get("Tables")
-                if tables_val is None:
-                    tables_val = rec.get("tables")
-                if tables_val is None:
-                    tables_val = rec.get("Tables/Collections", 0)
-                try:
-                    tables_total += int(tables_val)
-                except (ValueError, TypeError):
-                    pass
-                break
+            tables_val = rec.get("Tables")
+            if tables_val is None:
+                tables_val = rec.get("tables")
+            if tables_val is None:
+                tables_val = rec.get("Tables/Collections", 0)
+            try:
+                tables_total = max(tables_total, int(tables_val))
+            except (ValueError, TypeError):
+                pass
 
     traffic_step = report.step("traffic")
     traffic_data = traffic_step.data if traffic_step else {}
@@ -198,9 +250,11 @@ def _build_run_meta(report: Any, run_id: str, report_path: Path, boundaries_dir:
 
 def save_run(
     report: Any,
-    data_root: Path = Path("data"),
+    data_root: Path | None = None,
 ) -> RunMeta:
     """Save an AnalysisReport to the run registry and return its metadata."""
+    if data_root is None:
+        data_root = resolve_data_root()
     runs_dir = _ensure_runs_dir(data_root)
     project_name = report.project.root_dir.name
     run_id = _generate_run_id(project_name)
@@ -283,15 +337,19 @@ def save_run(
     return meta
 
 
-def list_runs(data_root: Path = Path("data")) -> list[dict[str, Any]]:
+def list_runs(data_root: Path | None = None) -> list[dict[str, Any]]:
     """List all saved runs, newest first."""
+    if data_root is None:
+        data_root = resolve_data_root()
     runs_dir = _ensure_runs_dir(data_root)
     index = _read_runs_index(runs_dir)
     return list(reversed(index))
 
 
-def get_run_path(run_id: str, data_root: Path = Path("data")) -> Path | None:
+def get_run_path(run_id: str, data_root: Path | None = None) -> Path | None:
     """Return the Path to a run's directory, or None if not found."""
+    if data_root is None:
+        data_root = resolve_data_root()
     runs_dir = _ensure_runs_dir(data_root)
     candidates = []
     for p in runs_dir.glob(f"{run_id}*"):
@@ -309,7 +367,7 @@ def get_run_path(run_id: str, data_root: Path = Path("data")) -> Path | None:
     return None
 
 
-def load_run_meta(run_id: str, data_root: Path = Path("data")) -> dict[str, Any] | None:
+def load_run_meta(run_id: str, data_root: Path | None = None) -> dict[str, Any] | None:
     """Load a run's metadata from its meta.json."""
     run_dir = get_run_path(run_id, data_root)
     if not run_dir:
@@ -324,7 +382,7 @@ def load_run_meta(run_id: str, data_root: Path = Path("data")) -> dict[str, Any]
         return None
 
 
-def load_run_csv(run_id: str, csv_name: str, data_root: Path = Path("data")) -> str | None:
+def load_run_csv(run_id: str, csv_name: str, data_root: Path | None = None) -> str | None:
     """Load a CSV from a run's directory by name."""
     import pandas as pd
 
@@ -341,8 +399,10 @@ def load_run_csv(run_id: str, csv_name: str, data_root: Path = Path("data")) -> 
         return None
 
 
-def get_last_run(data_root: Path = Path("data")) -> dict[str, Any] | None:
+def get_last_run(data_root: Path | None = None) -> dict[str, Any] | None:
     """Get the most recent run's metadata."""
+    if data_root is None:
+        data_root = resolve_data_root()
     runs_dir = _ensure_runs_dir(data_root)
     last_run_file = runs_dir / LAST_RUN_FILE
     if last_run_file.exists():
@@ -360,8 +420,10 @@ def get_last_run(data_root: Path = Path("data")) -> dict[str, Any] | None:
     return None
 
 
-def delete_run(run_id: str, data_root: Path = Path("data")) -> bool:
+def delete_run(run_id: str, data_root: Path | None = None) -> bool:
     """Delete a run's directory and remove it from the index."""
+    if data_root is None:
+        data_root = resolve_data_root()
     runs_dir = _ensure_runs_dir(data_root)
     run_dir = get_run_path(run_id, data_root)
     if not run_dir:

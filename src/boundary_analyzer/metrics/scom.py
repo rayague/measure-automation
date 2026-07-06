@@ -112,7 +112,8 @@ def _compute_service_scom(
     endpoints = list(endpoint_sets.keys())
     endpoints_count = len(endpoints)
 
-    # "La définition attribue une valeur de cohésion de 0 aux services ayant moins de deux points d'accès"
+    # Per the paper's definition, services with fewer than two endpoints
+    # are assigned a cohesion of 0 (no pair exists to measure overlap on).
     if endpoints_count < 2:
         return 0.0
 

@@ -1070,7 +1070,7 @@ def _main(argv: list[str] | None = None) -> int:
                 table.add_column("Endpoints")
                 table.add_column("Tables")
                 table.add_column("SCOM")
-                table.add_column("Cohésion")
+                table.add_column("Cohesion")
                 table.add_column("Status")
                 for s in scoms:
                     name = s.get("Service") if s.get("Service") is not None else (s.get("service") or "?")
@@ -1095,7 +1095,7 @@ def _main(argv: list[str] | None = None) -> int:
         if args.runs_command == "delete":
             if args.all:
                 from boundary_analyzer.auto.run_registry import list_runs
-                all_runs = list_runs(data_root_guess)
+                all_runs = list_runs()
                 if not all_runs:
                     _console.print("  [yellow]No runs to delete.[/]")
                     return 0

@@ -69,6 +69,31 @@ class DiscoverCategoryIdsTest(unittest.TestCase):
         mock_get.side_effect = requests.ConnectionError("boom")
         self.assertEqual(_discover_category_ids("http://localhost:8080"), [])
 
+    @patch("boundary_analyzer.auto.teastore_runner.requests.get")
+    def test_tolerates_jsessionid_rewritten_links(self, mock_get):
+        # TeaStore's <c:url> JSP tag appends ;jsessionid=<hex> to every link
+        # when the client has no session cookie yet (first request always).
+        # Confirmed live: without tolerating this, product discovery found 0
+        # products on a real deployment.
+        html = """
+        <a href="category;jsessionid=8A3F00D9C2?category=2&page=1">Tea</a>
+        <a href="product;jsessionid=8A3F00D9C2?id=42">Green Tea</a>
+        """
+        mock_get.return_value = _fake_response(html)
+        self.assertEqual(_discover_category_ids("http://localhost:8080"), [2])
+        self.assertEqual(_discover_product_ids("http://localhost:8080", 2), [42])
+
+    @patch("boundary_analyzer.auto.teastore_runner.requests.get")
+    def test_discovery_urls_include_webui_context_path(self, mock_get):
+        # Confirmed live: requesting /category at the Tomcat root (outside the
+        # /tools.descartes.teastore.webui context) 404s, so product discovery
+        # silently returned []. Both discovery URLs must carry the context path.
+        mock_get.return_value = _fake_response("<html></html>")
+        _discover_category_ids("http://localhost:8080")
+        _discover_product_ids("http://localhost:8080", 2)
+        for call in mock_get.call_args_list:
+            self.assertIn("/tools.descartes.teastore.webui", call.args[0])
+
 
 class DiscoverProductIdsTest(unittest.TestCase):
     @patch("boundary_analyzer.auto.teastore_runner.requests.get")
