@@ -215,13 +215,31 @@ def _extract_host_port(ports: list) -> int | None:
     return None
 
 
-def _discover_compose_app_services(root: Path) -> list[tuple[str, int | None, Path | None]]:
-    compose_file = None
-    for name in ["docker-compose.yml", "docker-compose.yaml"]:
+#: All compose file names recognized by the Compose specification, in the
+#: spec's own precedence order. ``compose.yaml`` is the canonical modern name
+#: (Docker's official samples use it) — only looking for the legacy
+#: ``docker-compose.*`` names made discovery silently miss the compose file
+#: on current-convention projects, so the orchestrator fell back to local
+#: process deployment and failed (found live on docker/awesome-compose).
+COMPOSE_FILE_NAMES: tuple[str, ...] = (
+    "compose.yaml",
+    "compose.yml",
+    "docker-compose.yml",
+    "docker-compose.yaml",
+)
+
+
+def find_compose_file(root: Path) -> Path | None:
+    """Return the project's compose file using the Compose-spec name order."""
+    for name in COMPOSE_FILE_NAMES:
         p = root / name
         if p.exists():
-            compose_file = p
-            break
+            return p
+    return None
+
+
+def _discover_compose_app_services(root: Path) -> list[tuple[str, int | None, Path | None]]:
+    compose_file = find_compose_file(root)
 
     if not compose_file:
         return []
@@ -258,7 +276,7 @@ def _discover_compose_app_services(root: Path) -> list[tuple[str, int | None, Pa
 
 
 def _detect_docker(root: Path) -> bool:
-    return (root / "docker-compose.yml").exists() or (root / "Dockerfile").exists()
+    return find_compose_file(root) is not None or (root / "Dockerfile").exists()
 
 
 def _derive_service_name(entry_path: Path, root: Path) -> str:

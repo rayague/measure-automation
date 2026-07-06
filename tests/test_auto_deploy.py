@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -187,15 +188,49 @@ class ComposeOverrideJavaTest(unittest.TestCase):
             language="node",
             framework="express",
         )
-        yaml_str = _build_compose_override(project)
+        # Provisioned case: modules cached on the host -> NODE_OPTIONS points
+        # at the bind-mounted absolute path (the app image needs nothing).
+        with mock.patch("boundary_analyzer.auto.deploy._ensure_node_otel", return_value="/host/otel-node"):
+            yaml_str = _build_compose_override(project)
         data = yaml.safe_load(yaml_str)
         self.assertIn("node-app", data["services"])
         env = data["services"]["node-app"]["environment"]
-        self.assertIn("NODE_OPTIONS=--require @opentelemetry/auto-instrumentations-node/register", env)
+        self.assertIn("NODE_OPTIONS=--require /mba-otel-node/node_modules/@opentelemetry/auto-instrumentations-node/register", env)
         self.assertIn("OTEL_METRICS_EXPORTER=none", env)
         self.assertIn("OTEL_LOGS_EXPORTER=none", env)
+        # The JS SDK register entrypoint speaks http/protobuf -> port 4318;
+        # pointing it at the gRPC port silently exports nothing.
+        self.assertIn("OTEL_EXPORTER_OTLP_ENDPOINT=http://mba-jaeger:4318", env)
+        self.assertIn("OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf", env)
         volumes = data["services"]["node-app"].get("volumes", [])
-        self.assertEqual(len(volumes), 0)
+        self.assertEqual(volumes, ["/host/otel-node:/mba-otel-node:ro"])
+
+    def test_build_override_node_without_provisioning_omits_node_options(self):
+        # If the OTel modules could not be provisioned on the host, injecting
+        # NODE_OPTIONS would crash every node process in the container with
+        # MODULE_NOT_FOUND -- the override must omit it (service runs untraced).
+        svc = ServiceInfo(
+            name="node-app",
+            language="node",
+            framework="express",
+            entry_points=[EntryPoint(path=Path("server.js"), framework="express")],
+            deployment="docker-compose",
+            compose_service_name="node-app",
+            ports=[3000],
+        )
+        project = ProjectInfo(
+            services=[svc],
+            root_dir=self.tmpdir,
+            has_docker=True,
+            language="node",
+            framework="express",
+        )
+        with mock.patch("boundary_analyzer.auto.deploy._ensure_node_otel", return_value=None):
+            yaml_str = _build_compose_override(project)
+        data = yaml.safe_load(yaml_str)
+        env = data["services"]["node-app"]["environment"]
+        self.assertFalse(any(e.startswith("NODE_OPTIONS=") for e in env))
+        self.assertNotIn("volumes", data["services"]["node-app"])
 
     def test_build_override_adds_dotnet_otel(self):
         svc = ServiceInfo(

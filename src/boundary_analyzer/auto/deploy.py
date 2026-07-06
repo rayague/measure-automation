@@ -726,12 +726,67 @@ def _ensure_java_agent() -> str | None:
         return None
 
 
+#: Host-side cache where the OTel Node.js auto-instrumentation modules are
+#: installed once, then bind-mounted read-only into Node containers — the
+#: same self-contained pattern as the Java agent JAR. Injecting
+#: ``NODE_OPTIONS=--require @opentelemetry/...`` *without* provisioning the
+#: package only works if the application image happens to ship it; on any
+#: real-world image it makes every node process (npm included) crash at
+#: startup with MODULE_NOT_FOUND.
+_NODE_OTEL_DIR = Path.home() / ".cache" / "boundary_analyzer" / "otel-node"
+
+#: npm packages required for zero-code Node instrumentation. Pure-JS only
+#: (no native builds), so one host-side install works for any container
+#: platform/architecture.
+_NODE_OTEL_PACKAGES = [
+    "@opentelemetry/api@^1.9",
+    "@opentelemetry/auto-instrumentations-node@^0.50",
+]
+
+#: In-container mount point and require path for the provisioned modules.
+_NODE_OTEL_MOUNT = "/mba-otel-node"
+_NODE_OTEL_REQUIRE = f"{_NODE_OTEL_MOUNT}/node_modules/@opentelemetry/auto-instrumentations-node/register"
+
+
+def _ensure_node_otel() -> str | None:
+    """Install the OTel Node auto-instrumentation into the host cache once.
+
+    Returns the host directory to bind-mount (containing ``node_modules``),
+    or ``None`` if npm is unavailable / the install failed — in which case
+    the caller must NOT inject ``NODE_OPTIONS``, otherwise every node
+    process in the container dies on a missing module.
+    """
+    marker = _NODE_OTEL_DIR / "node_modules" / "@opentelemetry" / "auto-instrumentations-node" / "register.js"
+    if marker.exists():
+        return str(_NODE_OTEL_DIR)
+
+    npm = shutil.which("npm")
+    if npm is None:
+        logger.warning("npm not found on host — cannot provision Node OTel instrumentation; Node services will run untraced.")
+        return None
+
+    try:
+        _NODE_OTEL_DIR.mkdir(parents=True, exist_ok=True)
+        logger.info("  Installing OTel Node auto-instrumentation into %s...", _NODE_OTEL_DIR)
+        result = subprocess.run(
+            [npm, "install", "--prefix", str(_NODE_OTEL_DIR), "--no-audit", "--no-fund", *_NODE_OTEL_PACKAGES],
+            capture_output=True, text=True, timeout=300,
+        )
+        if result.returncode != 0:
+            logger.warning("npm install of OTel Node packages failed: %s", (result.stderr or result.stdout).strip()[:500])
+            return None
+        return str(_NODE_OTEL_DIR) if marker.exists() else None
+    except (OSError, subprocess.TimeoutExpired) as e:
+        logger.warning("Failed to provision Node OTel instrumentation: %s", e)
+        return None
+
+
 def _find_compose_file(project_dir: Path) -> Path | None:
-    for name in ["docker-compose.yml", "docker-compose.yaml"]:
-        p = project_dir / name
-        if p.exists():
-            return p
-    return None
+    # Delegate to the shared Compose-spec-ordered lookup so discovery and
+    # deployment can never disagree about which file the project uses.
+    from boundary_analyzer.auto.discover import find_compose_file
+
+    return find_compose_file(project_dir)
 
 
 def _parse_dockerfile_cmd(value: str) -> list[str] | None:
@@ -1099,13 +1154,31 @@ def _build_compose_override(
                 ]
 
         elif svc.language == "node":
+            # The JS SDK's register entrypoint defaults to the http/protobuf
+            # OTLP protocol, which speaks to port 4318 — pointing it at the
+            # gRPC port (4317) silently exports nothing.
             env = [
                 f"OTEL_SERVICE_NAME={svc.name}",
-                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{otel_host}:4317",
-                "NODE_OPTIONS=--require @opentelemetry/auto-instrumentations-node/register",
+                f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{otel_host}:4318",
+                "OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf",
                 "OTEL_METRICS_EXPORTER=none",
                 "OTEL_LOGS_EXPORTER=none",
             ]
+            node_otel_host = _ensure_node_otel()
+            if node_otel_host:
+                # Same self-contained pattern as the Java agent: modules live
+                # in a host cache, bind-mounted read-only; --require uses the
+                # absolute in-container path so the app image needs nothing.
+                env.append(f"NODE_OPTIONS=--require {_NODE_OTEL_REQUIRE}")
+                svc_config["volumes"] = [
+                    f"{node_otel_host}:{_NODE_OTEL_MOUNT}:ro",
+                ]
+            else:
+                logger.warning(
+                    "Node OTel modules unavailable — service '%s' will run WITHOUT tracing "
+                    "(deploy proceeds, but no spans will be collected from it).",
+                    svc.name,
+                )
 
         elif svc.language == "php":
             env = [
@@ -1376,7 +1449,7 @@ def deploy_docker_compose(
         raise AnalysisError(
             code=ErrorCode.DEPLOY_UNKNOWN,
             scope=str(project.root_dir),
-            _override_detail="No docker-compose.yml or docker-compose.yaml found.",
+            _override_detail="No compose file found (looked for compose.yaml, compose.yml, docker-compose.yml, docker-compose.yaml).",
             recoverable=False,
         )
 
