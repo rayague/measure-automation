@@ -906,6 +906,12 @@ def run_full_analysis(config: FullConfig) -> AnalysisReport:
         _print_step("*", "Discovering endpoints...")
         endpoint_map = _build_endpoint_map(project, deployment, config)
         total_eps = sum(len(eps) for eps, _ in endpoint_map.values())
+        # Show every discovered endpoint by name, per service, in discovery
+        # order — the user can see live exactly what will be exercised and
+        # immediately spot a missing or unexpected endpoint.
+        for svc_name, (eps, source) in endpoint_map.items():
+            for ep in eps:
+                _console.print(f"      [dim]{svc_name}[/]  [cyan]{ep.method:<7}[/]{ep.path}  [dim]({source})[/]")
         _print_step("v", f"Discovered {total_eps} endpoints across {len(endpoint_map)} service(s)")
     except AnalysisError as e:
         report.steps["traffic"] = StepResult(

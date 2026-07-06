@@ -1547,8 +1547,13 @@ def deploy_docker_compose(
     # (When include_jaeger is True, Jaeger is part of the compose override and
     #  is automatically on the compose network — no action needed.)
 
+    # 900s, not 300: a first cold `docker compose up --build` on a real
+    # project legitimately exceeds 5 minutes (measured 391s+ on Docker's own
+    # react-express-mysql sample — `npm ci` for the React frontend alone
+    # takes ~2 min). 300s killed builds that were seconds from finishing;
+    # subsequent builds hit the layer cache and finish fast either way.
     try:
-        retcode = proc.wait(timeout=300)
+        retcode = proc.wait(timeout=900)
     except subprocess.TimeoutExpired:
         _kill_process_tree(proc)
         if proc.stdout:
@@ -1556,7 +1561,7 @@ def deploy_docker_compose(
         reader.join(timeout=5)
         _remove_override_file(override_file)
         detail_lines = list(captured_lines)
-        detail = "\n".join(detail_lines[-20:]) if detail_lines else "docker compose timed out after 300 seconds."
+        detail = "\n".join(detail_lines[-20:]) if detail_lines else "docker compose timed out after 900 seconds."
         logger.warning("Docker Compose build timed out — see output above")
         raise AnalysisError(
             code=ErrorCode.DOCKER_COMPOSE_FAILED,

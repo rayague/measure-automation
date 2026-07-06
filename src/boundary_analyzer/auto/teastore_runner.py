@@ -457,9 +457,52 @@ def run_scom_analysis(output_dir: Path, threshold: float = 0.5, skip_no_db: bool
 
     if rc == 0:
         logger.info("SCOM analysis complete")
+        _save_to_run_registry(output_dir)
         return True
     logger.error(f"Pipeline returned exit code {rc}")
     return False
+
+
+def _save_to_run_registry(output_dir: Path) -> None:
+    """Persist the TeaStore analysis to the run registry.
+
+    Without this, TeaStore results only exist as loose CSVs in *output_dir*
+    and never show up in ``mba runs list`` or the dashboard's run selector —
+    the ``mba ingest``/``mba full`` paths save runs, but this path didn't.
+    Best-effort: a registry failure must never fail the analysis itself.
+    """
+    try:
+        import pandas as pd
+
+        from boundary_analyzer.auto.models import AnalysisReport, ProjectInfo, ServiceInfo, StepResult
+        from boundary_analyzer.auto.run_registry import save_run
+
+        project = ProjectInfo(services=[], root_dir=output_dir, language="java", framework="jakarta")
+        project.name = "teastore"
+        report = AnalysisReport(project=project)
+        report.total_duration_seconds = 0.0
+        report.report_path = output_dir / "report.md"
+        report.steps["analyze"] = StepResult(success=True, step_name="analyze", message="TeaStore SCOM pipeline complete")
+
+        scom_csv = output_dir / "processed" / "service_scom.csv"
+        if scom_csv.exists():
+            scom_df = pd.read_csv(scom_csv)
+            report.scom_results["scom_df"] = scom_df
+            project.services = [
+                ServiceInfo(name=str(n), language="java", framework="jakarta", entry_points=[], deployment="docker-compose")
+                for n in scom_df["service_name"].dropna().astype(str)
+            ]
+        rank_csv = output_dir / "processed" / "service_rank.csv"
+        if rank_csv.exists():
+            report.scom_results["rank_df"] = pd.read_csv(rank_csv)
+        mapping_csv = output_dir / "interim" / "endpoint_table_map.csv"
+        if mapping_csv.exists():
+            report.scom_results["mapping_df"] = pd.read_csv(mapping_csv)
+
+        meta = save_run(report)
+        logger.info(f"Saved run to registry: mba runs show {meta.id}")
+    except Exception as e:
+        logger.warning(f"Could not save run to registry (analysis results are still in {output_dir}): {e}")
 
 
 def docker_compose_down() -> None:
