@@ -743,9 +743,15 @@ _NODE_OTEL_PACKAGES = [
     "@opentelemetry/auto-instrumentations-node@^0.50",
 ]
 
-#: In-container mount point and require path for the provisioned modules.
+#: In-container mount point for the provisioned modules. The require uses
+#: the BARE package specifier (resolved through NODE_PATH) rather than an
+#: absolute file path: modern @opentelemetry/auto-instrumentations-node
+#: exposes ``./register`` only through its package.json export map (the
+#: real file lives at build/src/register.js), and Node only consults export
+#: maps for bare specifiers — an absolute ``.../register`` path 404s.
 _NODE_OTEL_MOUNT = "/mba-otel-node"
-_NODE_OTEL_REQUIRE = f"{_NODE_OTEL_MOUNT}/node_modules/@opentelemetry/auto-instrumentations-node/register"
+_NODE_OTEL_REQUIRE = "@opentelemetry/auto-instrumentations-node/register"
+_NODE_OTEL_NODE_PATH = f"{_NODE_OTEL_MOUNT}/node_modules"
 
 
 def _ensure_node_otel() -> str | None:
@@ -756,7 +762,9 @@ def _ensure_node_otel() -> str | None:
     the caller must NOT inject ``NODE_OPTIONS``, otherwise every node
     process in the container dies on a missing module.
     """
-    marker = _NODE_OTEL_DIR / "node_modules" / "@opentelemetry" / "auto-instrumentations-node" / "register.js"
+    # package.json is the stable presence marker — the register entrypoint's
+    # on-disk location varies across package versions (export maps).
+    marker = _NODE_OTEL_DIR / "node_modules" / "@opentelemetry" / "auto-instrumentations-node" / "package.json"
     if marker.exists():
         return str(_NODE_OTEL_DIR)
 
@@ -1167,9 +1175,10 @@ def _build_compose_override(
             node_otel_host = _ensure_node_otel()
             if node_otel_host:
                 # Same self-contained pattern as the Java agent: modules live
-                # in a host cache, bind-mounted read-only; --require uses the
-                # absolute in-container path so the app image needs nothing.
+                # in a host cache, bind-mounted read-only. NODE_PATH makes the
+                # bare specifier resolvable so its package export map applies.
                 env.append(f"NODE_OPTIONS=--require {_NODE_OTEL_REQUIRE}")
+                env.append(f"NODE_PATH={_NODE_OTEL_NODE_PATH}")
                 svc_config["volumes"] = [
                     f"{node_otel_host}:{_NODE_OTEL_MOUNT}:ro",
                 ]

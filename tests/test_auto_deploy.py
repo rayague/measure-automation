@@ -195,7 +195,11 @@ class ComposeOverrideJavaTest(unittest.TestCase):
         data = yaml.safe_load(yaml_str)
         self.assertIn("node-app", data["services"])
         env = data["services"]["node-app"]["environment"]
-        self.assertIn("NODE_OPTIONS=--require /mba-otel-node/node_modules/@opentelemetry/auto-instrumentations-node/register", env)
+        # Bare specifier (not an absolute path): the package's ./register
+        # entrypoint only exists through its export map, which Node consults
+        # for bare specifiers only. NODE_PATH makes it resolvable.
+        self.assertIn("NODE_OPTIONS=--require @opentelemetry/auto-instrumentations-node/register", env)
+        self.assertIn("NODE_PATH=/mba-otel-node/node_modules", env)
         self.assertIn("OTEL_METRICS_EXPORTER=none", env)
         self.assertIn("OTEL_LOGS_EXPORTER=none", env)
         # The JS SDK register entrypoint speaks http/protobuf -> port 4318;
