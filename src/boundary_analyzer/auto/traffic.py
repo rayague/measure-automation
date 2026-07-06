@@ -4,6 +4,7 @@ import ast
 import json
 import logging
 import random
+import re
 import string
 import threading
 import time
@@ -289,24 +290,122 @@ def _is_auth_endpoint(path: str) -> bool:
     return any(kw in lower for kw in ["login", "auth", "token", "signin", "oauth"])
 
 
-def discover_endpoints_ast(service: ServiceInfo, root_dir: Path) -> list[Endpoint]:
-    if service.language != "python":
-        return []
+#: Express / generic Node router registrations:
+#:   app.get('/path', …)   router.post("/path", …)   server.delete(`/path`, …)
+_JS_ROUTE_RE = re.compile(
+    r"""\b\w+\.(get|post|put|delete|patch)\s*\(\s*(["'`])((?:/|\.)[^"'`\n]*)\2""",
+    re.IGNORECASE,
+)
 
+#: Express .route('/path').get(…).post(…) chains — the argument lists
+#: between chained verbs are consumed with [^)]* so the chain keeps matching.
+_JS_ROUTE_CHAIN_RE = re.compile(
+    r"""\.route\s*\(\s*(["'`])(/[^"'`\n]*)\1\s*\)((?:\s*\.\s*(?:get|post|put|delete|patch)\s*\([^)]*\))+)""",
+    re.IGNORECASE | re.DOTALL,
+)
+
+#: NestJS controller decorators: @Controller('prefix') + @Get('path') etc.
+_NEST_CONTROLLER_RE = re.compile(r"""@Controller\s*\(\s*(?:(["'])([^"'\n]*)\1)?\s*\)""")
+_NEST_METHOD_RE = re.compile(r"""@(Get|Post|Put|Delete|Patch)\s*\(\s*(?:(["'])([^"'\n]*)\2)?\s*\)""")
+
+#: Laravel route registrations: Route::get('/path', …)
+_PHP_ROUTE_RE = re.compile(r"""\bRoute::(get|post|put|delete|patch)\s*\(\s*(["'])([^"'\n]*)\2""", re.IGNORECASE)
+
+
+def _normalize_route_path(path: str) -> str:
+    """Normalize framework path syntax (``:id``, ``{id}``) to a common shape."""
+    path = path.strip()
+    if not path.startswith("/"):
+        path = "/" + path
+    # Express-style :param -> {param} so downstream payload/ID logic applies.
+    path = re.sub(r":(\w+)", r"{\1}", path)
+    return path
+
+
+def _extract_js_endpoints(text: str) -> list[Endpoint]:
     endpoints: list[Endpoint] = []
-    py_files = list(root_dir.rglob("*.py"))
-
-    for py_file in py_files:
-        try:
-            tree = ast.parse(py_file.read_text(encoding="utf-8", errors="replace"))
-        except SyntaxError:
-            continue
-
-        endpoints.extend(_extract_fastapi_endpoints(tree))
-        endpoints.extend(_extract_flask_endpoints(tree))
-        endpoints.extend(_extract_django_urls(tree, py_file))
-
+    for m in _JS_ROUTE_RE.finditer(text):
+        endpoints.append(Endpoint(method=m.group(1).upper(), path=_normalize_route_path(m.group(3))))
+    for m in _JS_ROUTE_CHAIN_RE.finditer(text):
+        base = _normalize_route_path(m.group(2))
+        for verb in re.findall(r"\.\s*(get|post|put|delete|patch)\s*\(", m.group(3), re.IGNORECASE):
+            endpoints.append(Endpoint(method=verb.upper(), path=base))
     return endpoints
+
+
+def _extract_nestjs_endpoints(text: str) -> list[Endpoint]:
+    endpoints: list[Endpoint] = []
+    controller = _NEST_CONTROLLER_RE.search(text)
+    prefix = ("/" + controller.group(2).strip("/")) if controller and controller.group(2) else ""
+    for m in _NEST_METHOD_RE.finditer(text):
+        sub = m.group(3) or ""
+        path = (prefix + "/" + sub.strip("/")).rstrip("/") or "/"
+        endpoints.append(Endpoint(method=m.group(1).upper(), path=_normalize_route_path(path)))
+    return endpoints
+
+
+def _extract_php_endpoints(text: str) -> list[Endpoint]:
+    return [Endpoint(method=m.group(1).upper(), path=_normalize_route_path(m.group(3))) for m in _PHP_ROUTE_RE.finditer(text)]
+
+
+#: Directories never worth scanning for route definitions.
+_SOURCE_SCAN_EXCLUDES = {"node_modules", "vendor", "dist", "build", ".git", "__pycache__", "coverage"}
+
+
+def _iter_source_files(root_dir: Path, suffixes: tuple[str, ...], limit: int = 400):
+    count = 0
+    for p in root_dir.rglob("*"):
+        if count >= limit:
+            return
+        if not p.is_file() or p.suffix.lower() not in suffixes:
+            continue
+        if any(part in _SOURCE_SCAN_EXCLUDES for part in p.parts):
+            continue
+        count += 1
+        yield p
+
+
+def discover_endpoints_ast(service: ServiceInfo, root_dir: Path) -> list[Endpoint]:
+    """Extract endpoints from source code, per language.
+
+    Python uses real AST parsing; Node/PHP use targeted regex extraction
+    (there is no stdlib parser for those languages). Previously this
+    returned ``[]`` for every non-Python service, which meant that on any
+    Node/PHP project without an OpenAPI spec, discovery found zero
+    endpoints, zero traffic was generated, and the analysis produced
+    nothing (found live on docker/awesome-compose react-express-mysql).
+    """
+    endpoints: list[Endpoint] = []
+
+    if service.language == "python":
+        for py_file in root_dir.rglob("*.py"):
+            try:
+                tree = ast.parse(py_file.read_text(encoding="utf-8", errors="replace"))
+            except SyntaxError:
+                continue
+            endpoints.extend(_extract_fastapi_endpoints(tree))
+            endpoints.extend(_extract_flask_endpoints(tree))
+            endpoints.extend(_extract_django_urls(tree, py_file))
+
+    elif service.language == "node":
+        for js_file in _iter_source_files(root_dir, (".js", ".mjs", ".cjs", ".ts")):
+            text = js_file.read_text(encoding="utf-8", errors="replace")
+            endpoints.extend(_extract_js_endpoints(text))
+            endpoints.extend(_extract_nestjs_endpoints(text))
+
+    elif service.language == "php":
+        for php_file in _iter_source_files(root_dir, (".php",)):
+            endpoints.extend(_extract_php_endpoints(php_file.read_text(encoding="utf-8", errors="replace")))
+
+    # Deduplicate on (method, path) while preserving discovery order.
+    seen: set[tuple[str, str]] = set()
+    unique: list[Endpoint] = []
+    for ep in endpoints:
+        key = (ep.method, ep.path)
+        if key not in seen:
+            seen.add(key)
+            unique.append(ep)
+    return unique
 
 
 def _extract_fastapi_endpoints(tree: ast.AST) -> list[Endpoint]:

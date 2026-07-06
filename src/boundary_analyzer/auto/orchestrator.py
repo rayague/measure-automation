@@ -211,7 +211,28 @@ def _discover_endpoints_for_service(
             else:
                 service_dir = project_info.root_dir / ep_path.parent
         endpoints = discover_endpoints_ast(service_info, service_dir)
-        source = "AST"
+        source = "source-scan"
+
+        if not endpoints:
+            # Source scanning found the entry file but not the routes (e.g.
+            # routes registered in a file we can't parse). Fall back to a
+            # subdirectory-wide scan from the project root before giving up.
+            endpoints = discover_endpoints_ast(service_info, project_info.root_dir)
+
+    if not endpoints:
+        # Universal last resort: probe the live service root. Zero discovered
+        # endpoints means zero traffic, zero traces, and an empty analysis —
+        # a synthesized "GET /" (if the service answers) keeps the pipeline
+        # producing evidence instead of silently doing nothing.
+        try:
+            import requests as _requests
+
+            resp = _requests.get(f"http://127.0.0.1:{service_port}/", timeout=5)
+            if resp.status_code < 500:
+                endpoints = [Endpoint(method="GET", path="/")]
+                source = "live-probe"
+        except Exception:
+            pass
 
     return endpoints, source
 
