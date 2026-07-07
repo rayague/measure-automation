@@ -129,6 +129,73 @@ def register_callbacks(app: dash.Dash) -> None:
         source_info, freshness_info = _make_source_freshness(data_dir)
         return content, source_info, freshness_info
 
+    # ── AI analysis on demand: pluggable API key, memory-only ─────────
+    @app.callback(
+        Output("llm-generate-output", "children"),
+        Input("llm-generate-btn", "n_clicks"),
+        [
+            State("llm-api-key", "value"),
+            State("url", "search"),
+            State("cli-data-dir", "data"),
+        ],
+        prevent_initial_call=True,
+    )
+    def generate_llm_analysis(n_clicks, api_key, url_search, cli_fallback):
+        if not n_clicks:
+            raise dash.exceptions.PreventUpdate
+
+        import os
+
+        from dash import dcc
+
+        from boundary_analyzer.llm.analysis import generate_narrative_analysis
+        from boundary_analyzer.llm.client import ENV_API_KEY
+
+        def _msg(text: str, color: str) -> html.Div:
+            return html.Div(text, style={"fontFamily": T["font_mono"], "fontSize": "11px", "color": color})
+
+        # The key lives only in this process's environment for the session —
+        # it is never written to any file or settings store.
+        if api_key and api_key.strip():
+            os.environ[ENV_API_KEY] = api_key.strip()
+
+        data_dir = _resolve_data_dir(url_search or "", cli_fallback or "")
+        rank_path = data_dir / "service_rank.csv"
+        if not rank_path.exists():
+            rank_path = data_dir / "processed" / "service_rank.csv"
+        mapping_path = data_dir / "interim" / "endpoint_table_map.csv"
+        if not mapping_path.exists():
+            mapping_path = data_dir / "endpoint_table_map.csv"
+
+        if not rank_path.exists() or not mapping_path.exists():
+            return _msg("This run has no service_rank.csv / endpoint_table_map.csv — nothing to analyze.", T["amber"])
+
+        analysis = generate_narrative_analysis(rank_path, mapping_path, data_dir=data_dir)
+        if not analysis:
+            return _msg(
+                "LLM call failed — check the API key (or that Ollama is running locally), then try again.",
+                T["amber"],
+            )
+
+        # Persist into the run's report.md so the analysis card (and any
+        # future dashboard session) picks it up without regenerating.
+        try:
+            report_path = data_dir / "report.md"
+            marker = "## AI-Powered Analysis"
+            existing = report_path.read_text(encoding="utf-8") if report_path.exists() else "# Analysis Report\n"
+            if marker in existing:
+                existing = existing.split(marker, 1)[0].rstrip() + "\n"
+            report_path.write_text(f"{existing}\n{marker}\n\n{analysis}\n", encoding="utf-8")
+        except OSError:
+            pass  # display still works below; persistence is best-effort
+
+        return html.Div(
+            [
+                _msg("Analysis generated — saved to this run's report.md.", T["cyan"]),
+                dcc.Markdown(analysis, style={"fontSize": "13px", "color": T["text"], "marginTop": "10px"}),
+            ]
+        )
+
     # ── Table navigation between overview ↔ detail ───────────────────
     @app.callback(
         [

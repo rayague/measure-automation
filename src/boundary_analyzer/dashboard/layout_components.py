@@ -407,10 +407,65 @@ def _render_inline(text: str) -> list:
     return parts
 
 
+def _llm_generate_panel() -> html.Div:
+    """Card shown when no AI analysis exists yet: paste an API key (kept in
+    process memory only — never written to disk) and generate one on demand."""
+    input_style = {
+        "fontFamily": T["font_mono"],
+        "fontSize": "12px",
+        "background": T["bg_deep"],
+        "color": T["text"],
+        "border": f"1px solid {T['border']}",
+        "borderRadius": "6px",
+        "padding": "8px 12px",
+        "width": "340px",
+        "marginRight": "10px",
+    }
+    return html.Div(
+        [
+            html.Div("AI ANALYSIS", style={"fontFamily": T["font_mono"], "fontSize": "10px", "letterSpacing": "3px", "color": T["text_dim"], "marginBottom": "10px"}),
+            html.Div(
+                "No AI analysis in this run's report yet. Paste an OpenRouter API key to generate one — the key stays in memory for this dashboard session only and is never saved to disk. Without a key, a local Ollama instance is tried instead.",
+                style={"fontSize": "12px", "color": T["text_dim"], "marginBottom": "12px", "maxWidth": "620px"},
+            ),
+            html.Div(
+                [
+                    dcc.Input(id="llm-api-key", type="password", placeholder="sk-or-... (optional if Ollama is running)", style=input_style, debounce=True),
+                    html.Button(
+                        "Generate AI analysis",
+                        id="llm-generate-btn",
+                        n_clicks=0,
+                        style={
+                            "fontFamily": T["font_mono"],
+                            "fontSize": "11px",
+                            "letterSpacing": "1px",
+                            "padding": "9px 18px",
+                            "borderRadius": "6px",
+                            "border": f"1px solid {T['cyan_glow']}",
+                            "background": T["cyan_dim"],
+                            "color": T["cyan"],
+                            "cursor": "pointer",
+                        },
+                    ),
+                ],
+                style={"display": "flex", "alignItems": "center"},
+            ),
+            dcc.Loading(html.Div(id="llm-generate-output", style={"marginTop": "14px"}), type="dot", color=T["cyan"]),
+        ],
+        style={
+            "background": T["bg_card"],
+            "border": f"1px solid {T['border']}",
+            "borderRadius": "10px",
+            "padding": "20px 24px",
+            "marginTop": "18px",
+        },
+    )
+
+
 def _llm_analysis_card(base_dir: Path | None = None) -> html.Div:
     analysis = _load_llm_analysis(base_dir)
     if analysis is None:
-        return html.Div()
+        return _llm_generate_panel()
 
     is_local = analysis.strip().startswith("> **Analysis mode:** Local computed")
     badge = html.Span(
