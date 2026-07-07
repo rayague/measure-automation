@@ -596,6 +596,31 @@ def _main(argv: list[str] | None = None) -> int:
     runs_delete.add_argument("--all", action="store_true", help="Delete ALL runs")
     runs_delete.add_argument("--yes", "-y", action="store_true", help="Skip confirmation prompt")
 
+    # ── endpoint subcommand ───────────────────────────────────────────
+    endpoint_parser = subparsers.add_parser(
+        "endpoint",
+        help="Track one endpoint's tables and cohesion across saved runs",
+        description=(
+            "Track a specific endpoint across your saved analysis runs.\n"
+            "\n"
+            "For every saved run where the endpoint appears, shows:\n"
+            "  - the database tables it accessed, with access counts\n"
+            "  - its per-endpoint cohesion: the mean table-overlap with its\n"
+            "    sibling endpoints in the same service (0.0 = shares nothing,\n"
+            "    1.0 = shares as much as possible with every sibling)\n"
+            "  - the run-over-run trend\n"
+            "\n"
+            "The pattern is a case-insensitive substring of the endpoint key:\n"
+            "  mba endpoint /orders\n"
+            "  mba endpoint \"GET /users\" --service user-service"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    endpoint_parser.add_argument("pattern", help="Endpoint key or substring to track (case-insensitive)")
+    endpoint_parser.add_argument("--service", default=None, help="Restrict to one service name.")
+    endpoint_parser.add_argument("--runs", type=_validate_positive_int, default=20, dest="max_runs", help="How many recent runs to inspect (default: 20).")
+    endpoint_parser.add_argument("--json", action="store_true", help="Output as JSON lines.")
+
     # ── ingest subcommand ─────────────────────────────────────────────
     ingest_parser = subparsers.add_parser(
         "ingest",
@@ -1006,6 +1031,9 @@ def _main(argv: list[str] | None = None) -> int:
 
         return 0
 
+    if args.command == "endpoint":
+        return _cmd_endpoint(args)
+
     if args.command == "runs":
         from boundary_analyzer.auto.run_registry import (
             delete_run,
@@ -1405,6 +1433,82 @@ _BENCHMARKS: dict[str, dict] = {
         ],
     },
 }
+
+
+def _cmd_endpoint(args: argparse.Namespace) -> int:
+    """Handler for ``mba endpoint <pattern>`` — cross-run endpoint tracking."""
+    from rich.table import Table
+
+    from boundary_analyzer.metrics.endpoint_tracking import track_endpoint
+
+    snapshots = track_endpoint(args.pattern, service=args.service, max_runs=args.max_runs)
+
+    if not snapshots:
+        _console.print(f"  [yellow]No table data found for endpoint pattern {args.pattern!r} in the last {args.max_runs} run(s).[/]")
+        _console.print("  [dim]Only endpoints that accessed at least one table appear in run data.[/]")
+        _console.print("  [dim]Run [cyan]mba runs list[/cyan] to see which runs exist, and check the pattern spelling.[/]")
+        return 1
+
+    if args.json:
+        for s in snapshots:
+            _console.print(
+                json.dumps(
+                    {
+                        "run_id": s.run_id,
+                        "timestamp": s.timestamp,
+                        "service": s.service_name,
+                        "endpoint": s.endpoint_key,
+                        "tables": s.tables,
+                        "total_accesses": s.total_accesses,
+                        "sibling_count": s.sibling_count,
+                        "cohesion": s.cohesion,
+                    }
+                )
+            )
+        return 0
+
+    # Group by (service, endpoint): a broad pattern may match several.
+    groups: dict[tuple[str, str], list] = {}
+    for s in snapshots:
+        groups.setdefault((s.service_name, s.endpoint_key), []).append(s)
+
+    for (svc, ep), snaps in groups.items():
+        _console.print()
+        _console.print(f"  [bold cyan]{ep}[/]  [dim]in service[/] [bold]{svc}[/]  —  {len(snaps)} run(s)")
+
+        table = Table(show_header=True, header_style="bold cyan", box=None, pad_edge=False)
+        table.add_column("Run")
+        table.add_column("Date")
+        table.add_column("Tables (count)")
+        table.add_column("Accesses", justify="right")
+        table.add_column("Cohesion", justify="right")
+        table.add_column("Trend")
+
+        prev_cohesion: float | None = None
+        for s in snaps:
+            tables_str = ", ".join(f"{t}({n})" for t, n in sorted(s.tables.items()))
+            if s.cohesion is None:
+                coh_str, trend = "[dim]n/a — no siblings[/]", ""
+            else:
+                coh_str = f"{s.cohesion:.3f}"
+                if prev_cohesion is None:
+                    trend = "[dim]—[/]"
+                elif s.cohesion > prev_cohesion:
+                    trend = f"[green]▲ +{s.cohesion - prev_cohesion:.3f}[/]"
+                elif s.cohesion < prev_cohesion:
+                    trend = f"[red]▼ {s.cohesion - prev_cohesion:.3f}[/]"
+                else:
+                    trend = "[dim]= 0.000[/]"
+                prev_cohesion = s.cohesion
+            date = s.timestamp[:16].replace("T", " ") if s.timestamp else "?"
+            table.add_row(s.run_id, date, tables_str, str(s.total_accesses), coh_str, trend)
+
+        _console.print(table)
+
+    _console.print()
+    _console.print("  [dim]Cohesion = mean table-overlap with sibling endpoints of the same service[/]")
+    _console.print("  [dim](1.0 = shares as much as possible with every sibling; 0.0 = shares nothing).[/]")
+    return 0
 
 
 def _cmd_benchmark(args: argparse.Namespace) -> int:

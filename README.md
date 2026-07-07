@@ -31,6 +31,7 @@
   - [mba benchmark — Known Microservice Benchmarks](#mba-benchmark--known-microservice-benchmarks)
   - [mba dashboard — Interactive Web UI](#mba-dashboard--interactive-web-ui)
   - [mba setup — Add OpenTelemetry to Your App](#mba-setup--add-opentelemetry-to-your-app)
+  - [mba endpoint — Track One Endpoint Across Runs](#mba-endpoint--track-one-endpoint-across-runs)
   - [mba runs — Manage Historical Runs](#mba-runs--manage-historical-runs)
   - [mba teastore — TeaStore Benchmark](#mba-teastore--teastore-benchmark)
 - [The Analysis Pipeline — 8 Steps Explained](#the-analysis-pipeline--8-steps-explained)
@@ -654,6 +655,40 @@ mba setup --project-path ./my-flask-api \
 5. Asks you to restart your app with the bootstrap
 6. Waits for you to send traffic (or generates it automatically)
 7. Collects traces and runs SCOM
+
+---
+
+### `mba endpoint` — Track One Endpoint Across Runs
+
+Follow a specific endpoint through your saved analysis runs: which database
+tables it accessed, how often, and how much data it shares with its sibling
+endpoints — with the run-over-run trend.
+
+```bash
+mba endpoint <PATTERN> [OPTIONS]
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `PATTERN` | — | Case-insensitive substring of the endpoint key (e.g. `/orders`, `"GET /users"`) |
+| `--service <name>` | all | Restrict to one service |
+| `--runs <n>` | `20` | How many recent runs to inspect |
+| `--json` | off | JSON-lines output for scripting |
+
+```bash
+mba endpoint /rest/products
+mba endpoint "GET /orders" --service shop --runs 10
+```
+
+Per run, the output shows the tables (with access counts), total accesses,
+and a **per-endpoint cohesion score**: the mean table-overlap with the
+endpoint's siblings in the same service (`1.0` = shares as many tables as
+possible with every sibling, `0.0` = shares nothing), plus a ▲/▼ trend
+against the previous run. Derived from the same Connection Intensity
+definition as SCOM.
+
+> Only endpoints that accessed at least one table appear in run data — an
+> endpoint with no traced DB operations reports "no table data" honestly.
 
 ---
 
