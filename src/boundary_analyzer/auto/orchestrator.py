@@ -218,10 +218,14 @@ def _discover_endpoints_for_service(
         endpoints = discover_endpoints_ast(service_info, service_dir)
         source = "source-scan"
 
-        if not endpoints:
+        if not endpoints and project_info.single_service:
             # Source scanning found the entry file but not the routes (e.g.
             # routes registered in a file we can't parse). Fall back to a
-            # subdirectory-wide scan from the project root before giving up.
+            # project-root-wide scan — but ONLY for single-service projects:
+            # with multiple services, root-wide routes cannot honestly be
+            # attributed to any one service (observed live: the frontend was
+            # credited with the backend's GET /healthz). Multi-service
+            # projects fall through to the live-probe below instead.
             endpoints = discover_endpoints_ast(service_info, project_info.root_dir)
 
     if not endpoints:

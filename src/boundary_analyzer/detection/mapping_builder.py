@@ -158,6 +158,7 @@ def build_endpoint_table_mapping(
     db_spans_no_endpoint = 0
     db_spans_no_parent = 0
     db_spans_found = 0
+    db_spans_no_tables = 0
 
     for _, db_row in db_ops_df.iterrows():
         trace_id = db_row["trace_id"]
@@ -166,6 +167,7 @@ def build_endpoint_table_mapping(
 
         # Handle NaN values (can be float when read from CSV)
         if pd.isna(tables_str) or not tables_str:
+            db_spans_no_tables += 1
             continue
 
         # Convert to string if needed
@@ -200,13 +202,26 @@ def build_endpoint_table_mapping(
     )
 
     if not mappings:
-        logger.warning(
-            "No endpoint-to-table mappings could be built from %d DB operations "
-            "(chain-walk: %d found, %d fell back, %d no parent). "
-            "The parent-span chain walking may have failed. Check that HTTP endpoint "
-            "spans exist and that DB spans have valid parent span IDs.",
-            len(db_ops_df), db_spans_found, db_spans_no_endpoint, db_spans_no_parent,
-        )
+        if db_spans_no_tables == len(db_ops_df):
+            # Every DB operation carried no table name — chain-walking never
+            # even ran, so don't blame it. This is what table-less SQL looks
+            # like (e.g. an app whose only query is `select VERSION()`), or
+            # SQL the table extractor could not parse.
+            logger.warning(
+                "No endpoint-to-table mappings could be built: none of the %d DB "
+                "operation(s) referenced a table (statements like SELECT VERSION() "
+                "touch no table; unparseable SQL also lands here). SCOM table "
+                "counts will be zero for the affected services.",
+                len(db_ops_df),
+            )
+        else:
+            logger.warning(
+                "No endpoint-to-table mappings could be built from %d DB operations "
+                "(%d had no table name; of the rest — chain-walk: %d matched an "
+                "endpoint, %d fell back to unknown_endpoint). Check that HTTP "
+                "endpoint spans exist and that DB spans have valid parent span IDs.",
+                len(db_ops_df), db_spans_no_tables, db_spans_found, db_spans_no_endpoint,
+            )
         return pd.DataFrame(columns=["service_name", "endpoint_key", "table", "count"])
 
     unknown_count = sum(1 for m in mappings if m["endpoint_key"] == "unknown_endpoint")

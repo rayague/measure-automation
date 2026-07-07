@@ -115,7 +115,7 @@ class JaegerIntegrationTest(unittest.TestCase):
         data = resp.json()
         self.assertEqual(len(data.get("data", [])), 0)
 
-    def test_step_01_collect_with_running_jaeger(self):
+    def test_step_01_collect_reports_error_when_service_has_no_traces(self):
         from boundary_analyzer.pipeline.step_01_collect_traces import main as collect
 
         with tempfile.TemporaryDirectory(prefix="jaeger_test_") as tmp:
@@ -132,7 +132,10 @@ class JaegerIntegrationTest(unittest.TestCase):
                 json.dump(settings, f)
 
             rc = collect()
-            self.assertEqual(rc, 0, "step_01 should return 0 even with no traces")
+            # Zero traces for the requested service is a hard error by design
+            # (rc=5): a silent zero-trace "success" would let the rest of the
+            # pipeline run on nothing and report an empty analysis.
+            self.assertEqual(rc, 5, "step_01 must signal an error when the service has no traces")
 
 
 if __name__ == "__main__":
