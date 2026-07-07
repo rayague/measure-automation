@@ -112,6 +112,24 @@ def _wait_for_health(url: str, timeout: int = 30, interval: float = 1.0) -> bool
     return False
 
 
+def _wait_for_http_response(url: str, timeout: int = 60, interval: float = 2.0) -> bool:
+    """Wait until *url* returns ANY HTTP response (any status code).
+
+    Unlike :func:`_wait_for_health`, a 4xx/5xx counts as success: the goal is
+    to know the application process is alive and answering, not that it is
+    healthy — some apps have no route at "/" but are perfectly serving.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            requests.get(url, timeout=5)
+            return True
+        except (requests.RequestException, ConnectionError):
+            pass
+        time.sleep(interval)
+    return False
+
+
 def _docker_installed() -> bool:
     try:
         result = subprocess.run(["docker", "--version"], capture_output=True, timeout=5)
@@ -1094,6 +1112,21 @@ def find_otel_dockerfiles(project_root: Path) -> list[Path]:
     return results
 
 
+def _read_compose_networks(project_dir: Path) -> list[str]:
+    """Return the top-level network names declared in the project's compose file."""
+    compose_file = _find_compose_file(project_dir)
+    if compose_file is None:
+        return []
+    try:
+        data = yaml.safe_load(compose_file.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError):
+        return []
+    networks = data.get("networks") if isinstance(data, dict) else None
+    if not isinstance(networks, dict):
+        return []
+    return sorted(networks.keys())
+
+
 def _build_compose_override(
     project: ProjectInfo,
     jaeger_port: int = 16686,
@@ -1109,13 +1142,23 @@ def _build_compose_override(
     override: dict[str, Any] = {"services": {}}
 
     if include_jaeger:
-        override["services"][container_name] = {
+        jaeger_svc: dict[str, Any] = {
             "image": "jaegertracing/all-in-one:latest",
             "ports": [
                 f"{jaeger_port}:16686",
                 f"{otlp_port}:4318",
             ],
         }
+        # When the project's compose declares named networks, its services
+        # live on those networks — NOT on "default". Without joining them,
+        # the app containers cannot resolve the Jaeger hostname and every
+        # span export dies with getaddrinfo ENOTFOUND (found live on
+        # docker/awesome-compose react-express-mysql, which uses
+        # public/private networks).
+        project_networks = _read_compose_networks(project.root_dir)
+        if project_networks:
+            jaeger_svc["networks"] = project_networks
+        override["services"][container_name] = jaeger_svc
 
     for svc in project.services:
         if not svc.compose_service_name:
@@ -1623,9 +1666,20 @@ def deploy_docker_compose(
 
         ready = _wait_for_port("127.0.0.1", port, timeout=timeout) if container_ok else False
         if ready:
-            health_path = svc.health_endpoint or "/"
-            health_url = f"http://127.0.0.1:{port}{health_path}"
-            _wait_for_health(health_url, timeout=15)
+            # A successful TCP connect on a published port only proves that
+            # docker-proxy is up — NOT that the application inside answers
+            # (found live: app still waiting on its database passed the port
+            # check, traffic then failed 118/118). Readiness requires an
+            # actual HTTP response; any status code counts (even 500 means
+            # the app is alive), so probe "/" rather than a health path the
+            # app may not implement.
+            ready = _wait_for_http_response(f"http://127.0.0.1:{port}/", timeout=timeout)
+            if not ready:
+                logger.warning(
+                    "Service %s: port %d accepts connections but the application "
+                    "never answered HTTP within %ds (still starting? waiting on its database?).",
+                    svc.compose_service_name, port, timeout,
+                )
 
         deployed = DeployedService(
             service=svc,

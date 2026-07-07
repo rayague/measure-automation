@@ -420,6 +420,11 @@ class AnalysisError(Exception):
         self._message = self._override_message or msg
         self._detail = self._override_detail or detail
         self._fix = self._override_fix or fix
+        # Several fix templates embed a "{detail}" placeholder; without this
+        # substitution the literal braces leak into user-facing output
+        # ("The last error response was: {detail}").
+        if self._fix and "{detail}" in self._fix:
+            self._fix = self._fix.replace("{detail}", self._detail or self.scope or "(no further detail captured)")
         if not self.recoverable:
             pass
         if fatal:
