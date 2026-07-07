@@ -1511,11 +1511,13 @@ def deploy_docker_compose(
     jaeger_port: int = 16686,
     otlp_port: int = 4318,
     container_name: str = "mba-jaeger",
-    # 300s, not 60: a real cold start routinely exceeds a minute — measured
-    # ~2 min on Docker's react-express-mysql sample (fresh MariaDB volume
-    # init + npm + nodemon + OTel bootstrap) before the app answers HTTP.
-    # Fast apps are unaffected: the readiness loop returns on first response.
-    timeout: int = 300,
+    # 600s: real cold starts run long — measured precisely on Docker's
+    # react-express-mysql sample: MariaDB was ready in 3s, but the app
+    # (npm → nodemon → node with bind-mounted volumes on Windows/WSL2 I/O)
+    # took 5m40s from container start to "Webserver is ready", overshooting
+    # the previous 300s budget. Fast apps are unaffected: the readiness
+    # loop returns on the first HTTP response.
+    timeout: int = 600,
 ) -> DeploymentResult:
     compose_file = _find_compose_file(project.root_dir)
     if compose_file is None:
