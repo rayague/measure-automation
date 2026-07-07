@@ -327,7 +327,7 @@ mba full [PROJECT_DIR] [OPTIONS]
 
 | Flag | Default | Description |
 |---|---|---|
-| `--language <lang>` | auto-detected | Force a specific language (`python`, `java`, `node`, `php`, `dotnet`). Useful if detection fails. |
+| `--language <lang>` | auto-detected | Force a specific language (`python`, `java`, `node`, `php`). Useful if detection fails. |
 | `--llm` | off | Use LLM to generate smarter instrumentation code and richer endpoint payloads |
 | `--verbose` / `-v` | off | Show detailed output: payloads, HTTP responses, endpoint discovery |
 | `--exclude-services <names...>` | none | Service names to exclude from SCOM analysis (e.g. `--exclude-services gateway`) |
@@ -634,7 +634,7 @@ mba setup --project-path <PATH> [OPTIONS]
 - Next.js (Node.js)
 - Nest.js (Node.js)
 
-> Each of these gets full code-level OpenTelemetry instrumentation via `mba setup` (a generated bootstrap file). Java and .NET services are not covered by `mba setup`, but are auto-instrumented through OpenTelemetry agent injection (no source code changes) when deployed via `mba full`.
+> Each of these gets full code-level OpenTelemetry instrumentation via `mba setup` (a generated bootstrap file). Java services are not covered by `mba setup`, but are auto-instrumented through OpenTelemetry agent injection (no source code changes) when deployed via `mba full`.
 
 **Example:**
 
@@ -1125,10 +1125,6 @@ Trace parsing supported. Auto-instrumentation via the `@opentelemetry/auto-instr
 ### PHP
 
 Trace parsing supported. Instrumentation via the OpenTelemetry PHP extension.
-
-### .NET
-
-Trace parsing supported. Instrumentation via the OpenTelemetry .NET SDK.
 
 > **Framework detection confidence**: MBA assigns a confidence score to each detection result. If confidence is low, it falls back to static templates and logs a warning. Use `--language` to force the correct language if auto-detection fails.
 

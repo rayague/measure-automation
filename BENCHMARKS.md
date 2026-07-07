@@ -17,8 +17,7 @@ Conventions:
 | Java | TeaStore (6 services) | [DescartesResearch/TeaStore](https://github.com/DescartesResearch/TeaStore) | ✅ Validated | [below](#java--teastore) |
 | Python | Flask scenario apps (3 designs) | supervisor-provided test scenarios | ✅ Validated | [below](#python--flask-scenarios) |
 | Node.js | react-express-mysql | [docker/awesome-compose](https://github.com/docker/awesome-compose/tree/master/react-express-mysql) | ⬜ In progress | [below](#nodejs--react-express-mysql) |
-| PHP | — | — | ⬜ Not yet run | |
-| .NET | — | — | ⬜ Not yet run | |
+| PHP | apache-php | [docker/awesome-compose](https://github.com/docker/awesome-compose/tree/master/apache-php) | ⬜ In progress | [below](#php--apache-php) |
 
 ---
 
@@ -141,12 +140,36 @@ reported for this project yet.
 
 ---
 
-## PHP — not yet run
+## PHP — apache-php
 
-No end-to-end run has been performed. The Laravel plugin has unit tests
-only. No empirical claim is made.
+**Command:** `mba full . --duration 45`
+**Source:** Docker's official samples — Apache + PHP, single service, no database.
+**Date:** 2026-07-07 · 1 run.
 
-## .NET — not yet run
+### Result
 
-No end-to-end run has been performed. The .NET agent-injection path has
-unit tests only. No empirical claim is made.
+| Step | Outcome |
+|---|---|
+| Discover | ✅ 1 PHP service detected from `compose.yaml` |
+| Deploy | ✅ 1/1 ready (HTTP readiness) |
+| Traffic | ✅ 88 requests, 0 failed |
+| Collect | ❌ No traces — expected, see below |
+
+### Honest status
+
+**Partial, with a documented structural limitation.** The deployment,
+discovery, and traffic pipeline works on a real PHP project. However, PHP
+tracing requires the **OpenTelemetry PHP extension compiled into the
+image** — unlike Node.js (where MBA bind-mounts pure-JS modules from a host
+cache), a PHP extension is a compiled `.so` that cannot be injected into an
+arbitrary image at deploy time. The injected `OTEL_PHP_AUTOLOAD_ENABLED`
+env vars are inert without it. Consequently:
+
+- PHP projects whose images already ship the OTel extension will be traced;
+- stock PHP images (like this sample) produce **no spans**, and MBA reports
+  "No traces found" rather than fabricating results.
+
+Additionally, this sample has no database, so SCOM would be empty by
+design even with tracing. A PHP benchmark with real DB access (e.g. a
+Laravel + MySQL application with the OTel extension) would be needed for a
+PHP SCOM number; none is claimed here.
