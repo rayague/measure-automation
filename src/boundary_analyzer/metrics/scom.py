@@ -222,7 +222,23 @@ def compute_scom(
 
     df = pd.DataFrame(results)
     if skip_no_db_services and not df.empty:
-        df = df[df["tables_count"] > 0].reset_index(drop=True)
+        filtered = df[df["tables_count"] > 0].reset_index(drop=True)
+        if filtered.empty:
+            # Every analyzed service has zero detected tables. Dropping them
+            # all would report "No SCOM data", hiding the far more useful
+            # truth: services WERE analyzed but no DB operations were traced
+            # (missing DB instrumentation, DB-less workload, or traffic that
+            # never reached DB-touching endpoints). Keep the honest rows.
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "skip_no_db_services would remove ALL %d service(s) (every tables_count is 0) — "
+                "keeping them so the result is visible. No database operations were traced: "
+                "check DB instrumentation and that traffic reached DB-touching endpoints.",
+                len(df),
+            )
+            return df
+        df = filtered
     return df
 
 

@@ -113,19 +113,24 @@ def _export_jaeger_traces(
     if service_filter:
         service_filter_lower = {s.lower() for s in service_filter}
         matched = []
-        unmatched = []
         for s in services:
             if s in service_filter or s.lower() in service_filter_lower:
                 matched.append(s)
-            else:
-                unmatched.append(s)
-        if unmatched:
+        # Warn only when a DISCOVERED service produced no traces — that is
+        # the actionable problem. Jaeger knowing extra services we did not
+        # discover (its own self-traces, other apps) is normal and was
+        # previously reported as a scary "mismatch", which repeatedly sent
+        # debugging down the wrong path.
+        matched_lower = {m.lower() for m in matched}
+        missing_from_jaeger = [d for d in service_filter if d.lower() not in matched_lower]
+        if missing_from_jaeger:
             logger.warning(
-                "Service name mismatch between discovery and Jaeger: "
-                "discovered=%s, not found in Jaeger=%s. "
-                "Check that OTEL_SERVICE_NAME env var matches the service name in docker-compose.yml.",
-                service_filter,
-                unmatched,
+                "No traces found in Jaeger for discovered service(s) %s "
+                "(Jaeger currently knows: %s). The service may not be "
+                "instrumented, may not have been exercised, or its "
+                "OTEL_SERVICE_NAME may differ from the compose service name.",
+                missing_from_jaeger,
+                all_jaeger_services,
             )
         services = matched
 
