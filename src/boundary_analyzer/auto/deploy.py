@@ -1208,12 +1208,24 @@ def _build_compose_override(
             # The JS SDK's register entrypoint defaults to the http/protobuf
             # OTLP protocol, which speaks to port 4318 — pointing it at the
             # gRPC port (4317) silently exports nothing.
+            #
+            # ENABLED_INSTRUMENTATIONS + RESOURCE_DETECTORS are restricted
+            # because NODE_OPTIONS applies to EVERY node process in the
+            # container (npm, nodemon, each Docker HEALTHCHECK invocation…),
+            # and the full auto-instrumentation set plus the cloud resource
+            # detectors (GCP/AWS metadata probes that wait out network
+            # timeouts — observed live as GET /computeMetadata/v1/instance
+            # spans) multiply into minutes of extra startup per boot. That
+            # pushed a real app's readiness past the 300s budget.
             env = [
                 f"OTEL_SERVICE_NAME={svc.name}",
                 f"OTEL_EXPORTER_OTLP_ENDPOINT=http://{otel_host}:4318",
                 "OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf",
                 "OTEL_METRICS_EXPORTER=none",
                 "OTEL_LOGS_EXPORTER=none",
+                "OTEL_NODE_ENABLED_INSTRUMENTATIONS="
+                "http,express,koa,fastify,router,mysql,mysql2,pg,mongodb,mongoose,redis,ioredis,knex,dns,net",
+                "OTEL_NODE_RESOURCE_DETECTORS=env,host,os,serviceinstance",
             ]
             node_otel_host = _ensure_node_otel()
             if node_otel_host:
@@ -1765,6 +1777,34 @@ def cleanup_docker_compose(
     except subprocess.TimeoutExpired:
         logger.warning("Docker compose down timed out — skipping")
     except FileNotFoundError:
+        pass
+
+    # Split-brain guard: a leftover Jaeger created by a PREVIOUS run's
+    # include_jaeger=True override carries the compose service alias
+    # "mba-jaeger" on the project networks. If a later run reuses a
+    # standalone Jaeger instead (include_jaeger=False), application spans
+    # resolve "mba-jaeger" to the LEFTOVER container while collection
+    # queries the standalone one on localhost:16686 — two Jaegers, each
+    # holding half the truth, and the analysis silently sees zero
+    # application spans (observed live across three full runs).
+    try:
+        project_name = _get_compose_project_name(compose_file)
+        ps = subprocess.run(
+            [
+                "docker", "ps", "-aq",
+                "--filter", f"label=com.docker.compose.project={project_name}",
+                "--filter", f"label=com.docker.compose.service={container_name}",
+            ],
+            capture_output=True, text=True, timeout=15,
+        )
+        leftover_ids = ps.stdout.split()
+        if leftover_ids:
+            logger.info(
+                "Removing %d leftover compose-managed Jaeger container(s) from a previous run "
+                "(prevents split-brain trace collection)", len(leftover_ids),
+            )
+            subprocess.run(["docker", "rm", "-f", *leftover_ids], capture_output=True, text=True, timeout=30)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
 
     try:
