@@ -101,11 +101,43 @@ Threats to Validity.
 
 ## Node.js — react-express-mysql
 
-**Command:** `mba full . --duration 60`
+**Command:** `mba full . --duration 60 [--reset-jaeger]`
 **Source:** Docker's official samples — Express backend + MariaDB + React frontend,
-Docker secrets, multi-stage build.
-**Status:** ⬜ run in progress; this section will be filled with the actual
-outcome (success or documented failure) once complete.
+Docker secrets, multi-stage build, modern `compose.yaml` naming, named networks.
+**Date:** 2026-07-07 · **7 iterative runs** — each failure was a real
+genericity defect in the tool, fixed and committed before the next run.
+
+### Campaign log (honest, run by run)
+
+| Run | Reached | Defect found → fixed |
+|---|---|---|
+| 1 | discovery | `compose.yaml` (Compose-spec canonical name) not recognized — discovery silently missed the compose file, fell back to host-process deploy |
+| 2 | build | 300s hard build timeout killed a legitimate first build (391s measured); Node OTel injection assumed the package exists in the app image; OTLP endpoint pointed at the gRPC port with an HTTP-protocol SDK |
+| 3 | deploy ✔ | endpoint discovery returned `[]` for every non-Python service → zero traffic |
+| 4 | traffic ✔ 114/114 | provisioning marker checked a file layout modern OTel packages no longer have → `NODE_OPTIONS` silently omitted → app ran untraced; a 9-hour-old zombie Jaeger was absorbing/serving all trace queries |
+| 5 | deploy ✔ | TCP port readiness lies behind docker-proxy → traffic fired while the app was still waiting on its DB: 118/118 failed |
+| 6 | deploy ✔ | honest HTTP readiness now in place, but its 60s budget was shorter than the app's real cold start (~2 min: fresh MariaDB init + npm + nodemon + OTel bootstrap) |
+| 7 | traffic ✔ 124/124, collect ✔ | app served traffic and 200 traces were exported — but no application spans reached Jaeger; root-cause analysis of the export path ongoing |
+
+### Mechanisms validated live during this campaign
+
+- OTel Node modules provisioned once on the host and bind-mounted read-only;
+  the register entrypoint loads in a real unmodified container:
+  *"OpenTelemetry automatic instrumentation started successfully"*.
+- Spans from an instrumented container reach Jaeger over both tested routes:
+  the compose network (service alias) and `host.docker.internal:4318`
+  (verified: service appears in Jaeger's `/api/services`).
+- Express route extraction recovers the sample's real routes (`GET /`,
+  `GET /healthz`) from its source.
+
+### Honest status
+
+**Partial.** Deployment, instrumentation loading, endpoint discovery and
+traffic generation against this real-world project are validated end-to-end.
+The final link — application spans arriving in Jaeger *during an `mba full`
+run* — has been validated in isolation but not yet observed in a complete
+run; the investigation is documented and continuing. No SCOM number is
+reported for this project yet.
 
 ---
 

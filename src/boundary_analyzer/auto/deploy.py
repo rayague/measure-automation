@@ -1305,12 +1305,17 @@ def _get_container_networks(container_identifier: str) -> list[str]:
 def _get_compose_project_name(compose_file: Path) -> str:
     """Infer the Docker Compose project name from the compose file path.
 
-    Docker Compose uses the directory name (lowercased, non-alphanumeric → ``_``)
-    as the default project name.
+    Compose v2 derives the default project name from the directory name,
+    lowercased, keeping ``[a-z0-9_-]`` — hyphens are VALID and preserved
+    (``react-express-mysql`` stays ``react-express-mysql``). The previous
+    implementation replaced every non-alphanumeric character with ``_``,
+    so the network-label lookup polled a project that never existed
+    ("react_express_mysql", 47 fruitless polls observed live).
     """
     name = compose_file.parent.name.lower()
-    safe = "".join(c if c.isalnum() else "_" for c in name)
-    return safe.strip("_") or "default"
+    safe = "".join(c if (c.isalnum() or c in "_-") else "_" for c in name)
+    safe = safe.lstrip("_-")  # must start with a letter or digit
+    return safe or "default"
 
 
 def _connect_with_network_name(
