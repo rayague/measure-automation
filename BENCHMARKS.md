@@ -16,8 +16,8 @@ Conventions:
 |---|---|---|---|---|
 | Java | TeaStore (6 services) | [DescartesResearch/TeaStore](https://github.com/DescartesResearch/TeaStore) | ✅ Validated | [below](#java--teastore) |
 | Python | Flask scenario apps (3 designs) | supervisor-provided test scenarios | ✅ Validated | [below](#python--flask-scenarios) |
-| Node.js | react-express-mysql | [docker/awesome-compose](https://github.com/docker/awesome-compose/tree/master/react-express-mysql) | ⬜ In progress | [below](#nodejs--react-express-mysql) |
-| PHP | apache-php | [docker/awesome-compose](https://github.com/docker/awesome-compose/tree/master/apache-php) | ⬜ In progress | [below](#php--apache-php) |
+| Node.js | react-express-mysql | [docker/awesome-compose](https://github.com/docker/awesome-compose/tree/master/react-express-mysql) | ✅ Validated (pipeline; app has no table-touching SQL) | [below](#nodejs--react-express-mysql) |
+| PHP | apache-php | [docker/awesome-compose](https://github.com/docker/awesome-compose/tree/master/apache-php) | ⚠️ Partial (pipeline OK; PHP ext required for tracing) | [below](#php--apache-php) |
 
 ---
 
@@ -103,7 +103,7 @@ Threats to Validity.
 **Command:** `mba full . --duration 60 [--reset-jaeger]`
 **Source:** Docker's official samples — Express backend + MariaDB + React frontend,
 Docker secrets, multi-stage build, modern `compose.yaml` naming, named networks.
-**Date:** 2026-07-07 · **7 iterative runs** — each failure was a real
+**Date:** 2026-07-07 · **14 iterative runs** — each failure was a real
 genericity defect in the tool, fixed and committed before the next run.
 
 ### Campaign log (honest, run by run)
@@ -116,7 +116,9 @@ genericity defect in the tool, fixed and committed before the next run.
 | 4 | traffic ✔ 114/114 | provisioning marker checked a file layout modern OTel packages no longer have → `NODE_OPTIONS` silently omitted → app ran untraced; a 9-hour-old zombie Jaeger was absorbing/serving all trace queries |
 | 5 | deploy ✔ | TCP port readiness lies behind docker-proxy → traffic fired while the app was still waiting on its DB: 118/118 failed |
 | 6 | deploy ✔ | honest HTTP readiness now in place, but its 60s budget was shorter than the app's real cold start (~2 min: fresh MariaDB init + npm + nodemon + OTel bootstrap) |
-| 7 | traffic ✔ 124/124, collect ✔ | app served traffic and 200 traces were exported — but no application spans reached Jaeger; root-cause analysis of the export path ongoing |
+| 7-8 | traffic ✔, collect ✔ | split-brain Jaeger: a leftover compose-managed Jaeger carried the `mba-jaeger` DNS alias on the app networks, so apps exported to one instance while collection queried another; Compose-v2 project names with hyphens were also mangled to underscores, breaking the early network join |
+| 9-13 | deploy ✔ | the backend never passed HTTP readiness: NODE_OPTIONS loads OTel into every node process (npm, nodemon, healthchecks) and the cloud resource detectors wait out network timeouts; measured boot 5m40s vs 300s budget → traffic only exercised the frontend. Fixed: targeted instrumentation set, local-only detectors, 600s budget |
+| 14 | **✅ complete, exit 0** | full pipeline through SCOM; and the final twist below |
 
 ### Mechanisms validated live during this campaign
 
@@ -129,14 +131,32 @@ genericity defect in the tool, fixed and committed before the next run.
 - Express route extraction recovers the sample's real routes (`GET /`,
   `GET /healthz`) from its source.
 
+### Final result (run 14, exit 0)
+
+The complete pipeline now runs end-to-end on this project:
+
+- 2/2 services deployed and HTTP-ready; 128 requests, 0 failed.
+- The backend's knex/mysql2 queries are traced: **35 `select` spans + 35
+  knex spans** confirmed in Jaeger from the run's own traffic, correctly
+  exported and extracted as 70 DB operations by the pipeline.
+- SCOM: `backend 0.0 (2 endpoints, 0 tables)`, `frontend 0.0 (6 endpoints,
+  0 tables)` — **and 0 tables is the correct answer**: this sample's only
+  SQL statement is `select VERSION()`, a metadata query that touches no
+  table at all. There is nothing for endpoint→table mapping to map.
+
 ### Honest status
 
-**Partial.** Deployment, instrumentation loading, endpoint discovery and
-traffic generation against this real-world project are validated end-to-end.
-The final link — application spans arriving in Jaeger *during an `mba full`
-run* — has been validated in isolation but not yet observed in a complete
-run; the investigation is documented and continuing. No SCOM number is
-reported for this project yet.
+**✅ Pipeline validated end-to-end on Node.js.** Every stage demonstrably
+works on a real unmodified project: compose discovery, self-contained OTel
+injection, endpoint discovery from Express sources, traffic, knex/mysql2
+span tracing, export, DB-operation extraction, and honest SCOM reporting.
+This particular reference app has no table-touching queries, so its SCOM is
+legitimately zero-table; a Node project with real business queries would be
+needed to produce a non-trivial SCOM figure. No such figure is claimed.
+
+**9 real genericity defects** were found and fixed against this single
+project (see the campaign log above) — itself a key empirical finding about
+"fully automatic" claims.
 
 ---
 
