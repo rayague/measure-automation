@@ -68,7 +68,6 @@ _OAUTH2_CONFIG_PATHS = [
 _LLM_MODELS = [
     "gpt-4",
     "gpt-3.5-turbo",
-    "claude-3",
     "llama-3",
     "mistral",
     "gemini-pro",
