@@ -1,5 +1,72 @@
 # Changelog
 
+## v0.9.0 (2026-07-07)
+
+### Multi-language benchmark campaign: 9 genericity fixes, new features, honest reporting
+
+Everything in this release was driven by running `mba full` against real
+reference projects (docker/awesome-compose react-express-mysql and
+apache-php) and fixing what actually broke — 14 iterative runs, each
+failure a real defect. Full campaign log in BENCHMARKS.md.
+
+**New features**
+- **`mba endpoint <pattern>`** — track one endpoint across saved runs:
+  tables accessed (with counts), total accesses, per-endpoint cohesion
+  (mean table-overlap with sibling endpoints, same CI definition as SCOM),
+  and run-over-run ▲/▼ trend. `--service`, `--runs N`, `--json`.
+- **Endpoint discovery for Node.js and PHP sources**: Express
+  (`app/router.<verb>`, `.route().get().post()` chains), NestJS
+  (`@Controller`/`@Get`… decorators), Laravel (`Route::<verb>`), with
+  node_modules/vendor exclusion and a universal live-probe fallback —
+  previously non-Python services always discovered zero endpoints.
+- **Dashboard: on-demand AI analysis with pluggable API key** (memory-only,
+  never written to disk; falls back to local Ollama).
+- **Every discovered endpoint is listed live by name** (service, method,
+  path, discovery source) during `mba full`.
+- **TeaStore runs now saved to the run registry** (visible in
+  `mba runs list` and the dashboard).
+
+**Genericity fixes (found on real projects)**
+- Modern `compose.yaml`/`compose.yml` names recognized (Compose-spec order,
+  shared lookup between discovery and deploy).
+- Self-contained Node OTel injection: modules npm-installed once into a
+  host cache and bind-mounted; bare-specifier `--require` + NODE_PATH so
+  package export maps resolve; correct OTLP port/protocol (4318,
+  http/protobuf); targeted instrumentation set + local-only resource
+  detectors (cloud metadata probes were adding minutes to every process
+  start).
+- Compose v2 project names keep hyphens (network join polled a project
+  that never existed).
+- Split-brain Jaeger guard: leftover compose-managed Jaegers from earlier
+  runs are removed during cleanup (apps exported to one instance while
+  collection queried another).
+- Real HTTP readiness for compose deploys (TCP connect on a published port
+  only proves docker-proxy is up), with a 600s budget matched to a
+  measured 5m40s real-world app boot; compose build timeout 300s→900s.
+- Jaeger joins the project's named compose networks (service alias),
+  fixing getaddrinfo ENOTFOUND on projects with custom networks.
+
+**Honest reporting**
+- When `skip_no_db_services` would hide every service (all zero tables),
+  the rows are kept with a clear warning instead of "No SCOM data".
+- The misleading "Service name mismatch" warning now only fires when a
+  discovered service is genuinely absent from Jaeger.
+- `{detail}` placeholders in error fix-templates are substituted.
+- Run header totals (`Endpoints`/`Tables`) come from the same
+  trace-measured source as the per-service table; shared tables no longer
+  double-counted.
+- Run registry resolves to a central per-user location (MBA_DATA_DIR env >
+  local ./data registry > user dir) — runs no longer vanish when commands
+  are launched from different directories; fixed NameError in
+  `mba runs delete --all`.
+
+**Scope**
+- .NET removed from documented scope (plugin code remains, inert).
+- PHP: pipeline validated on a real sample; tracing requires the OTel PHP
+  extension in the image — documented limitation, no fabricated results.
+
+622 tests passing.
+
 ## v0.8.2 (2026-07-06)
 
 ### TeaStore Docker cleanup fix — leftover containers no longer break the next run
