@@ -413,8 +413,8 @@ def _llm_generate_panel() -> html.Div:
     input_style = {
         "fontFamily": T["font_mono"],
         "fontSize": "12px",
-        "background": T["bg_deep"],
-        "color": T["text"],
+        "background": T["bg_base"],
+        "color": T["text_primary"],
         "border": f"1px solid {T['border']}",
         "borderRadius": "6px",
         "padding": "8px 12px",
@@ -423,10 +423,10 @@ def _llm_generate_panel() -> html.Div:
     }
     return html.Div(
         [
-            html.Div("AI ANALYSIS", style={"fontFamily": T["font_mono"], "fontSize": "10px", "letterSpacing": "3px", "color": T["text_dim"], "marginBottom": "10px"}),
+            html.Div("AI ANALYSIS", style={"fontFamily": T["font_mono"], "fontSize": "10px", "letterSpacing": "3px", "color": T["text_secondary"], "marginBottom": "10px"}),
             html.Div(
                 "No AI analysis in this run's report yet. Paste an OpenRouter API key to generate one — the key stays in memory for this dashboard session only and is never saved to disk. Without a key, a local Ollama instance is tried instead.",
-                style={"fontSize": "12px", "color": T["text_dim"], "marginBottom": "12px", "maxWidth": "620px"},
+                style={"fontSize": "12px", "color": T["text_secondary"], "marginBottom": "12px", "maxWidth": "620px"},
             ),
             html.Div(
                 [

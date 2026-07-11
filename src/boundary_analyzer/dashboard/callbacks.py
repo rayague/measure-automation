@@ -192,7 +192,7 @@ def register_callbacks(app: dash.Dash) -> None:
         return html.Div(
             [
                 _msg("Analysis generated — saved to this run's report.md.", T["cyan"]),
-                dcc.Markdown(analysis, style={"fontSize": "13px", "color": T["text"], "marginTop": "10px"}),
+                dcc.Markdown(analysis, style={"fontSize": "13px", "color": T["text_primary"], "marginTop": "10px"}),
             ]
         )
 

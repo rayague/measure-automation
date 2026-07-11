@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.9.1 (2026-07-12)
+
+### Hotfix: dashboard crashed (HTTP 500) for runs without an AI analysis
+
+The AI-analysis generate panel introduced in 0.9.0 referenced design tokens
+that don't exist in the dashboard theme (bg_deep/text/text_dim) — a KeyError
+that took down the ENTIRE overview page for any run whose report has no
+"AI-Powered Analysis" section (i.e. most runs, including a fresh
+`mba teastore` result). Found by a user on their very first dashboard open.
+
+- Tokens corrected to the real theme keys (bg_base/text_primary/text_secondary).
+- Verified against the live server: the exact `/_dash-update-component`
+  callback that returned 500 now returns 200 with the full page content.
+- Regression tests added covering the previously untested "no AI analysis
+  yet" rendering path.
+
+
 ## v0.9.0 (2026-07-07)
 
 ### Multi-language benchmark campaign: 9 genericity fixes, new features, honest reporting

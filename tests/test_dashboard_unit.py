@@ -652,3 +652,40 @@ class TestCharts(unittest.TestCase):
         self.assertEqual(result["suspicious_count"], 1)
         self.assertEqual(result["safe_count"], 2)
         self.assertAlmostEqual(result["avg_scom"], (0.9 + 0.7 + 0.5) / 3)
+
+
+class LlmGeneratePanelRegressionTest(unittest.TestCase):
+    """Regression: a run WITHOUT an AI-Powered Analysis section must render.
+
+    The AI card's generate panel used design tokens that don't exist in
+    design_tokens.T (bg_deep/text/text_dim) — KeyError crashed the ENTIRE
+    overview page with a 500 for any such run. Found live by a user on the
+    published 0.9.0 (their very first dashboard open on a fresh TeaStore run).
+    """
+
+    def test_generate_panel_uses_only_real_tokens(self):
+        from boundary_analyzer.dashboard.layout_components import _llm_generate_panel
+
+        panel = _llm_generate_panel()  # KeyError here = invalid token
+        self.assertIsNotNone(panel)
+
+    def test_page_builds_for_run_without_ai_analysis(self):
+        import tempfile
+        from pathlib import Path
+
+        import pandas as pd
+
+        from boundary_analyzer.dashboard.layout_components import _build_page_content
+
+        run_dir = Path(tempfile.mkdtemp(prefix="dash_noai_"))
+        self.addCleanup(lambda: __import__("shutil").rmtree(run_dir, ignore_errors=True))
+        pd.DataFrame(
+            [{"service_name": "svc", "scom_score": 0.5, "endpoints_count": 3, "tables_count": 2,
+              "method": "weighted", "rank": 1, "threshold_value": 0.5,
+              "threshold_method": "fixed", "is_suspicious": False}]
+        ).to_csv(run_dir / "service_rank.csv", index=False)
+        # report.md WITHOUT the "## AI-Powered Analysis" marker -> generate panel path
+        (run_dir / "report.md").write_text("# Report\nNo AI section here.\n", encoding="utf-8")
+
+        content = _build_page_content(run_dir)
+        self.assertIsNotNone(content)
