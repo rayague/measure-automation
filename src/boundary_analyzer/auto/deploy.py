@@ -1302,12 +1302,17 @@ def _get_container_id_for_compose_service(
     cmd = ["docker", "compose", "-f", str(compose_file)]
     if override_file and override_file.exists():
         cmd.extend(["-f", str(override_file)])
-    cmd.extend(["ps", "-q", service_name])
+    # -a: include STOPPED containers. Without it, a container that started
+    # and immediately crashed resolves to nothing, and the caller can only
+    # report a generic "could not resolve container ID" instead of showing
+    # the crash logs (observed live: an `exec format error` from corrupted
+    # image layers was invisible until inspected by hand).
+    cmd.extend(["ps", "-a", "-q", service_name])
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-        cid = result.stdout.strip()
-        return cid if cid else None
+        cid = result.stdout.strip().splitlines()
+        return cid[0] if cid and cid[0] else None
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return None
 
