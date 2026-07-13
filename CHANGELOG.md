@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.9.3 (2026-07-14)
+
+### Crashed containers now show their logs instead of "Could not resolve container ID"
+
+When a service container exited immediately after startup (e.g. a broken
+image), `docker compose ps -q` returned nothing — the container was already
+stopped — so the deploy failed with an opaque "Could not resolve container
+ID" and no way to see why. Container resolution now uses `ps -a -q`, so
+exited containers are found and their crash logs are printed with the error.
+
+Field note that motivated this: a degraded Docker Desktop daemon had written
+corrupted image layers; after a reboot the daemon recovered but every build
+reused the corrupted layers from cache (all steps CACHED), so containers
+kept dying instantly with `exec format error`. If you hit that, run
+`docker builder prune -af` and remove the affected images before rebuilding.
+
+
 ## v0.9.2 (2026-07-13)
 
 ### Deploy readiness now shows progress (no more silent multi-minute wait)
