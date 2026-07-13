@@ -6,7 +6,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.9.1-cyan)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.9.2-cyan)](CHANGELOG.md)
 [![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-ready-orange?logo=opentelemetry)](https://opentelemetry.io)
 [![Jaeger](https://img.shields.io/badge/Jaeger-integrated-blue)](https://jaegertracing.io)
 
@@ -248,7 +248,7 @@ pip install .
 
 ```bash
 mba --version
-# MBA v0.9.1 - Microservice Boundary Analyzer
+# MBA v0.9.2 - Microservice Boundary Analyzer
 ```
 
 Both `mba` and `boundary-analyzer` are registered as entry points and work identically.
@@ -942,7 +942,7 @@ During `mba full`, a **Rich live terminal dashboard** displays in real time as t
 
 ```
 ╔══ MBA — Microservice Boundary Analyzer ═══════════════════════════════════════════════╗
-║  ◈ MBA — Microservice Boundary Analyzer           v0.9.1         ║
+║  ◈ MBA — Microservice Boundary Analyzer           v0.9.2         ║
 ║  Project: scenario3  ·  Services: 2  ·  Duration: 60s  ·  Workers: 5  ║
 ╠═══════════════════════════════════════════════════════════════╝
   ✔ DISCOVER  ✔ DEPLOY  ● TRAFFIC  ○ COLLECT  ○ ANALYZE  ○ CLEANUP

@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.9.2 (2026-07-13)
+
+### Deploy readiness now shows progress (no more silent multi-minute wait)
+
+After the docker build output, the HTTP-readiness phase (budget up to 600s
+per service) printed nothing at all — indistinguishable from a hang. It now
+prints which service it is waiting on and elapsed/budget time every 30s,
+and confirms when the app answers.
+
+Note for Windows users: if `mba full` seems frozen even during the BUILD
+phase with abnormally slow output, check Docker Desktop itself — a degraded
+daemon (API returning 500s) reproduces exactly this symptom. Remedy:
+`wsl --shutdown`, then restart Docker Desktop.
+
+
 ## v0.9.1 (2026-07-12)
 
 ### Hotfix: dashboard crashed (HTTP 500) for runs without an AI analysis
