@@ -112,20 +112,35 @@ def _wait_for_health(url: str, timeout: int = 30, interval: float = 1.0) -> bool
     return False
 
 
-def _wait_for_http_response(url: str, timeout: int = 60, interval: float = 2.0) -> bool:
+def _wait_for_http_response(url: str, timeout: int = 60, interval: float = 2.0, label: str = "") -> bool:
     """Wait until *url* returns ANY HTTP response (any status code).
 
     Unlike :func:`_wait_for_health`, a 4xx/5xx counts as success: the goal is
     to know the application process is alive and answering, not that it is
     healthy — some apps have no route at "/" but are perfectly serving.
+
+    When *label* is given, progress is printed every 30s: with budgets up to
+    10 minutes, a silent wait is indistinguishable from a hang (a user
+    watching a frozen terminal after the docker build output reported
+    exactly that).
     """
-    deadline = time.time() + timeout
+    start = time.time()
+    deadline = start + timeout
+    next_progress = start + 30
     while time.time() < deadline:
         try:
             requests.get(url, timeout=5)
+            if label and time.time() - start >= 30:
+                sys.stderr.write(f"  ✔ {label} answered HTTP after {time.time() - start:.0f}s\n")
+                sys.stderr.flush()
             return True
         except (requests.RequestException, ConnectionError):
             pass
+        now = time.time()
+        if label and now >= next_progress:
+            sys.stderr.write(f"  … waiting for {label} to answer HTTP ({now - start:.0f}s / {timeout}s) — app still starting\n")
+            sys.stderr.flush()
+            next_progress = now + 30
         time.sleep(interval)
     return False
 
@@ -1696,7 +1711,11 @@ def deploy_docker_compose(
             # actual HTTP response; any status code counts (even 500 means
             # the app is alive), so probe "/" rather than a health path the
             # app may not implement.
-            ready = _wait_for_http_response(f"http://127.0.0.1:{port}/", timeout=timeout)
+            ready = _wait_for_http_response(
+                f"http://127.0.0.1:{port}/",
+                timeout=timeout,
+                label=f"service '{svc.compose_service_name}' on :{port}",
+            )
             if not ready:
                 logger.warning(
                     "Service %s: port %d accepts connections but the application "
