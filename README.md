@@ -855,7 +855,7 @@ Extracts **all spans that represent a database operation** and identifies the ta
 
 | Database system | Detection method |
 |---|---|
-| PostgreSQL / MySQL | Parses `db.statement` tag (SQL `FROM`, `INSERT INTO`, `UPDATE`, `JOIN` clauses) |
+| PostgreSQL / MySQL | Parses the SQL text tag — `db.statement` (OTel semconv <1.26), `db.query.text` (≥1.26), `sql.query` (OpenTracing legacy), or `db.query` — for `FROM`, `INSERT INTO`, `UPDATE`, `JOIN` clauses |
 | MongoDB | Extracts collection name from `db.mongodb.collection` or the operation command |
 | Generic SQL | Regex-based SQL statement parser covering all common DML/DDL patterns |
 
