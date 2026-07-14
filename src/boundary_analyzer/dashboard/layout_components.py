@@ -111,7 +111,10 @@ def _status_badge(is_suspicious: bool) -> html.Span:
 
 def _build_table(df: pd.DataFrame) -> Any:
     if df.empty:
-        return dash_table.DataTable()  # type: ignore[attr-defined]
+        # Keep the id even when empty: the navigate callback declares
+        # Input("service-table", "active_cell"), and a missing id makes the
+        # Dash renderer log a ReferenceError in the browser console.
+        return dash_table.DataTable(id="service-table", data=[])  # type: ignore[attr-defined]
 
     from boundary_analyzer._utils import classify_scom
 
