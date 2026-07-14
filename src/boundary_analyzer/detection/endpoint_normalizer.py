@@ -75,6 +75,10 @@ def _normalize_dynamic_parameters(route: str) -> str:
 
     Pattern: Replace numeric IDs and UUID-like strings with {id} or {uuid}
     """
+    # Drop query string and fragment: they are request parameters, not part
+    # of the endpoint identity (GET /route?pickup=1,2 == GET /route).
+    route = route.split("?", 1)[0].split("#", 1)[0]
+
     # Replace numeric IDs
     route = re.sub(r"/\d+(?=/|$)", "/{id}", route)
 

@@ -61,6 +61,11 @@ SYSTEM_TABLE_PREFIXES = (
     "v$",
 )
 
+# Tag keys that carry the SQL/query text, across instrumentation generations:
+# db.statement (OTel semconv <1.26), db.query.text (OTel semconv >=1.26),
+# sql.query (OpenTracing legacy, e.g. Jaeger HotROD), db.query (misc).
+DB_STATEMENT_TAG_KEYS = ("db.statement", "db.query.text", "sql.query", "db.query")
+
 
 def _is_db_span(row: pd.Series) -> bool:
     """Check if a span is a database operation span."""
@@ -69,8 +74,9 @@ def _is_db_span(row: pd.Series) -> bool:
     # Strong signals from OpenTelemetry/Jaeger semantic conventions
     if _get_tag_value(tags, "db.system"):
         return True
-    if _get_tag_value(tags, "db.statement"):
-        return True
+    for key in DB_STATEMENT_TAG_KEYS:
+        if _get_tag_value(tags, key):
+            return True
 
     # Fallback: operation_name heuristic (MVP)
     operation = str(row.get("operation_name", "")).upper()
@@ -230,13 +236,10 @@ def extract_db_operations(spans_df: pd.DataFrame) -> pd.DataFrame:
     # Statement/query (prefer semantic tag)
     def detect_statement(row: pd.Series) -> str:
         tags = row.get("_tags_parsed", [])
-        stmt = _get_tag_value(tags, "db.statement")
-        if stmt:
-            return stmt
-        # Some instrumentations may use different keys
-        alt = _get_tag_value(tags, "db.query")
-        if alt:
-            return alt
+        for key in DB_STATEMENT_TAG_KEYS:
+            stmt = _get_tag_value(tags, key)
+            if stmt:
+                return stmt
         return str(row.get("operation_name", ""))
 
     db_spans["db_statement"] = db_spans.apply(detect_statement, axis=1)

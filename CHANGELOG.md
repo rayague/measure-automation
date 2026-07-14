@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.9.4 (2026-07-14)
+
+### Multi-service Jaeger ingestion fixed + broader SQL tag support
+
+Found by running `mba ingest` on traces from Jaeger's official HotROD demo
+(4 services + MySQL + Redis) — an external validation file MBA had never
+seen before. Three real defects surfaced:
+
+- **`mba ingest` collapsed multi-service trace files into one service.**
+  The pipeline re-parsed the file with the majority service name as a
+  global override, so a 6-service Jaeger export was analyzed as a single
+  service (with wildly wrong endpoint counts). The override is now applied
+  only when the user explicitly passes `--service`.
+- **SQL carried in `sql.query` or `db.query.text` tags was invisible.**
+  Only `db.statement` (OTel semconv <1.26) was recognized. MBA now also
+  reads `db.query.text` (OTel semconv >=1.26), `sql.query` (OpenTracing
+  legacy, used by HotROD) and `db.query` — both for DB-span detection and
+  table extraction, with the CLI span counters kept consistent.
+- **Query strings/fragments were kept in endpoint keys**, so
+  `GET /route?pickup=1,2` and `GET /route?pickup=3,4` counted as different
+  endpoints (327 "endpoints" instead of 5). Endpoint normalization now
+  strips `?...` and `#...`.
+
+Also: the dashboard no longer logs a browser-console ReferenceError
+(`service-table` used in a callback but absent from the layout) when a run
+contains zero services.
+
+
 ## v0.9.3 (2026-07-14)
 
 ### Crashed containers now show their logs instead of "Could not resolve container ID"

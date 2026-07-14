@@ -183,7 +183,9 @@ def _compute_stats(df: pd.DataFrame) -> dict[str, Any]:
 
     tags_series = df["tags"].fillna("[]").astype(str)
     http_mask = tags_series.str.contains("http.method", na=False, regex=False)
-    db_mask = tags_series.str.contains("db.system", na=False, regex=False) | tags_series.str.contains("db.statement", na=False, regex=False)
+    db_mask = tags_series.str.contains("db.system", na=False, regex=False)
+    for _key in ("db.statement", "db.query.text", "sql.query"):
+        db_mask = db_mask | tags_series.str.contains(_key, na=False, regex=False)
 
     return {
         "total_spans": len(df),

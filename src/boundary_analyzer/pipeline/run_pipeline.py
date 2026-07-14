@@ -141,6 +141,8 @@ def _read_universal_logs(
         total_spans = int(len(spans_df))
         http_spans = int(tags_series.str.contains("http.method", na=False, regex=False).sum())
         db_mask = tags_series.str.contains("db.system", na=False, regex=False) | tags_series.str.contains("db.statement", na=False, regex=False)
+        for _key in ("db.query.text", "sql.query"):
+            db_mask = db_mask | tags_series.str.contains(_key, na=False, regex=False)
         db_spans = int(db_mask.sum())
         services = sorted(spans_df["service_name"].dropna().astype(str).unique().tolist())
         unique_traces = int(spans_df["trace_id"].nunique())

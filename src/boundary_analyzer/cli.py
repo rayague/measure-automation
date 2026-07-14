@@ -1290,7 +1290,11 @@ def _cmd_ingest(args: argparse.Namespace) -> int:
             exclude_health_routes=True,
             exclude_http_client_spans=True,
             exclude_unknown_endpoint=True,
-            service_name=result.service_name_used or svc_name,
+            # Only force a service name when the user explicitly asked for one:
+            # service_name_used is the *majority* service of the file, and using
+            # it as an override collapses multi-service traces (e.g. a Jaeger
+            # export) into a single service.
+            service_name=svc_name,
             format_hint=effective_fmt,
             encoding=encoding,
         )

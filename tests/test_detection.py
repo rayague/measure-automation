@@ -756,5 +756,64 @@ class MappingBuilderTest(unittest.TestCase):
         self.assertTrue(path.exists())
 
 
+class HotrodStyleTracesRegressionTest(unittest.TestCase):
+    """Regressions found by ingesting Jaeger HotROD demo traces (v0.9.4).
+
+    HotROD carries its SQL in the legacy OpenTracing ``sql.query`` tag and
+    puts raw query strings in ``http.target`` — both previously produced
+    zero DB spans and one endpoint per unique query string.
+    """
+
+    def test_sql_query_tag_detected_as_db_span(self):
+        spans_df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "parent_span_id": [None],
+                "service_name": ["mysql"],
+                "operation_name": ["SQL SELECT"],
+                "start_time": [0],
+                "duration": [10],
+                "tags": [json.dumps([{"key": "sql.query", "value": "SELECT * FROM customer WHERE customer_id=123"}])],
+            }
+        )
+        result = extract_db_operations(spans_df)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result.iloc[0]["tables"], "customer")
+
+    def test_db_query_text_tag_detected_as_db_span(self):
+        spans_df = pd.DataFrame(
+            {
+                "trace_id": ["t1"],
+                "span_id": ["s1"],
+                "parent_span_id": [None],
+                "service_name": ["orders"],
+                "operation_name": ["query"],
+                "start_time": [0],
+                "duration": [10],
+                "tags": [json.dumps([{"key": "db.query.text", "value": "INSERT INTO orders (id) VALUES (1)"}])],
+            }
+        )
+        result = extract_db_operations(spans_df)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result.iloc[0]["tables"], "orders")
+
+    def test_query_string_stripped_from_endpoint_key(self):
+        key = build_endpoint_key(
+            "HTTP GET /customer",
+            [{"key": "http.method", "value": "GET"}, {"key": "http.target", "value": "/customer?customer=392"}],
+            normalize=True,
+        )
+        self.assertEqual(key, "GET /customer")
+
+    def test_fragment_stripped_from_endpoint_key(self):
+        key = build_endpoint_key(
+            "GET /page#section",
+            [],
+            normalize=True,
+        )
+        self.assertEqual(key, "GET /page")
+
+
 if __name__ == "__main__":
     unittest.main()
