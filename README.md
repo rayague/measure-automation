@@ -4,9 +4,9 @@
 
 **Detect bad microservice boundaries using runtime observability and data-cohesion metrics.**
 
+[![PyPI](https://img.shields.io/pypi/v/boundary-analyzer?logo=pypi&label=PyPI)](https://pypi.org/project/boundary-analyzer/)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.9.2-cyan)](CHANGELOG.md)
 [![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-ready-orange?logo=opentelemetry)](https://opentelemetry.io)
 [![Jaeger](https://img.shields.io/badge/Jaeger-integrated-blue)](https://jaegertracing.io)
 
@@ -228,7 +228,21 @@ Optional but recommended:
 
 ## Installation
 
-### From source (recommended)
+### From PyPI (recommended)
+
+MBA is published on PyPI as [`boundary-analyzer`](https://pypi.org/project/boundary-analyzer/):
+
+```bash
+pip install boundary-analyzer
+```
+
+To upgrade to the latest release:
+
+```bash
+pip install --upgrade boundary-analyzer
+```
+
+### From source (development)
 
 ```bash
 git clone https://github.com/rayague/measure-automation.git
@@ -236,19 +250,13 @@ cd measure-automation
 pip install -e .
 ```
 
-The `-e` flag installs in **editable mode**: any changes you make to the source are reflected immediately without reinstalling.
-
-### Standard install
-
-```bash
-pip install .
-```
+The `-e` flag installs in **editable mode**: any changes you make to the source are reflected immediately without reinstalling. (A plain `pip install .` also works for a non-editable source install.)
 
 ### Verify installation
 
 ```bash
 mba --version
-# MBA v0.9.2 - Microservice Boundary Analyzer
+# MBA v0.9.4 - Microservice Boundary Analyzer
 ```
 
 Both `mba` and `boundary-analyzer` are registered as entry points and work identically.
